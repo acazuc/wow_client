@@ -1,0 +1,15 @@
+wow
+obj/*
+*.swp
+test
+callgrind*
+massif*
+wow.exe
+wow_dxgi.log
+WoW
+wow.dxvk-cache
+wow_d3d11.log
+icon.png
+lib/build_*
+lib/sl_lib
+config

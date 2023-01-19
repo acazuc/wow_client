@@ -1,0 +1,12 @@
+#DEBUG: sanitizer; DEVEL: debug verbose & asserts; RELEASE: full optim
+#BUILD = DEBUG
+#BUILD = DEVEL
+BUILD = RELEASE
+
+WITH_DEBUG_RENDERING = NO
+WITH_LTO = NO
+WITH_PERFORMANCE = NO
+WITH_MEMORY = NO
+
+TARGET = linux
+#TARGET = windows
