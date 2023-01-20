@@ -43,8 +43,8 @@ layout(std140) uniform scene_block
 
 void main()
 {
-	vec4 position_fixed = vec4(vs_position.x, vs_position.z, -vs_position.y, 1);
-	vec4 normal_fixed = vec4(vs_normal.x, vs_normal.z, -vs_normal.y, 0);
+	vec4 position_fixed = vec4(vs_position.x, vs_position.y, vs_position.z, 1);
+	vec4 normal_fixed = vec4(vs_normal.x, vs_normal.x, vs_normal.z, 0);
 	gl_Position =  mvp * position_fixed;
 	fs_position = (mv * position_fixed).xyz;
 	switch (combiners.x)

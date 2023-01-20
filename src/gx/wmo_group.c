@@ -377,7 +377,9 @@ bool gx_wmo_group_load(struct gx_wmo_group *group, struct wow_wmo_group_file *fi
 	{
 		struct shader_wmo_input *vertex = JKS_ARRAY_GET(&group->init_data->vertexes, i, struct shader_wmo_input);
 		VEC3_CPY(vertex->position, file->movt.vertexes[i]);
+		vertex->position = (struct vec3f){vertex->position.x, vertex->position.z, -vertex->position.y};
 		VEC3_CPY(vertex->norm, file->monr.normals[i]);
+		vertex->norm = (struct vec3f){vertex->norm.x, vertex->norm.z, -vertex->norm.y};
 		VEC2_CPY(vertex->uv, file->motv.tex_coords[i]);
 	}
 	if (!jks_array_resize(&group->init_data->indices, file->movi.indices_nb))
