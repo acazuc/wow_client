@@ -9,7 +9,6 @@ enum memory_type
 	MEM_FONT,
 	MEM_UI,
 	MEM_NET,
-	MEM_OPENSSL,
 	MEM_GFX,
 	MEM_DBC,
 	MEM_GX,
