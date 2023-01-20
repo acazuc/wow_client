@@ -701,7 +701,7 @@ void gx_wmo_group_set_m2_ambient(struct gx_wmo_group *group, struct gx_wmo_insta
 	 || (group->flags & WOW_MOGP_FLAGS_EXT_LIGHT)
 	 || (group->flags & WOW_MOGP_FLAGS_OUTDOOR))
 		return;
-	cache_lock_m2(g_wow->cache);
+	cache_lock_m2(g_wow->cache); /* XXX change this mutex */
 	for (size_t i = 0; i < group->doodads.size; ++i)
 	{
 		uint16_t doodad = *(uint16_t*)jks_array_get(&group->doodads, i);
@@ -717,7 +717,13 @@ void gx_wmo_group_set_m2_ambient(struct gx_wmo_group *group, struct gx_wmo_insta
 			continue;
 		}
 		loc->uniform_buffer = GFX_BUFFER_INIT();
-		if (color->w == 0xFF)
+		if (m2->local_lighting)
+		{
+			/* detect m2 which belongs to at least two groups */
+			VEC4_SET(loc->diffuse_color, 0, 1, 0, 1);
+			VEC4_SET(loc->light_direction, 1, -1, 1, 0);
+		}
+		else if (color->w == 0xFF)
 		{
 			struct vec3f group_center;
 			VEC3_ADD(group_center, group->aabb.p0, group->aabb.p1);
