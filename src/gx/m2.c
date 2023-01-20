@@ -1880,81 +1880,83 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 	gfx_set_buffer_data(&instance->uniform_buffers[g_wow->draw_frame_id], &data, lights_off + data.light_count.x * sizeof(struct shader_m2_light_block), 0);
 }
 
-static struct mat4f calc_bone_billboard(struct gx_m2_instance *instance, struct wow_m2_bone *bone)
+static void calc_bone_billboard(struct gx_m2_instance *instance, struct wow_m2_bone *bone, struct mat4f *mat)
 {
-	/* XXX: only rotate given the view direction, not relative position */
-	struct vec4f tmp;
-	VEC3_CPY(tmp, g_wow->cull_frame->cull_pos);
-	tmp.w = 1;
-	struct vec4f camera_point;
-	MAT4_VEC4_MUL(camera_point, instance->m_inv, tmp);
-	if (bone->parent_bone != -1)
-	{
-		struct mat4f *mat = JKS_ARRAY_GET(&instance->render_frames[g_wow->cull_frame_id].bone_mats, bone->parent_bone, struct mat4f);
-		struct mat4f mat_inv;
-		MAT4_INVERSE(float, mat_inv, *mat);
-		struct vec4f tmp1 = {camera_point.x, camera_point.y, camera_point.z, 1};
-		struct vec4f tmp2;
-		MAT4_VEC4_MUL(tmp2, mat_inv, tmp1);
-		VEC3_CPY(camera_point, tmp2);
-	}
-	VEC3_SUB(camera_point, camera_point, bone->pivot);
-	struct vec3f model_forward;
-	VEC3_SET(model_forward, camera_point.x, camera_point.y, camera_point.z);
-	VEC3_NORMALIZE(float, model_forward, model_forward);
-	struct vec3f model_right;
-	struct vec3f model_up;
 	if (bone->flags & WOW_M2_BONE_SPHERICAL_BILLBOARD)
 	{
-		const struct vec3f front = {0, 0, 1};
-		VEC3_CROSS(model_right, front, model_forward);
-		VEC3_NORMALIZE(float, model_right, model_right);
-		VEC3_CROSS(model_up, model_forward, model_right);
-		VEC3_NORMALIZE(float, model_up, model_up);
+		struct mat4f tmp;
+		struct mat4f t;
+		MAT4_IDENTITY(t);
+		VEC3_CPY(t.x, instance->m_inv.x);
+		VEC3_CPY(t.y, instance->m_inv.y);
+		VEC3_CPY(t.z, instance->m_inv.z);
+		MAT4_ROTATEZ(float, tmp, t, -g_wow->cull_frame->cull_rot.z);
+		MAT4_ROTATEY(float, t, tmp, -g_wow->cull_frame->cull_rot.y);
+		MAT4_ROTATEX(float, tmp, t, -g_wow->cull_frame->cull_rot.x);
+		MAT4_ROTATEY(float, t, tmp, -M_PI / 2);
+		tmp = t;
+		float n;
+		n = instance->scale * VEC3_NORM(mat->x);
+		VEC3_MULV(tmp.x, tmp.x, n);
+		n = instance->scale * VEC3_NORM(mat->y);
+		VEC3_MULV(tmp.y, tmp.y, n);
+		n = instance->scale * VEC3_NORM(mat->z);
+		VEC3_MULV(tmp.z, tmp.z, n);
+		VEC3_CPY(mat->x, tmp.x);
+		VEC3_CPY(mat->y, tmp.y);
+		VEC3_CPY(mat->z, tmp.z);
 	}
 	else if (bone->flags & WOW_M2_BONE_CYLINDRICAL_X_BILLBOARD)
 	{
-		const struct vec3f up = {0, 1, 0};
-		VEC3_SET(model_forward, 1, 0, 0);
-		VEC3_CROSS(model_right, up, model_forward);
-		VEC3_NORMALIZE(float, model_right, model_right);
-		VEC3_CROSS(model_up, model_forward, model_right);
-		VEC3_NORMALIZE(float, model_up, model_up);
-		VEC3_CROSS(model_right, model_up, model_forward);
-		VEC3_NORMALIZE(float, model_right, model_right);
+		struct mat4f tmp;
+		struct mat4f t;
+		MAT4_IDENTITY(t);
+		VEC3_CPY(t.x, instance->m_inv.x);
+		VEC3_CPY(t.y, instance->m_inv.y);
+		VEC3_CPY(t.z, instance->m_inv.z);
+		MAT4_ROTATEX(float, tmp, t, -g_wow->cull_frame->cull_rot.x);
+		float n;
+		n = instance->scale * VEC3_NORM(mat->y);
+		VEC3_MULV(tmp.y, tmp.y, n);
+		n = instance->scale * VEC3_NORM(mat->z);
+		VEC3_MULV(tmp.z, tmp.z, n);
+		VEC3_CPY(mat->y, tmp.y);
+		VEC3_CPY(mat->z, tmp.z);
 	}
 	else if (bone->flags & WOW_M2_BONE_CYLINDRICAL_Y_BILLBOARD)
 	{
-		VEC3_SET(model_up, 0, 0, 1);
-		VEC3_CROSS(model_right, model_up, model_forward);
-		VEC3_NORMALIZE(float, model_right, model_right);
-		VEC3_CROSS(model_forward, model_right, model_up);
-		VEC3_NORMALIZE(float, model_forward, model_forward);
-		VEC3_CROSS(model_right, model_up, model_forward);
-		VEC3_NORMALIZE(float, model_right, model_right);
+		struct mat4f tmp;
+		struct mat4f t;
+		MAT4_IDENTITY(t);
+		VEC3_CPY(t.x, instance->m_inv.x);
+		VEC3_CPY(t.y, instance->m_inv.y);
+		VEC3_CPY(t.z, instance->m_inv.z);
+		MAT4_ROTATEZ(float, tmp, t, -g_wow->cull_frame->cull_rot.z);
+		float n;
+		n = instance->scale * VEC3_NORM(mat->x);
+		VEC3_MULV(tmp.x, tmp.x, n);
+		n = instance->scale * VEC3_NORM(mat->y);
+		VEC3_MULV(tmp.y, tmp.y, n);
+		VEC3_CPY(mat->x, tmp.x);
+		VEC3_CPY(mat->y, tmp.y);
 	}
 	else if (bone->flags & WOW_M2_BONE_CYLINDRICAL_Z_BILLBOARD)
 	{
-		VEC3_SET(model_right, 0, 1, 0);
-		VEC3_CROSS(model_up, model_forward, model_right);
-		VEC3_NORMALIZE(float, model_up, model_up);
-		VEC3_CROSS(model_forward, model_right, model_up);
-		VEC3_NORMALIZE(float, model_forward, model_forward);
-		VEC3_CROSS(model_up, model_forward, model_right);
-		VEC3_NORMALIZE(float, model_up, model_up);
+		struct mat4f tmp;
+		struct mat4f t;
+		MAT4_IDENTITY(t);
+		VEC3_CPY(t.x, instance->m_inv.x);
+		VEC3_CPY(t.y, instance->m_inv.y);
+		VEC3_CPY(t.z, instance->m_inv.z);
+		MAT4_ROTATEY(float, tmp, t, -g_wow->cull_frame->cull_rot.y - M_PI / 2);
+		float n;
+		n = instance->scale * VEC3_NORM(mat->x);
+		VEC3_MULV(tmp.x, tmp.x, n);
+		n = instance->scale * VEC3_NORM(mat->z);
+		VEC3_MULV(tmp.z, tmp.z, n);
+		VEC3_CPY(mat->x, tmp.x);
+		VEC3_CPY(mat->z, tmp.z);
 	}
-	else
-	{
-		VEC3_SET(model_forward, 1, 0, 0);
-		VEC3_SET(model_right, 0, 1, 0);
-		VEC3_SET(model_up, 0, 0, 1);
-	}
-	struct mat4f ret;
-	VEC4_SET(ret.x, model_forward.x, model_forward.y, model_forward.z, 0);
-	VEC4_SET(ret.y, model_right.x  , model_right.y  , model_right.z  , 0);
-	VEC4_SET(ret.z, model_up.x     , model_up.y     , model_up.z     , 0);
-	VEC4_SET(ret.w, 0              , 0              , 0              , 1);
-	return ret;
 }
 
 static void calc_bone_sequence(struct gx_m2_instance *instance, struct mat4f *mat, struct wow_m2_bone *bone)
@@ -1976,10 +1978,7 @@ static void calc_bone_sequence(struct gx_m2_instance *instance, struct mat4f *ma
 	}
 	if (bone->flags & WOW_M2_BONE_BILLBOARD)
 	{
-		struct mat4f billboard_mat = calc_bone_billboard(instance, bone);
-		struct mat4f tmp_mat;
-		MAT4_MUL(tmp_mat, *mat, billboard_mat);
-		*mat = tmp_mat;
+		calc_bone_billboard(instance, bone, mat);
 	}
 	else
 	{
