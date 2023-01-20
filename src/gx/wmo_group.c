@@ -85,8 +85,10 @@ static void batch_init(struct gx_wmo_batch *batch, struct gx_wmo_group *parent, 
 	}
 	/* Mainly seen: 0, 1, 5
 	 */
+#if 0
 	if (batch->shader)
 		LOG_DEBUG("WMOshader: %u", batch->shader);
+#endif
 	batch->flags1 = momt->flags;
 	rasterizer_state = batch->flags1 & WOW_MOMT_FLAGS_UNCULLED ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
 	batch->pipeline_state = &g_wow->graphics->wmo_pipeline_states[rasterizer_state][blend_state] - &g_wow->graphics->wmo_pipeline_states[0][0];
@@ -561,7 +563,7 @@ void gx_wmo_group_render(struct gx_wmo_group *group, struct jks_array *instances
 	}
 }
 
-static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct jks_array *frustums, struct vec4f *rpos)
+static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct jks_array *frustums, struct vec4f rpos)
 {
 	bool ret = false;
 	struct frustum *new_frustum;
@@ -621,7 +623,7 @@ next_batch:
 		wow_mopr_data_t *mopr = (wow_mopr_data_t*)jks_array_get(&group->parent->mopr, group->portal_start + i);
 		wow_mopt_data_t *mopt = (wow_mopt_data_t*)jks_array_get(&group->parent->mopt, mopr->portal_index);
 		struct vec4f tmp = {mopt->normal.x, mopt->normal.y, mopt->normal.z, mopt->distance};
-		if ((VEC4_DOT(tmp, *rpos) < 0) != (mopr->side < 0))
+		if ((VEC4_DOT(tmp, rpos) < 0) != (mopr->side < 0))
 			continue;
 		uint32_t base = mopt->start_vertex;
 		if (!jks_array_resize(&transformed, mopt->count))
@@ -671,7 +673,7 @@ err:
 	return ret;
 }
 
-void gx_wmo_group_cull_portal(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct vec4f *rpos)
+void gx_wmo_group_cull_portal(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct vec4f rpos)
 {
 	if (!group->loaded)
 		return;

@@ -663,7 +663,7 @@ void gx_wmo_instance_cull_portal(struct gx_wmo_instance *instance)
 		if (group_instance->render_frames[g_wow->cull_frame_id].culled || !group_instance->render_frames[g_wow->cull_frame_id].cull_source)
 			continue;
 		group_instance->render_frames[g_wow->cull_frame_id].cull_source = false;
-		gx_wmo_group_cull_portal(*(struct gx_wmo_group**)jks_array_get(&wmo->groups, i), instance, &rpos);
+		gx_wmo_group_cull_portal(*(struct gx_wmo_group**)jks_array_get(&wmo->groups, i), instance, rpos);
 	}
 }
 

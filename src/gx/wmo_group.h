@@ -78,7 +78,7 @@ void gx_wmo_group_delete(struct gx_wmo_group *group);
 bool gx_wmo_group_load(struct gx_wmo_group *group, struct wow_wmo_group_file *file);
 int gx_wmo_group_initialize(struct gx_wmo_group *group);
 void gx_wmo_group_render(struct gx_wmo_group *group, struct jks_array *instances);
-void gx_wmo_group_cull_portal(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct vec4f *rpos);
+void gx_wmo_group_cull_portal(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct vec4f rpos);
 void gx_wmo_group_set_m2_ambient(struct gx_wmo_group *group, struct gx_wmo_instance *instance);
 
 #endif
