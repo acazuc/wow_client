@@ -1,12 +1,24 @@
-#DEBUG: sanitizer; DEVEL: debug verbose & asserts; RELEASE: full optim
+# build type:
+# - DEBUG: DEVEL + sanitizer
+# - DEVEL: disable optimizations, enable debug verbose, enable asserts
+# - RELEASE: enable optimizations, disable asserts
 #BUILD = DEBUG
 #BUILD = DEVEL
 BUILD = RELEASE
 
+# enable / disable debug rendering (aabb, collisions, light points, portals, bones)
 WITH_DEBUG_RENDERING = NO
+
+# enable / disable link time optimizations
 WITH_LTO = NO
+
+# enable / disable performance measurements
 WITH_PERFORMANCE = NO
+
+# enable / disable memory measurements
 WITH_MEMORY = NO
 
+# linux: use gcc
+# windows: use mingw
 TARGET = linux
 #TARGET = windows
