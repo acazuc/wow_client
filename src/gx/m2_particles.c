@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_PARTICLES 512
-
 MEMORY_DECL(GX);
 
 static void destroy_emitter(void *ptr)
@@ -185,18 +183,16 @@ static struct vec3f update_acceleration(struct gx_m2_particles *particles, struc
 static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct m2_particle *particle)
 {
 	struct vec3f tmp;
-	struct vec3f acceleration;
 	struct vec3f gravity = get_gravity(particles, emitter);
 	float dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
-	VEC3_CPY(acceleration, particle->acceleration);
-	VEC3_ADD(acceleration, acceleration, gravity);
-	VEC3_MULV(tmp, acceleration, .5);
+	VEC3_MULV(tmp, gravity, .5);
 	VEC3_MULV(tmp, tmp, dt);
 	VEC3_ADD(tmp, tmp, particle->velocity);
 	VEC3_MULV(tmp, tmp, dt);
 	VEC3_ADD(particle->position, particle->position, tmp);
-	VEC3_MULV(tmp, acceleration, dt);
+	VEC3_MULV(tmp, gravity, dt);
 	VEC3_ADD(particle->velocity, particle->velocity, tmp);
+	particle->position.w = 1;
 }
 
 static void update_particles(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
@@ -214,31 +210,48 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		update_position(particles, emitter->emitter, particle);
 		if ((g_wow->frametime - particle->created) / 1000000000.f < emitter->emitter->wind_time)
 		{
-			particle->position.x -= emitter->emitter->wind_vector.x * dt;
-			particle->position.y -= emitter->emitter->wind_vector.z * dt;
-			particle->position.z += emitter->emitter->wind_vector.y * dt;
+			struct vec4f wind;
+			VEC3_MULV(wind, emitter->emitter->wind_vector, dt);
+			wind.w = 0;
+			struct vec4f tmp;
+#if 0
+			if (emitter->emitter->bone != (uint16_t)-1 && emitter->emitter->bone < particles->parent->parent->bones_nb)
+			{
+				struct mat4f *bone_mat = JKS_ARRAY_GET(&particles->parent->render_frames[g_wow->cull_frame_id].bone_mats, emitter->emitter->bone, struct mat4f);
+				struct vec4f tmp2;
+				MAT4_VEC4_MUL(tmp2, *bone_mat, wind);
+				wind = tmp2;
+			}
+			MAT4_VEC4_MUL(tmp, particles->parent->m, wind);
+#else
+			tmp = wind;
+#endif
+			VEC3_SUB(particle->position, particle->position, tmp);
 		}
 	}
 	for (size_t i = 0; i < emitter->particles.size; ++i)
 	{
 		struct m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct m2_particle);
-		struct shader_particle_input *vertex = JKS_ARRAY_GET(&emitter->vertexes, i, struct shader_particle_input);
-		vertex->position = particle->position;
+		struct shader_particle_input *vertexes = JKS_ARRAY_GET(&emitter->vertexes, i * 4, struct shader_particle_input);
 		float lifetime = (g_wow->frametime - particle->created) / (float)particle->lifespan;
-		struct vec4f color1;
-		struct vec4f color2;
+		struct vec4f color1 = {1, 1, 1, 1};
+		struct vec4f color2 = {1, 1, 1, 1};
 		float scale1;
 		float scale2;
-		float a;
-		vertex->scale = particles->parent->scale;
+		float a = 1;
+		float scale = 1;
+		vertexes[0].position = particle->position;
+		vertexes[1].position = particle->position;
+		vertexes[2].position = particle->position;
+		vertexes[3].position = particle->position;
 		if (emitter->emitter->twinkle_percent != 0 && emitter->emitter->twinkle_scale_min != emitter->emitter->twinkle_scale_max)
 		{
 			float len = 1000000000.f / emitter->emitter->twinkle_speed * 2;
 			float p = fmod(g_wow->frametime - particle->created, len) / len;
 			if (p <= .5)
-				vertex->scale *= (2 * p) * (emitter->emitter->twinkle_scale_max - emitter->emitter->twinkle_scale_min) + emitter->emitter->twinkle_scale_min;
+				scale *= (2 * p) * (emitter->emitter->twinkle_scale_max - emitter->emitter->twinkle_scale_min) + emitter->emitter->twinkle_scale_min;
 			else
-				vertex->scale *= (2 * (p - .5)) * (emitter->emitter->twinkle_scale_min - emitter->emitter->twinkle_scale_max) + emitter->emitter->twinkle_scale_max;
+				scale *= (2 * (p - .5)) * (emitter->emitter->twinkle_scale_min - emitter->emitter->twinkle_scale_max) + emitter->emitter->twinkle_scale_max;
 		}
 		if (lifetime <= emitter->emitter->mid_point)
 		{
@@ -260,19 +273,40 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		struct vec4f tmp2;
 		VEC4_SUB(tmp1, color2, color1);
 		VEC4_MULV(tmp2, tmp1, a);
-		VEC4_ADD(vertex->color, tmp2, color1);
+		VEC4_ADD(vertexes[0].color, tmp2, color1);
 		if (!(emitter->emitter->flags & WOW_M2_PARTICLE_FLAG_UNLIT))
 		{
 			VEC3_CPY(tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_AMBIENT]);
-			VEC3_ADD(tmp1, tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_DIFFUSE]);
-			VEC3_MUL(vertex->color, vertex->color, tmp1);
+			//VEC3_ADD(tmp1, tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_DIFFUSE]);
+			float t;
+			t = tmp1.x;
+			tmp1.x = tmp1.z;
+			tmp1.z = t;
+			VEC3_MUL(vertexes[0].color, vertexes[0].color, tmp1);
 		}
-		vertex->scale *= scale1 + (scale2 - scale1) * a;
-		vertex->uv.x = 0;
-		vertex->uv.y = 0;
-		vertex->uv.z = 1.f / emitter->emitter->texture_dimensions_columns;
-		vertex->uv.w = 1.f / emitter->emitter->texture_dimensions_rows;
-		if (emitter->emitter->spin == 0)
+		VEC4_CPY(vertexes[1].color, vertexes[0].color);
+		VEC4_CPY(vertexes[2].color, vertexes[0].color);
+		VEC4_CPY(vertexes[3].color, vertexes[0].color);
+		scale *= scale1 + (scale2 - scale1) * a;
+		struct vec4f right;
+		struct vec4f bot;
+		VEC3_MULV(right, g_wow->draw_frame->view_right, scale);
+		VEC3_MULV(bot, g_wow->draw_frame->view_bottom, scale);
+		VEC3_SUB(vertexes[0].position, particle->position, right);
+		VEC3_SUB(vertexes[0].position, vertexes[0].position, bot);
+		VEC3_ADD(vertexes[1].position, particle->position, right);
+		VEC3_SUB(vertexes[1].position, vertexes[1].position, bot);
+		VEC3_ADD(vertexes[2].position, particle->position, right);
+		VEC3_ADD(vertexes[2].position, vertexes[2].position, bot);
+		VEC3_SUB(vertexes[3].position, particle->position, right);
+		VEC3_ADD(vertexes[3].position, vertexes[3].position, bot);
+		float u = 1.f / emitter->emitter->texture_dimensions_columns;
+		float v = 1.f / emitter->emitter->texture_dimensions_rows;
+		VEC2_SET(vertexes[1].uv, 0, 0);
+		VEC2_SET(vertexes[2].uv, u, 0);
+		VEC2_SET(vertexes[3].uv, u, v);
+		VEC2_SET(vertexes[0].uv, 0, v);
+		/*if (emitter->emitter->spin == 0)
 		{
 			vertex->matrix.x = 1;
 			vertex->matrix.y = 0;
@@ -282,13 +316,13 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		else
 		{
 			float t = emitter->emitter->spin * lifetime * M_PI * 2;
-			float c = cos(t);
-			float s = sin(t);
+			float c = cosf(t);
+			float s = sinf(t);
 			vertex->matrix.x = c;
 			vertex->matrix.y = s;
 			vertex->matrix.z = -s;
 			vertex->matrix.w = c;
-		}
+		}*/
 		/* XXX: per-emitter uniform (spin, texture dimensions) ? */
 	}
 }
@@ -301,19 +335,12 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 		LOG_ERROR("failed to grow particle array");
 		return;
 	}
-	if (!jks_array_grow(&emitter->vertexes, 1))
+	if (!jks_array_resize(&emitter->vertexes, emitter->particles.size * 4))
 	{
 		jks_array_resize(&emitter->particles, emitter->particles.size - 1);
 		LOG_ERROR("failed to grow vertexes array");
 		return;
 	}
-	struct vec4f tmp1;
-	struct vec4f tmp2;
-	tmp1.x = 0;
-	tmp1.y = 0;
-	tmp1.z = 0;
-	tmp1.w = 1;
-	VEC3_SETV(particle->acceleration, 0);
 	float speed;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_speed, &speed))
 		speed = 0;
@@ -327,6 +354,16 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 	float horizontal_range;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->horizontal_range, &horizontal_range))
 		horizontal_range = 0;
+	float z_source;
+	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->z_source, &z_source))
+		z_source = 0;
+	float area_length;
+	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_area_length, &area_length))
+		area_length = 0;
+	float area_width;
+	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_area_width, &area_width))
+		area_width = 0;
+	struct vec4f position;
 	struct vec4f velocity;
 	switch (emitter->emitter_type)
 	{
@@ -334,81 +371,104 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 			LOG_INFO("unhandled emitter type: %d", emitter->emitter_type);
 			return;
 			/* FALLTHROUGH */
-		case 3:
-			/* XXX spline */
+		case 3: /* spline */
+			/* XXX */
 			return;
-		case 1:
-			VEC4_SET(velocity, 0, speed * (1 - speed_variation * (rand() / (float)RAND_MAX)), 0, 0);
-			break;
-		case 2:
+		case 1: /* plane */
 		{
-			float min;
-			float max;
-			if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_area_length, &min))
-				min = 0;
-			if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_area_width, &max))
-				max = 0;
-			float diff = max - min;
-			float rnd = rand() / (float)RAND_MAX * M_PI * 2;
-			struct vec3f add;
-			add.x = cos(rnd);
-			add.y = 0;
-			add.z = sin(rnd);
-			if (rand() > RAND_MAX / 2)
-				add.x = -add.x;
-			if (rand() > RAND_MAX / 2)
-				add.z = -add.z;
-			VEC4_SET(velocity, -add.x, 0, -add.z, 0);
-			float spd = -(speed * (1 - speed_variation * (rand() / (float)RAND_MAX)));
+			VEC4_SET(position, (rand() / (float)RAND_MAX - .5f) * area_width, 0, -((rand() / (float)RAND_MAX - .5f) * area_length), 1);
+			VEC3_ADD(position, position, emitter->emitter->position);
+			float polar = (rand() / (float)RAND_MAX - .5f) * 2 * vertical_range;
+			float azimuth = (rand() / (float)RAND_MAX - .5f) * 2 * horizontal_range;
+			float pc = cosf(polar);
+			float ps = sinf(polar);
+			float ac = cosf(azimuth);
+			float as = sinf(azimuth);
+			float spd = speed * (1 + speed_variation * (rand() / (float)RAND_MAX - .5f) * 2);
+			VEC4_SET(velocity, ac * ps, pc, -as * ps, 0);
 			VEC3_MULV(velocity, velocity, spd);
-			float len = (rand() / (float)RAND_MAX) * diff + min;
-			VEC3_MULV(add, add, len);
-			VEC3_ADD(tmp1, tmp1, add);
+			break;
+		}
+		case 2: /* sphere */
+		{
+			float radius = area_length + (area_width - area_length) * (rand() / (float)RAND_MAX);
+			float polar = (rand() / (float)RAND_MAX - .5f) * 2 * vertical_range;
+			float azimuth = (rand() / (float)RAND_MAX - .5f) * 2 * horizontal_range;
+			float pc = cosf(polar);
+			float ps = sinf(polar);
+			float ac = cosf(azimuth);
+			float as = sinf(azimuth);
+			VEC4_SET(position, ac * pc, ps, as * pc, 1);
+			VEC3_CPY(velocity, position);
+			float spd = speed * (1 + speed_variation * (rand() / (float)RAND_MAX - .5f) * 2);
+			VEC3_MULV(velocity, velocity, spd);
+			velocity.w = 0;
+			VEC3_MULV(position, position, radius);
+			VEC3_ADD(position, position, emitter->emitter->position);
 			break;
 		}
 	}
-	particle->created = g_wow->frametime;
-	struct mat4f orientation;
-	struct mat4f tmp_mat;
-	MAT4_IDENTITY(orientation);
-	MAT4_ROTATEZ(float, tmp_mat, orientation, vertical_range);
-	MAT4_ROTATEY(float, orientation, tmp_mat, horizontal_range);
-	MAT4_VEC4_MUL(tmp2, orientation, tmp1);
-	tmp1 = tmp2;
-	tmp1.x += emitter->emitter->position.x;
-	tmp1.y += emitter->emitter->position.z;
-	tmp1.z -= emitter->emitter->position.y;
-	MAT4_VEC4_MUL(tmp2, orientation, velocity);
-	velocity = tmp2;
 	if (emitter->emitter->bone != (uint16_t)-1 && emitter->emitter->bone < particles->parent->parent->bones_nb)
 	{
 		struct mat4f *bone_mat = JKS_ARRAY_GET(&particles->parent->render_frames[g_wow->cull_frame_id].bone_mats, emitter->emitter->bone, struct mat4f);
-		MAT4_VEC4_MUL(tmp2, *bone_mat, velocity);
-		velocity = tmp2;
-		MAT4_VEC4_MUL(tmp2, *bone_mat, tmp1);
-		tmp1 = tmp2;
+		struct vec4f tmp;
+		MAT4_VEC4_MUL(tmp, *bone_mat, velocity);
+		velocity = tmp;
+		MAT4_VEC4_MUL(tmp, *bone_mat, position);
+		position = tmp;
 	}
-	MAT4_VEC4_MUL(particle->position, particles->parent->m, tmp1);
+	MAT4_VEC4_MUL(particle->position, particles->parent->m, position);
 	MAT4_VEC4_MUL(particle->velocity, particles->parent->m, velocity);
+	particle->created = g_wow->frametime;
 	float lifespan;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->lifespan, &lifespan))
 		lifespan = 0;
 	particle->lifespan = lifespan * 1000000000;
 }
 
-static void render_particles(struct m2_particles_emitter *emitter)
+static struct mat4f get_matrix(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
+{
+	struct mat4f tmp;
+#if 0
+	struct mat4f t;
+	MAT4_IDENTITY(t);
+	VEC3_CPY(t.x, particles->parent->m_inv.x);
+	VEC3_CPY(t.y, particles->parent->m_inv.y);
+	VEC3_CPY(t.z, particles->parent->m_inv.z);
+	MAT4_ROTATEZ(float, tmp, t, -g_wow->cull_frame->cull_rot.z);
+	MAT4_ROTATEY(float, t, tmp, -g_wow->cull_frame->cull_rot.y);
+	MAT4_ROTATEX(float, tmp, t, -g_wow->cull_frame->cull_rot.x);
+	MAT4_ROTATEY(float, t, tmp, -M_PI / 2);
+	tmp = t;
+	float n;
+	n = particles->parent->scale;// * VEC3_NORM(mat->x);
+	VEC3_MULV(tmp.x, tmp.x, n);
+	n = particles->parent->scale;// * VEC3_NORM(mat->y);
+	VEC3_MULV(tmp.y, tmp.y, n);
+	n = particles->parent->scale;// * VEC3_NORM(mat->z);
+	VEC3_MULV(tmp.z, tmp.z, n);
+#else
+	MAT4_IDENTITY(tmp);
+#endif
+	return tmp;
+}
+
+static void render_particles(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
 {
 	if (!emitter->particles.size)
 		return;
-	gfx_set_buffer_data(&emitter->vertexes_buffers[g_wow->draw_frame_id], emitter->vertexes.data, sizeof(struct shader_particle_input) * emitter->particles.size, 0);
+	gfx_set_buffer_data(&emitter->vertexes_buffers[g_wow->draw_frame_id], emitter->vertexes.data, sizeof(struct shader_particle_input) * emitter->vertexes.size, 0);
 	gfx_bind_attributes_state(g_wow->device, &emitter->attributes_states[g_wow->draw_frame_id], &g_wow->graphics->particles_input_layout);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->particles_pipeline_states[emitter->pipeline_state]);
 	struct shader_particle_model_block model_block;
 	model_block.alpha_test = emitter->alpha_test;
+	struct mat4f model = get_matrix(particles, emitter);
+	MAT4_MUL(model_block.mvp, g_wow->draw_frame->view_vp, model);
+	MAT4_MUL(model_block.mv, g_wow->draw_frame->view_v, model);
 	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	blp_texture_bind(emitter->texture, 0);
-	gfx_draw(g_wow->device, emitter->particles.size, 0);
+	gfx_draw_indexed(g_wow->device, emitter->vertexes.size / 4 * 6, 0);
 }
 
 static void initialize(struct gx_m2_particles *particles)
@@ -423,12 +483,10 @@ static void initialize(struct gx_m2_particles *particles)
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, position)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
-				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, matrix)},
-				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, scale)},
 			};
 			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_input) * MAX_PARTICLES, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_model_block), GFX_BUFFER_STREAM);
-			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), NULL, 0);
+			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), &g_wow->map->particles_indices_buffer, GFX_INDEX_UINT16);
 		}
 	}
 	particles->initialized = true;
@@ -441,29 +499,27 @@ void gx_m2_particles_update(struct gx_m2_particles *particles)
 		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
 		if (emitter->emitter_type == 3)
 			continue;
-		update_particles(particles, emitter);
 		float rate;
 		if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_rate, &rate))
 			rate = 0;
 		if (rate > 0)
 		{
-			uint64_t delay = 1000000000.f / rate;
+			uint64_t interval = 1000000000.f / rate;
 			size_t j = 0;
-			while (g_wow->frametime - emitter->last_spawned > delay)
+			while (g_wow->frametime - emitter->last_spawned > interval)
 			{
-				if (j == 5)
+				if (j == 1 || emitter->particles.size >= MAX_PARTICLES)
 				{
 					/* skip if too much particles must be created (avoiding freeze) */
 					emitter->last_spawned = g_wow->frametime;
 					break;
 				}
-				while (emitter->particles.size >= MAX_PARTICLES)
-					jks_array_erase(&emitter->particles, 0);
 				create_particle(particles, emitter);
-				emitter->last_spawned += delay;
+				emitter->last_spawned += interval;
 				++j;
 			}
 		}
+		update_particles(particles, emitter);
 	}
 }
 
@@ -474,6 +530,6 @@ void gx_m2_particles_render(struct gx_m2_particles *particles)
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
 		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
-		render_particles(emitter);
+		render_particles(particles, emitter);
 	}
 }

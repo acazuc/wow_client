@@ -266,12 +266,15 @@ struct shader_sharpen_model_block
 
 struct shader_particle_model_block
 {
+	struct mat4f mvp;
+	struct mat4f mv;
 	float alpha_test;
 };
 
 struct shader_particle_scene_block
 {
-	struct mat4f vp;
+	struct vec4f fog_color;
+	struct vec2f fog_range;
 };
 
 struct shader_text_model_block
@@ -308,9 +311,7 @@ struct shader_particle_input
 {
 	struct vec4f position;
 	struct vec4f color;
-	struct vec4f uv;
-	struct vec4f matrix;
-	float scale;
+	struct vec2f uv;
 };
 
 struct shader_skybox_input

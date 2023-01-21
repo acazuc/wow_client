@@ -1399,6 +1399,12 @@ int gx_m2_load(struct gx_m2 *m2, struct wow_m2_file *file)
 		LOG_ERROR("failed to allocate m2 bones");
 		return 0;
 	}
+	for (uint32_t i = 0; i < m2->particles_nb; ++i)
+	{
+		struct wow_m2_particle *particle = &m2->particles[i];
+		particle->position = (struct wow_vec3f){particle->position.x, particle->position.z, -particle->position.y};
+		particle->wind_vector = (struct wow_vec3f){particle->wind_vector.x, particle->wind_vector.z, -particle->wind_vector.y};
+	}
 	for (uint32_t i = 0; i < m2->attachments_nb; ++i)
 	{
 		struct wow_m2_attachment *attachment = &m2->attachments[i];

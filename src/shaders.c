@@ -370,8 +370,6 @@ static bool build_particle(gfx_shader_state_t *shader_state)
 		{"vs_position", 0},
 		{"vs_color", 1},
 		{"vs_uv", 2},
-		{"vs_matrix", 3},
-		{"vs_scale", 4},
 		{NULL, 0}
 	};
 	static const gfx_shader_constant_t constants[] =

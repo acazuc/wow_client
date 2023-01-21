@@ -9,6 +9,8 @@
 
 #include <stdbool.h>
 
+#define MAX_PARTICLES 1024 /* XXX for some reasons, my computer freeze if this value is too low... */
+
 struct wow_m2_particle;
 struct gx_m2_instance;
 struct blp_texture;
@@ -19,7 +21,6 @@ struct m2_particle
 	uint64_t lifespan;
 	struct vec4f position;
 	struct vec4f velocity;
-	struct vec4f acceleration;
 };
 
 struct m2_particles_emitter

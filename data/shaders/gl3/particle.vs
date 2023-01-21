@@ -2,36 +2,32 @@
 
 layout(location=0) in vec4 vs_position;
 layout(location=1) in vec4 vs_color;
-layout(location=2) in vec4 vs_uv;
-layout(location=3) in vec4 vs_matrix;
-layout(location=4) in float vs_scale;
+layout(location=2) in vec2 vs_uv;
 
-out gs_block
+out fs_block
 {
-	vec4 color;
-	vec4 uv;
-	mat2 matrix;
-	float scale;
-} gs_input;
+	vec3 fs_position;
+	vec4 fs_color;
+	vec2 fs_uv;
+};
 
 layout(std140) uniform model_block
 {
+	mat4 mvp;
+	mat4 mv;
 	float alpha_test;
 };
 
 layout(std140) uniform scene_block
 {
-	mat4 vp;
+	vec4 fog_color;
+	vec2 fog_range;
 };
 
 void main()
 {
-	gl_Position = vp * vs_position;
-	gs_input.color = vs_color;
-	gs_input.uv = vs_uv;
-	gs_input.scale = vs_scale;
-	gs_input.matrix[0][0] = vs_matrix.x;
-	gs_input.matrix[0][1] = vs_matrix.y;
-	gs_input.matrix[1][0] = vs_matrix.z;
-	gs_input.matrix[1][1] = vs_matrix.w;
+	fs_position = (mv * vs_position).xyz;
+	gl_Position = mvp * vs_position;
+	fs_color = vs_color;
+	fs_uv = vs_uv;
 }

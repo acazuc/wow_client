@@ -63,6 +63,8 @@ struct gx_frame
 	struct mat4f view_vp;
 	struct mat4f view_v;
 	struct mat4f view_p;
+	struct vec4f view_bottom;
+	struct vec4f view_right;
 	struct mat4f cull_wdl_vp;
 	struct mat4f cull_wdl_p;
 	struct vec3f cull_pos;

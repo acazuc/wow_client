@@ -368,7 +368,7 @@ void main()
 	if (settings.x == 0)
 	{
 		float fog_factor = clamp((length(fs_position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
-		output = vec4(mix(output.rgb, fog_color, fog_factor), output.a);
+		output.rgb = mix(output.rgb, fog_color, fog_factor);
 	}
 	output = clamp(output, 0, 1);
 	fragcolor = output;

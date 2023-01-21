@@ -88,10 +88,7 @@ static const gfx_input_layout_bind_t g_particles_binds[] =
 {
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},
-	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
-	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, matrix)},
-	{GFX_ATTR_R32_FLOAT         , sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, scale)},
-
+	{GFX_ATTR_R32G32_FLOAT      , sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
 };
 
 static const gfx_input_layout_bind_t g_wmo_mliq_binds[] =
@@ -445,7 +442,7 @@ bool graphics_init(struct graphics *graphics)
 			&graphics->world_depth_stencil_states[WORLD_DEPTH_STENCIL_R_NO],
 			&graphics->world_blend_states[blend],
 			&graphics->particles_input_layout,
-			GFX_PRIMITIVE_POINTS);
+			GFX_PRIMITIVE_TRIANGLES);
 	}
 	for (enum world_rasterizer_state rasterizer = 0; rasterizer < WORLD_RASTERIZER_LAST; ++rasterizer)
 	{

@@ -1,6 +1,7 @@
 #include "ppe/render_target.h"
 #include "ppe/render_pass.h"
 
+#include "gx/m2_particles.h"
 #include "gx/wmo_mliq.h"
 #include "gx/skybox.h"
 #include "gx/frame.h"
@@ -107,6 +108,7 @@ void map_delete(struct map *map)
 		return;
 	for (uint32_t i = 0; i < map->tiles_nb; ++i)
 		map_tile_ask_unload(map->tile_array[map->tiles[i]]);
+	gfx_delete_buffer(g_wow->device, &map->particles_indices_buffer);
 	gfx_delete_buffer(g_wow->device, &map->mcnk_vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &map->mcnk_indices_buffer);
 	for (uint32_t i = 0; i < sizeof(map->lavag_textures) / sizeof(*map->lavag_textures); ++i)
@@ -394,6 +396,7 @@ static bool init_mcnk_data(struct map *map)
 		struct vec2f uv;
 	} *vertexes;
 	uint32_t indices_pos = 0;
+	uint16_t *particles_indices;
 	indices = mem_malloc(MEM_GX, sizeof(*indices) * (16 * 16 * ((8 * 8 * 4 * 3) + (8 * 8 * 2 * 3) + (48 * 3))));
 	if (!indices)
 		goto err1;
@@ -485,6 +488,22 @@ static bool init_mcnk_data(struct map *map)
 				indices[indices_pos++] = base + points[i];
 		}
 	}
+	particles_indices = mem_malloc(MEM_GX, sizeof(*particles_indices) * MAX_PARTICLES * 6);
+	if (!particles_indices)
+		goto err3;
+	for (size_t i = 0; i < MAX_PARTICLES; ++i)
+	{
+		uint16_t *tmp = &particles_indices[i * 6];
+		size_t n = i * 4;
+		tmp[0] = n + 0;
+		tmp[1] = n + 1;
+		tmp[2] = n + 2;
+		tmp[3] = n + 0;
+		tmp[4] = n + 2;
+		tmp[5] = n + 3;
+	}
+	map->particles_indices_buffer = GFX_BUFFER_INIT();
+	gfx_create_buffer(g_wow->device, &map->particles_indices_buffer, GFX_BUFFER_INDICES, particles_indices, 6 * MAX_PARTICLES * sizeof(*particles_indices), GFX_BUFFER_IMMUTABLE);
 	map->mcnk_vertexes_buffer = GFX_BUFFER_INIT();
 	map->mcnk_indices_nb = indices_pos;
 	map->mcnk_indices_buffer = GFX_BUFFER_INIT();
@@ -492,6 +511,8 @@ static bool init_mcnk_data(struct map *map)
 	gfx_create_buffer(g_wow->device, &map->mcnk_indices_buffer, GFX_BUFFER_INDICES, indices, indices_pos * sizeof(*indices), GFX_BUFFER_IMMUTABLE);
 	ret = true;
 
+	mem_free(MEM_GX, particles_indices);
+err3:
 	mem_free(MEM_GX, vertexes);
 err2:
 	mem_free(MEM_GX, indices);

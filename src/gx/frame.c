@@ -17,6 +17,8 @@
 
 #include <gfx/device.h>
 
+#include <math.h>
+
 MEMORY_DECL(GX);
 
 static const struct vec4f light_direction = {-1, -1, 1, 0};
@@ -101,19 +103,21 @@ void destroy_gx_frame(struct gx_frame *gx_frame)
 	pthread_mutex_destroy(&gx_frame->gc_mutex);
 }
 
-static void build_particle_uniform_buffer(struct gx_frame *gx_frame)
-{
-	struct shader_particle_scene_block scene_block;
-	scene_block.vp = g_wow->draw_frame->view_vp;
-	gfx_set_buffer_data(&gx_frame->particle_uniform_buffer, &scene_block, sizeof(scene_block), 0);
-}
-
 #define COPY_VEC3_A1(dst, src) \
 do \
 { \
 	VEC3_CPY(dst, src); \
 	dst.w = 1; \
 } while (0)
+
+static void build_particle_uniform_buffer(struct gx_frame *gx_frame)
+{
+	struct shader_particle_scene_block scene_block;
+	COPY_VEC3_A1(scene_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
+	scene_block.fog_range.y = g_wow->draw_frame->view_distance * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_END] / 36 / g_wow->map->fog_divisor;
+	scene_block.fog_range.x = scene_block.fog_range.y * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_START];
+	gfx_set_buffer_data(&gx_frame->particle_uniform_buffer, &scene_block, sizeof(scene_block), 0);
+}
 
 static void build_ocean_uniform_buffer(struct gx_frame *gx_frame)
 {
@@ -243,6 +247,16 @@ void render_copy_cameras(struct gx_frame *gx_frame, struct camera *cull_camera, 
 	gx_frame->cull_p = cull_camera->p;
 	gx_frame->view_distance = cull_camera->view_distance;
 	gx_frame->fov = view_camera->fov;
+	const struct vec4f right = {1, 0, 0, 0};
+	const struct vec4f bottom = {0, -1, 0, 0};
+	struct mat4f tmp1;
+	struct mat4f tmp2;
+	MAT4_IDENTITY(tmp1);
+	MAT4_ROTATEZ(float, tmp2, tmp1, -view_camera->rot.z);
+	MAT4_ROTATEY(float, tmp1, tmp2, -view_camera->rot.y);
+	MAT4_ROTATEX(float, tmp2, tmp1, -view_camera->rot.x);
+	MAT4_VEC4_MUL(gx_frame->view_right, tmp2, right);
+	MAT4_VEC4_MUL(gx_frame->view_bottom, tmp2, bottom);
 }
 
 void render_clear_scene(struct gx_frame *gx_frame)
