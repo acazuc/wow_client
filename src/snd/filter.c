@@ -68,8 +68,8 @@ struct snd_stream *snd_stream_lowpass_new(struct snd_stream *input, uint32_t sam
 	if (!stream)
 		return NULL;
 	float w0 = 2 * M_PI * cutoff / sampling;
-	float alpha = sin(w0) / (2 * resonance);
-	float cw0 = cos(w0);
+	float alpha = sinf(w0) / (2 * resonance);
+	float cw0 = cosf(w0);
 	stream->a0 = 1 + alpha;
 	stream->a1 = (-2 * cw0) / stream->a0;
 	stream->a2 = (1 - alpha) / stream->a0;
@@ -85,8 +85,8 @@ struct snd_stream *snd_stream_highpass_new(struct snd_stream *input, uint32_t sa
 	if (!stream)
 		return NULL;
 	float w0 = 2 * M_PI * cutoff / sampling;
-	float alpha = sin(w0) / (2 * resonance);
-	float cw0 = cos(w0);
+	float alpha = sinf(w0) / (2 * resonance);
+	float cw0 = cosf(w0);
 	stream->a0 = 1 + alpha;
 	stream->a1 = (-2 * cw0) / stream->a0;
 	stream->a2 = (1 - alpha) / stream->a0;
@@ -102,8 +102,8 @@ struct snd_stream *snd_stream_bandpass_new(struct snd_stream *input, uint32_t sa
 	if (!stream)
 		return NULL;
 	float w0 = 2 * M_PI * cutoff / sampling;
-	float alpha = sin(w0) / (2 * resonance);
-	float cw0 = cos(w0);
+	float alpha = sinf(w0) / (2 * resonance);
+	float cw0 = cosf(w0);
 	stream->a0 = 1 + alpha;
 	stream->a1 = (-2 * cw0) / stream->a0;
 	stream->a2 = (1 - alpha) / stream->a0;
