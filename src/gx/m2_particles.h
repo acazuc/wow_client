@@ -34,6 +34,7 @@ struct m2_particles_emitter
 	uint32_t pipeline_state;
 	float alpha_test;
 	uint64_t last_spawned;
+	uint16_t emitter_type;
 };
 
 struct gx_m2_particles

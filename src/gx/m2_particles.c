@@ -1,6 +1,9 @@
 #include "gx/m2_particles.h"
+#include "gx/skybox.h"
 #include "gx/frame.h"
 #include "gx/m2.h"
+
+#include "map/map.h"
 
 #include "graphics.h"
 #include "shaders.h"
@@ -90,10 +93,16 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 		jks_array_init(&emitter->particles, sizeof(struct m2_particle), NULL, &jks_array_memory_fn_GX);
 		jks_array_init(&emitter->vertexes, sizeof(struct shader_particle_input), NULL, &jks_array_memory_fn_GX);
 		uint8_t blending_type;
-		if (parent->parent->version >= 263)
+		if (parent->parent->version >= 262)
+		{
 			blending_type = emitter->emitter->blending_type2;
+			emitter->emitter_type = emitter->emitter->emitter_type2;
+		}
 		else
+		{
 			blending_type = emitter->emitter->blending_type;
+			emitter->emitter_type = emitter->emitter->emitter_type;
+		}
 		enum world_blend_state blend_state;
 		switch (blending_type)
 		{
@@ -107,15 +116,15 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 				break;
 			case 2:
 				blend_state = WORLD_BLEND_ALPHA;
-				emitter->alpha_test = 0;
+				emitter->alpha_test = 1 / 255.;
 				break;
 			case 3:
-				blend_state = WORLD_BLEND_ADD;
-				emitter->alpha_test = 0;
+				blend_state = WORLD_BLEND_NO_ALPHA_ADD;
+				emitter->alpha_test = 1 / 255.;
 				break;
 			case 4:
 				blend_state = WORLD_BLEND_ADD;
-				emitter->alpha_test = 0;
+				emitter->alpha_test = 1 / 255.;
 				break;
 			default:
 				LOG_INFO("unsupported blending: %d", (int)emitter->emitter->blending_type);
@@ -175,19 +184,19 @@ static struct vec3f update_acceleration(struct gx_m2_particles *particles, struc
 
 static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct m2_particle *particle)
 {
-	struct vec3f tmp1;
-	struct vec3f tmp2;
+	struct vec3f tmp;
+	struct vec3f acceleration;
+	struct vec3f gravity = get_gravity(particles, emitter);
 	float dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
-	float tmpf = dt * dt * .5;
-	VEC3_MULV(tmp1, particle->acceleration, tmpf);
-	VEC3_MULV(tmp2, particle->velocity, dt);
-	VEC3_ADD(particle->position, particle->position, tmp1);
-	VEC3_ADD(particle->position, particle->position, tmp2);
-	struct vec3f new_acceleration = update_acceleration(particles, emitter, particle);
-	VEC3_ADD(tmp1, particle->acceleration, new_acceleration);
-	tmpf = dt * .5;
-	VEC3_MULV(tmp2, tmp1, tmpf);
-	VEC3_ADD(particle->velocity, particle->velocity, tmp2);
+	VEC3_CPY(acceleration, particle->acceleration);
+	VEC3_ADD(acceleration, acceleration, gravity);
+	VEC3_MULV(tmp, acceleration, .5);
+	VEC3_MULV(tmp, tmp, dt);
+	VEC3_ADD(tmp, tmp, particle->velocity);
+	VEC3_MULV(tmp, tmp, dt);
+	VEC3_ADD(particle->position, particle->position, tmp);
+	VEC3_MULV(tmp, acceleration, dt);
+	VEC3_ADD(particle->velocity, particle->velocity, tmp);
 }
 
 static void update_particles(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
@@ -203,7 +212,7 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 			continue;
 		}
 		update_position(particles, emitter->emitter, particle);
-		if (g_wow->frametime - particle->created < emitter->emitter->wind_time)
+		if ((g_wow->frametime - particle->created) / 1000000000.f < emitter->emitter->wind_time)
 		{
 			particle->position.x -= emitter->emitter->wind_vector.x * dt;
 			particle->position.y -= emitter->emitter->wind_vector.z * dt;
@@ -224,7 +233,7 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		vertex->scale = particles->parent->scale;
 		if (emitter->emitter->twinkle_percent != 0 && emitter->emitter->twinkle_scale_min != emitter->emitter->twinkle_scale_max)
 		{
-			float len = 1000000000 / emitter->emitter->twinkle_speed * 2;
+			float len = 1000000000.f / emitter->emitter->twinkle_speed * 2;
 			float p = fmod(g_wow->frametime - particle->created, len) / len;
 			if (p <= .5)
 				vertex->scale *= (2 * p) * (emitter->emitter->twinkle_scale_max - emitter->emitter->twinkle_scale_min) + emitter->emitter->twinkle_scale_min;
@@ -252,6 +261,12 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		VEC4_SUB(tmp1, color2, color1);
 		VEC4_MULV(tmp2, tmp1, a);
 		VEC4_ADD(vertex->color, tmp2, color1);
+		if (!(emitter->emitter->flags & WOW_M2_PARTICLE_FLAG_UNLIT))
+		{
+			VEC3_CPY(tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_AMBIENT]);
+			VEC3_ADD(tmp1, tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_DIFFUSE]);
+			VEC3_MUL(vertex->color, vertex->color, tmp1);
+		}
 		vertex->scale *= scale1 + (scale2 - scale1) * a;
 		vertex->uv.x = 0;
 		vertex->uv.y = 0;
@@ -313,8 +328,15 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->horizontal_range, &horizontal_range))
 		horizontal_range = 0;
 	struct vec4f velocity;
-	switch (emitter->emitter->emitter_type)
+	switch (emitter->emitter_type)
 	{
+		default:
+			LOG_INFO("unhandled emitter type: %d", emitter->emitter_type);
+			return;
+			/* FALLTHROUGH */
+		case 3:
+			/* XXX spline */
+			return;
 		case 1:
 			VEC4_SET(velocity, 0, speed * (1 - speed_variation * (rand() / (float)RAND_MAX)), 0, 0);
 			break;
@@ -344,9 +366,6 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 			VEC3_ADD(tmp1, tmp1, add);
 			break;
 		}
-		default:
-			//LOG_INFO("unhandled emitter type: %d", emitter->emitter->emitter_type);
-			return;
 	}
 	particle->created = g_wow->frametime;
 	struct mat4f orientation;
@@ -420,14 +439,14 @@ void gx_m2_particles_update(struct gx_m2_particles *particles)
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
 		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
+		if (emitter->emitter_type == 3)
+			continue;
 		update_particles(particles, emitter);
 		float rate;
 		if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_rate, &rate))
 			rate = 0;
 		if (rate > 0)
 		{
-			if (rate < 0)
-				rate = -rate;
 			uint64_t delay = 1000000000.f / rate;
 			size_t j = 0;
 			while (g_wow->frametime - emitter->last_spawned > delay)

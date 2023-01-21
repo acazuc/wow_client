@@ -645,7 +645,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 		case 0: /* opaque */
 			blend_state = WORLD_BLEND_OPAQUE;
 			batch->blending = false;
-			batch->alpha_test = -1 / 255.;
+			batch->alpha_test = 0 / 255.;
 			batch->fog_override = false;
 			break;
 		case 1: /* alpha key */
@@ -657,27 +657,27 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 		case 2: /* alpha */
 			blend_state = WORLD_BLEND_ALPHA;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = false;
 			break;
 		case 3: /* no alpha add */
 			blend_state = WORLD_BLEND_NO_ALPHA_ADD;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, 0);
 			break;
 		case 4: /* add */
 			blend_state = WORLD_BLEND_ADD;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, 0);
 			break;
 		case 5: /* mod */
 			blend_state = WORLD_BLEND_MOD;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, 1);
 			batch->flags |= WOW_M2_MATERIAL_FLAGS_UNLIT;
@@ -685,7 +685,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 		case 6: /* mod2x */
 			blend_state = WORLD_BLEND_MOD2X;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = true;
 			VEC3_SETV(batch->fog_color, .5);
 			batch->flags |= WOW_M2_MATERIAL_FLAGS_UNLIT;
@@ -693,7 +693,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 		default:
 			blend_state = WORLD_BLEND_ALPHA;
 			batch->blending = true;
-			batch->alpha_test = 0 / 255.;
+			batch->alpha_test = 1 / 255.;
 			batch->fog_override = false;
 			LOG_WARN("unsupported blend mode: %u", material->blend_mode);
 			break;
