@@ -27,7 +27,7 @@ layout(location=0) out vec4 fragcolor;
 void main()
 {
 #if 0
-	fragcolor = vec4(fs_uv, 0, .2);
+	fragcolor = vec4(fs_uv, 1, .2);
 	return;
 #endif
 	vec4 tex_color = texture(tex, fs_uv);

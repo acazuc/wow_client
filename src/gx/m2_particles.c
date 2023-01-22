@@ -292,38 +292,47 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		struct vec4f bot;
 		VEC3_MULV(right, g_wow->draw_frame->view_right, scale);
 		VEC3_MULV(bot, g_wow->draw_frame->view_bottom, scale);
-		VEC3_SUB(vertexes[0].position, particle->position, right);
-		VEC3_SUB(vertexes[0].position, vertexes[0].position, bot);
-		VEC3_ADD(vertexes[1].position, particle->position, right);
-		VEC3_SUB(vertexes[1].position, vertexes[1].position, bot);
-		VEC3_ADD(vertexes[2].position, particle->position, right);
-		VEC3_ADD(vertexes[2].position, vertexes[2].position, bot);
-		VEC3_SUB(vertexes[3].position, particle->position, right);
-		VEC3_ADD(vertexes[3].position, vertexes[3].position, bot);
+		if (emitter->emitter->spin != 0)
+		{
+			float t = emitter->emitter->spin * lifetime + M_PI * .25;
+			float c = cosf(t) * 1.4142;
+			float s = sinf(t) * 1.4142;
+			struct vec3f cx;
+			struct vec3f cy;
+			struct vec3f sx;
+			struct vec3f sy;
+
+			VEC3_MULV(cx, right, c);
+			VEC3_MULV(cy, bot, c);
+			VEC3_MULV(sx, right, s);
+			VEC3_MULV(sy, bot, s);
+
+			VEC3_SUB(vertexes[0].position, particle->position, sx);
+			VEC3_SUB(vertexes[0].position, vertexes[0].position, cy);
+			VEC3_ADD(vertexes[1].position, particle->position, cx);
+			VEC3_SUB(vertexes[1].position, vertexes[1].position, sy);
+			VEC3_ADD(vertexes[2].position, particle->position, sx);
+			VEC3_ADD(vertexes[2].position, vertexes[2].position, cy);
+			VEC3_SUB(vertexes[3].position, particle->position, cx);
+			VEC3_ADD(vertexes[3].position, vertexes[3].position, sy);
+		}
+		else
+		{
+			VEC3_SUB(vertexes[0].position, particle->position, right);
+			VEC3_SUB(vertexes[0].position, vertexes[0].position, bot);
+			VEC3_ADD(vertexes[1].position, particle->position, right);
+			VEC3_SUB(vertexes[1].position, vertexes[1].position, bot);
+			VEC3_ADD(vertexes[2].position, particle->position, right);
+			VEC3_ADD(vertexes[2].position, vertexes[2].position, bot);
+			VEC3_SUB(vertexes[3].position, particle->position, right);
+			VEC3_ADD(vertexes[3].position, vertexes[3].position, bot);
+		}
 		float u = 1.f / emitter->emitter->texture_dimensions_columns;
 		float v = 1.f / emitter->emitter->texture_dimensions_rows;
 		VEC2_SET(vertexes[1].uv, 0, 0);
 		VEC2_SET(vertexes[2].uv, u, 0);
 		VEC2_SET(vertexes[3].uv, u, v);
 		VEC2_SET(vertexes[0].uv, 0, v);
-		/*if (emitter->emitter->spin == 0)
-		{
-			vertex->matrix.x = 1;
-			vertex->matrix.y = 0;
-			vertex->matrix.z = 0;
-			vertex->matrix.w = 1;
-		}
-		else
-		{
-			float t = emitter->emitter->spin * lifetime * M_PI * 2;
-			float c = cosf(t);
-			float s = sinf(t);
-			vertex->matrix.x = c;
-			vertex->matrix.y = s;
-			vertex->matrix.z = -s;
-			vertex->matrix.w = c;
-		}*/
-		/* XXX: per-emitter uniform (spin, texture dimensions) ? */
 	}
 }
 
@@ -376,7 +385,7 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 			return;
 		case 1: /* plane */
 		{
-			VEC4_SET(position, (rand() / (float)RAND_MAX - .5f) * area_width, 0, -((rand() / (float)RAND_MAX - .5f) * area_length), 1);
+			VEC4_SET(position, (rand() / (float)RAND_MAX - .5f) * area_width, 0, ((rand() / (float)RAND_MAX - .5f) * area_length), 1);
 			VEC3_ADD(position, position, emitter->emitter->position);
 			float polar = (rand() / (float)RAND_MAX - .5f) * 2 * vertical_range;
 			float azimuth = (rand() / (float)RAND_MAX - .5f) * 2 * horizontal_range;
