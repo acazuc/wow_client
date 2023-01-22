@@ -89,5 +89,6 @@ void gx_collisions_render(struct gx_collisions *collisions, bool triangles)
 	gfx_buffer_t *uniform_buffer = triangles ? &collisions->triangles_uniform_buffer : &collisions->lines_uniform_buffer;
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
+	gfx_set_line_width(g_wow->device, 1);
 	gfx_draw(g_wow->device, collisions->triangles_nb * 3, 0);
 }

@@ -131,5 +131,6 @@ void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, const struct
 	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->graphics->wmo_collisions_input_layout);
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
+	gfx_set_line_width(g_wow->device, 1);
 	gfx_draw(g_wow->device, collisions->indices_nb, 0);
 }

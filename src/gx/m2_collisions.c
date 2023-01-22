@@ -124,6 +124,7 @@ void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct g
 	gfx_buffer_t *uniform_buffer = triangles ? &collisions->triangles_uniform_buffers[g_wow->draw_frame_id] : &collisions->lines_uniform_buffers[g_wow->draw_frame_id];
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
+	gfx_set_line_width(g_wow->device, 1);
 	for (uint32_t i = 0; i < instances_nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
