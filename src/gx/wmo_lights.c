@@ -59,7 +59,7 @@ bool gx_wmo_lights_load(struct gx_wmo_lights *lights, const struct wow_molt_data
 	}
 	for (uint32_t i = 0; i < nb; ++i)
 	{
-		const wow_molt_data_t *data = &molt[i];
+		const struct wow_molt_data *data = &molt[i];
 		VEC3_SET(lights->init_data->vertexes[i].position, data->position.x, data->position.y, data->position.z);
 		VEC4_SET(lights->init_data->vertexes[i].color, data->intensity, data->intensity, data->intensity, 1);
 	}

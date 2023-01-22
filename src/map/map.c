@@ -237,13 +237,13 @@ bool generate_minimap_texture(struct map *map)
 			}
 			char path[512];
 			snprintf(path, sizeof(path), "TEXTURES\\MINIMAP\\%s", *hashp);
-			wow_mpq_file_t *mpq = wow_mpq_get_file(g_wow->mpq_compound, path);
+			struct wow_mpq_file *mpq = wow_mpq_get_file(g_wow->mpq_compound, path);
 			if (!mpq)
 			{
 				LOG_ERROR("failed to open %s", path);
 				continue;
 			}
-			wow_blp_file_t *blp = wow_blp_file_new(mpq);
+			struct wow_blp_file *blp = wow_blp_file_new(mpq);
 			wow_mpq_file_delete(mpq);
 			if (!blp)
 			{
@@ -295,13 +295,13 @@ static bool create_wdl(struct map *map)
 {
 	char buf[256];
 	snprintf(buf, sizeof(buf), "WORLD\\MAPS\\%s\\%s.WDL", map->name, map->name);
-	wow_mpq_file_t *file = wow_mpq_get_file(g_wow->mpq_compound, buf);
+	struct wow_mpq_file *file = wow_mpq_get_file(g_wow->mpq_compound, buf);
 	if (!file)
 	{
 		LOG_ERROR("failed to get wdl file \"%s\"", buf);
 		return false;
 	}
-	wow_wdl_file_t *wdl = wow_wdl_file_new(file);
+	struct wow_wdl_file *wdl = wow_wdl_file_new(file);
 	wow_mpq_file_delete(file);
 	if (!wdl)
 	{
@@ -520,7 +520,7 @@ err1:
 	return ret;
 }
 
-static bool load_wdt(struct map *map, wow_wdt_file_t *file)
+static bool load_wdt(struct map *map, struct wow_wdt_file *file)
 {
 	map->wmo = NULL;
 	map->last_pos = (struct vec3f){-999999, -999999, -999999};
@@ -573,13 +573,13 @@ static bool create_wdt(struct map *map)
 {
 	char buf[256];
 	snprintf(buf, sizeof(buf), "WORLD\\MAPS\\%s\\%s.WDT", map->name, map->name);
-	wow_mpq_file_t *file = wow_mpq_get_file(g_wow->mpq_compound, buf);
+	struct wow_mpq_file *file = wow_mpq_get_file(g_wow->mpq_compound, buf);
 	if (!file)
 	{
 		LOG_ERROR("failed to get wdt file \"%s\"", buf);
 		return false;
 	}
-	wow_wdt_file_t *wdt = wow_wdt_file_new(file);
+	struct wow_wdt_file *wdt = wow_wdt_file_new(file);
 	wow_mpq_file_delete(file);
 	if (!wdt)
 	{
@@ -600,7 +600,7 @@ static void load_worldmap(struct map *map)
 {
 	for (size_t i = 0; i < g_wow->dbc.world_map_continent->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = wow_dbc_get_row(g_wow->dbc.world_map_continent->file, i);
+		struct wow_dbc_row row = wow_dbc_get_row(g_wow->dbc.world_map_continent->file, i);
 		uint32_t continent = wow_dbc_get_u32(&row, 4);
 		if (continent != map->id)
 			continue;
@@ -635,7 +635,7 @@ static bool load_taxi(struct map *map)
 {
 	for (size_t i = 0; i < g_wow->dbc.taxi_nodes->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = wow_dbc_get_row(g_wow->dbc.taxi_nodes->file, i);
+		struct wow_dbc_row row = wow_dbc_get_row(g_wow->dbc.taxi_nodes->file, i);
 		uint32_t continent = wow_dbc_get_u32(&row, 4);
 		if (continent != map->id)
 			continue;
@@ -690,7 +690,7 @@ static bool load_taxi(struct map *map)
 	}
 	for (size_t i = 0; i < g_wow->dbc.taxi_path->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = wow_dbc_get_row(g_wow->dbc.taxi_path->file, i);
+		struct wow_dbc_row row = wow_dbc_get_row(g_wow->dbc.taxi_path->file, i);
 		struct taxi_node *src = find_taxi_node(map, wow_dbc_get_u32(&row, 4));
 		if (!src)
 			continue;
@@ -812,7 +812,7 @@ bool map_setid(struct map *map, uint32_t id)
 	map->id = id;
 	for (uint32_t i = 0; i < g_wow->dbc.map->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.map, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.map, i);
 		if (wow_dbc_get_u32(&row, 0) == id)
 		{
 			mem_free(MEM_GX, map->name);

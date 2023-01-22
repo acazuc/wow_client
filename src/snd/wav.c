@@ -17,7 +17,7 @@
 struct snd_stream_wav
 {
 	struct snd_stream stream;
-	wow_mpq_file_t *file;
+	struct wow_mpq_file *file;
 	size_t file_begin;
 	struct
 	{
@@ -222,7 +222,7 @@ static const struct snd_stream_vtable vtable =
 	.read_samples = read_samples,
 };
 
-struct snd_stream *snd_stream_wav_new(wow_mpq_file_t *file)
+struct snd_stream *snd_stream_wav_new(struct wow_mpq_file *file)
 {
 	char riff_sig[4];
 	if (!wow_mpq_read(file, riff_sig, 4))

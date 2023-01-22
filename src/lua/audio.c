@@ -19,7 +19,7 @@ static int luaAPI_PlaySound(lua_State *L)
 	if (!sound)
 		return luaL_argerror(L, 1, "failed to get string");
 	char path[512] = "";
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed_str(g_wow->dbc.sound_entries, &row, sound))
 	{
 		const char *directory = wow_dbc_get_str(&row, 92);
@@ -57,7 +57,7 @@ static int luaAPI_PlayGlueMusic(lua_State *L)
 	if (!music)
 		return luaL_argerror(L, 1, "failed to get string");
 	char path[512] = "";
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed_str(g_wow->dbc.sound_entries, &row, music))
 	{
 		const char *directory = wow_dbc_get_str(&row, 92);

@@ -56,7 +56,7 @@ static void dtr(struct object *object)
 
 static void update_render_batches_items(struct object *object)
 {
-	wow_dbc_row_t display_info_row;
+	struct wow_dbc_row display_info_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &display_info_row, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID)))
 	{
 		LOG_ERROR("failed to get create display info row: %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID));
@@ -65,7 +65,7 @@ static void update_render_batches_items(struct object *object)
 	uint32_t extra_id = wow_dbc_get_u32(&display_info_row, 12);
 	bool has_extra;
 	/* should be overriden by fields if set ? */
-	wow_dbc_row_t display_info_extra_row;
+	struct wow_dbc_row display_info_extra_row;
 	if (dbc_get_row_indexed(g_wow->dbc.creature_display_info_extra, &display_info_extra_row, extra_id))
 	{
 		has_extra = true;
@@ -87,7 +87,7 @@ static void update_render_batches_items(struct object *object)
 
 static void update_displayid(struct object *object)
 {
-	wow_dbc_row_t display_info_row;
+	struct wow_dbc_row display_info_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &display_info_row, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID)))
 	{
 		LOG_ERROR("failed to get create display info row: %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID));
@@ -100,7 +100,7 @@ static void update_displayid(struct object *object)
 	snprintf(monster_textures[0], sizeof(monster_textures[0]), "%s", wow_dbc_get_str(&display_info_row, 24));
 	snprintf(monster_textures[1], sizeof(monster_textures[1]), "%s", wow_dbc_get_str(&display_info_row, 28));
 	snprintf(monster_textures[2], sizeof(monster_textures[2]), "%s", wow_dbc_get_str(&display_info_row, 32));
-	wow_dbc_row_t model_data_row;
+	struct wow_dbc_row model_data_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_model_data, &model_data_row, model))
 	{
 		LOG_ERROR("failed to get creature model data row: %" PRIu32, model);
@@ -112,7 +112,7 @@ static void update_displayid(struct object *object)
 	normalize_m2_filename(filename, sizeof(filename));
 	worldobj_set_m2(WORLD_OBJECT, filename);
 	char batch_texture[512] = "";
-	wow_dbc_row_t display_info_extra_row;
+	struct wow_dbc_row display_info_extra_row;
 	struct blp_texture *texture;
 	if (dbc_get_row_indexed(g_wow->dbc.creature_display_info_extra, &display_info_extra_row, extra_id))
 	{

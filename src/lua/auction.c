@@ -174,7 +174,7 @@ static int luaAPI_GetAuctionItemClasses(lua_State *L)
 		return luaL_error(L, "Usage: GetAuctionItemClasses()");
 	for (size_t i = 0; i < g_wow->dbc.item_class->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.item_class, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.item_class, i);
 		lua_pushstring(L, wow_dbc_get_str(&row, 20));
 	}
 	return g_wow->dbc.item_class->file->header.record_count;
@@ -189,7 +189,7 @@ static int luaAPI_GetAuctionItemSubClasses(lua_State *L)
 	int index = lua_tointeger(L, 1) - 1;
 	if (index < 0 || (unsigned)index >= g_wow->dbc.item_class->file->header.record_count)
 		return luaL_argerror(L, 1, "invalid class");
-	wow_dbc_row_t row = dbc_get_row(g_wow->dbc.item_class, index);
+	struct wow_dbc_row row = dbc_get_row(g_wow->dbc.item_class, index);
 	int class_id = wow_dbc_get_i32(&row, 0);
 	size_t nb = 0;
 	for (size_t i = 0; i < g_wow->dbc.item_sub_class->file->header.record_count; ++i)

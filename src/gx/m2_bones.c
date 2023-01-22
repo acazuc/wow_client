@@ -79,7 +79,7 @@ bool gx_m2_bones_load(struct gx_m2_bones *bones, const struct wow_m2_bone *wow_b
 	lines_pos = 0;
 	for (size_t i = 0; i < nb; ++i)
 	{
-		const wow_m2_bone_t *bone = &wow_bones[i];
+		const struct wow_m2_bone *bone = &wow_bones[i];
 		bones->init_data->points_vertexes[i].bone = i;
 		VEC3_CPY(bones->init_data->points_vertexes[i].position, bone->pivot);
 		struct vec3f color;
@@ -87,7 +87,7 @@ bool gx_m2_bones_load(struct gx_m2_bones *bones, const struct wow_m2_bone *wow_b
 		VEC4_SET(bones->init_data->points_vertexes[i].color, color.x, color.y, color.z, 1);
 		if (bone->parent_bone != -1)
 		{
-			const wow_m2_bone_t *parent_bone = &wow_bones[bone->parent_bone];
+			const struct wow_m2_bone *parent_bone = &wow_bones[bone->parent_bone];
 			bones->init_data->lines_vertexes[lines_pos + 0].bone = i;
 			bones->init_data->lines_vertexes[lines_pos + 1].bone = bone->parent_bone;
 			VEC3_CPY(bones->init_data->lines_vertexes[lines_pos + 0].position, bone->pivot);

@@ -61,7 +61,7 @@ static int luaAPI_GetMacroIconInfo(lua_State *L)
 	index--;
 	if (index < 0 || (unsigned)index >= g_wow->dbc.spell_icon->file->header.record_count)
 		return luaL_argerror(L, 1, "invalid index");
-	wow_dbc_row_t row = dbc_get_row(g_wow->dbc.spell_icon, index);
+	struct wow_dbc_row row = dbc_get_row(g_wow->dbc.spell_icon, index);
 	lua_pushstring(L, wow_dbc_get_str(&row, 4));
 	return 1;
 }

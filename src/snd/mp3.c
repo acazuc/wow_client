@@ -18,7 +18,7 @@
 struct snd_stream_mp3
 {
 	struct snd_stream stream;
-	wow_mpq_file_t *file;
+	struct wow_mpq_file *file;
 	mp3dec_frame_info_t info;
 	mp3dec_t ctx;
 	mp3d_sample_t buf[MINIMP3_MAX_SAMPLES_PER_FRAME];
@@ -73,7 +73,7 @@ static const struct snd_stream_vtable vtable =
 	.read_samples = read_samples,
 };
 
-struct snd_stream *snd_stream_mp3_new(wow_mpq_file_t *file)
+struct snd_stream *snd_stream_mp3_new(struct wow_mpq_file *file)
 {
 	struct snd_stream_mp3 *stream = mem_zalloc(MEM_SND, sizeof(*stream));
 	if (!stream)

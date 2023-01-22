@@ -162,7 +162,7 @@ static void on_field_changed(struct object *object, uint32_t field)
 		g_field_functions[field - PLAYER_FIELD_MIN](object);
 }
 
-static void patch_texture(uint8_t *image_data, uint32_t image_width, wow_blp_file_t *blp_file, const struct texture_section *dst)
+static void patch_texture(uint8_t *image_data, uint32_t image_width, struct wow_blp_file *blp_file, const struct texture_section *dst)
 {
 	if (blp_file->header.width != dst->width)
 	{
@@ -200,7 +200,7 @@ static void patch_texture(uint8_t *image_data, uint32_t image_width, wow_blp_fil
 
 static void generate_skin_texture(struct object *object)
 {
-	wow_blp_file_t *skin_texture = NULL;
+	struct wow_blp_file *skin_texture = NULL;
 	unit_get_skin_textures_files(UNIT, &skin_texture, NULL);
 	if (!skin_texture)
 	{
@@ -223,14 +223,14 @@ static void generate_skin_texture(struct object *object)
 		return;
 	}
 	{
-		wow_blp_file_t *face_lower;
-		wow_blp_file_t *face_upper;
-		wow_blp_file_t *scalp_lower;
-		wow_blp_file_t *scalp_upper;
-		wow_blp_file_t *facial_lower;
-		wow_blp_file_t *facial_upper;
-		wow_blp_file_t *pelvis;
-		wow_blp_file_t *torso;
+		struct wow_blp_file *face_lower;
+		struct wow_blp_file *face_upper;
+		struct wow_blp_file *scalp_lower;
+		struct wow_blp_file *scalp_upper;
+		struct wow_blp_file *facial_lower;
+		struct wow_blp_file *facial_upper;
+		struct wow_blp_file *pelvis;
+		struct wow_blp_file *torso;
 		unit_get_face_textures_files(UNIT, &face_lower, &face_upper);
 		unit_get_hair_textures_files(UNIT, NULL, &scalp_lower, &scalp_upper);
 		unit_get_facial_hair_textures_files(UNIT, &facial_lower, &facial_upper);
@@ -282,7 +282,7 @@ static void generate_skin_texture(struct object *object)
 		if (!item)
 			continue;
 		LOG_INFO("items[%d] = %" PRIu32, (int)i, item);
-		wow_dbc_row_t item_row;
+		struct wow_dbc_row item_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item, &item_row, item))
 		{
 			LOG_WARN("can't find player item %" PRIu32, item);
@@ -291,7 +291,7 @@ static void generate_skin_texture(struct object *object)
 		uint32_t item_display = wow_dbc_get_u32(&item_row, 4);
 		if (!item_display)
 			continue;
-		wow_dbc_row_t item_display_row;
+		struct wow_dbc_row item_display_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_display_row, item_display))
 		{
 			LOG_WARN("can't find item display %" PRIu32, item_display);
@@ -305,7 +305,7 @@ static void generate_skin_texture(struct object *object)
 			char texture_fn[256];
 			snprintf(texture_fn, sizeof(texture_fn), "item/texturecomponents/%s/%s", g_texture_components_dirs[j], texture);
 			normalize_blp_filename(texture_fn, sizeof(texture_fn));
-			wow_mpq_file_t *mpq_file = wow_mpq_get_file(g_wow->mpq_compound, texture_fn);
+			struct wow_mpq_file *mpq_file = wow_mpq_get_file(g_wow->mpq_compound, texture_fn);
 			if (!mpq_file)
 			{
 				int len = strlen(texture_fn) - 4;
@@ -323,7 +323,7 @@ static void generate_skin_texture(struct object *object)
 					}
 				}
 			}
-			wow_blp_file_t *blp_file = wow_blp_file_new(mpq_file);
+			struct wow_blp_file *blp_file = wow_blp_file_new(mpq_file);
 			wow_mpq_file_delete(mpq_file);
 			if (!blp_file)
 			{
@@ -361,7 +361,7 @@ static void update_render_batches(struct object *object)
 			continue;
 		}
 		LOG_DEBUG("items[%d] = %" PRIu32, (int)i, items[i]);
-		wow_dbc_row_t item_row;
+		struct wow_dbc_row item_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item, &item_row, items[i]))
 		{
 			LOG_WARN("can't find player item %" PRIu32, items[i]);
@@ -376,7 +376,7 @@ static void update_render_batches(struct object *object)
 
 static void update_displayid(struct object *object)
 {
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &row, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID)))
 	{
 		LOG_WARN("unknown displayid %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_DISPLAYID));

@@ -47,7 +47,7 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 	struct gx_wmo_mliq *mliq = mem_zalloc(MEM_GX, sizeof(*mliq));
 	if (!mliq)
 		return NULL;
-	wow_mliq_t *wow_mliq = &file->mliq;
+	struct wow_mliq *wow_mliq = &file->mliq;
 	VEC3_SET(mliq->position, wow_mliq->header.coords.x, 0, -wow_mliq->header.coords.y);
 	for (size_t x = 0; x < wow_mliq->header.xtiles; ++x)
 	{

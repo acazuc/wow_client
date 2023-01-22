@@ -25,7 +25,7 @@ struct taxi_link
 
 struct taxi_node
 {
-	wow_dbc_row_t dbc;
+	struct wow_dbc_row dbc;
 	struct taxi_link *links;
 	size_t links_count;
 	size_t pf_dist;

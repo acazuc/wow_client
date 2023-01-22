@@ -90,7 +90,7 @@ static void mouse_move_callback(gfx_pointer_event_t *event);
 static void mouse_scroll_callback(gfx_scroll_event_t *event);
 static void error_callback(const char *fmt, ...);
 
-gfx_window_t *wow_create_window(const char *title)
+struct gfx_window *wow_create_window(const char *title)
 {
 	LOG_INFO("creating window");
 	gfx_window_properties_t properties;
@@ -250,7 +250,7 @@ static bool setup_cache(void)
 
 static void archive_delete(void *ptr)
 {
-	wow_mpq_archive_delete(*(wow_mpq_archive_t**)ptr);
+	wow_mpq_archive_delete(*(struct wow_mpq_archive**)ptr);
 }
 
 static bool setup_game_files(void)
@@ -261,7 +261,7 @@ static bool setup_game_files(void)
 		LOG_ERROR("malloc failed");
 		return EXIT_FAILURE;
 	}
-	jks_array_init(g_wow->mpq_archives, sizeof(wow_mpq_archive_t*), archive_delete, &jks_array_memory_fn_GENERIC);
+	jks_array_init(g_wow->mpq_archives, sizeof(struct wow_mpq_archive*), archive_delete, &jks_array_memory_fn_GENERIC);
 	char files[14][256];
 	snprintf(files[0] , sizeof(files[0]) , "patch-5.MPQ");
 	snprintf(files[1] , sizeof(files[1]) , "patch-3.MPQ");
@@ -290,7 +290,7 @@ static bool setup_game_files(void)
 	{
 		char name[512];
 		snprintf(name, sizeof(name), "%s/Data/%s", g_wow->game_path, files[i]);
-		wow_mpq_archive_t *archive = wow_mpq_archive_new(name);
+		struct wow_mpq_archive *archive = wow_mpq_archive_new(name);
 		if (!archive)
 		{
 			LOG_ERROR("failed to open archive \"%s\"", name);
@@ -595,13 +595,14 @@ static void trs_dir_dtr(jks_hmap_key_t key, void *value)
 
 static bool load_trs(void)
 {
-	wow_mpq_file_t *mpq = wow_mpq_get_file(g_wow->mpq_compound, "TEXTURES\\MINIMAP\\MD5TRANSLATE.TRS");
+	/* XXX should load only current map entries */
+	struct wow_mpq_file *mpq = wow_mpq_get_file(g_wow->mpq_compound, "TEXTURES\\MINIMAP\\MD5TRANSLATE.TRS");
 	if (!mpq)
 	{
 		LOG_ERROR("failed to get TRS mpq file");
 		return false;
 	}
-	wow_trs_file_t *trs = wow_trs_file_new(mpq);
+	struct wow_trs_file *trs = wow_trs_file_new(mpq);
 	if (!trs)
 	{
 		LOG_ERROR("failed to parse TRS file");
@@ -1641,11 +1642,11 @@ void normalize_wmo_filename(char *filename, size_t size)
 	normalize_mpq_filename(filename, size);
 }
 
-bool wow_load_compound(wow_mpq_compound_t *compound)
+bool wow_load_compound(struct wow_mpq_compound *compound)
 {
 	for (size_t i = 0; i < g_wow->mpq_archives->size; ++i)
 	{
-		wow_mpq_archive_t *archive = *(wow_mpq_archive_t**)jks_array_get(g_wow->mpq_archives, i);
+		struct wow_mpq_archive *archive = *(struct wow_mpq_archive**)jks_array_get(g_wow->mpq_archives, i);
 		if (!wow_mpq_compound_add_archive(compound, archive))
 			return false;
 	}

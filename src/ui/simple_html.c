@@ -90,7 +90,7 @@ static void load_xml(struct ui_object *object, const struct xml_layout_frame *la
 			char filename[256];
 			snprintf(filename, sizeof(filename), "Data\\%s\\%s", g_wow->locale, xml_simple_html->file);
 			normalize_mpq_filename(filename, sizeof(filename));
-			wow_mpq_file_t *file;
+			struct wow_mpq_file *file;
 			if (cache_ref_by_key_mpq(g_wow->cache, filename, &file))
 			{
 				simple_html->text = mem_malloc(MEM_UI, file->size + 1);

@@ -174,7 +174,7 @@ static void map_m2_hmap_destructor(jks_hmap_key_t key, void *ref)
 
 static bool font_constructor(const void *key, void **ref)
 {
-	wow_mpq_file_t *file;
+	struct wow_mpq_file *file;
 	if (!cache_ref_by_key_mpq(g_wow->cache, (const char*)key, &file))
 		return false;
 	*ref = font_model_new((const char*)file->data, file->size);
@@ -195,10 +195,10 @@ static void font_hmap_destructor(jks_hmap_key_t key, void *ref)
 
 static bool dbc_constructor(const void *key, void **ref)
 {
-	wow_mpq_file_t *mpq_file;
+	struct wow_mpq_file *mpq_file;
 	if (!cache_ref_by_key_mpq(g_wow->cache, (const char*)key, &mpq_file))
 		return false;
-	wow_dbc_file_t *dbc_file = wow_dbc_file_new(mpq_file);
+	struct wow_dbc_file *dbc_file = wow_dbc_file_new(mpq_file);
 	cache_unref_by_ref_mpq(g_wow->cache, mpq_file);
 	if (!dbc_file)
 		return false;
@@ -227,7 +227,7 @@ static bool mpq_constructor(const void *key, void **ref)
 
 static void mpq_destructor(void *ref)
 {
-	wow_mpq_file_delete(*(wow_mpq_file_t**)ref);
+	wow_mpq_file_delete(*(struct wow_mpq_file**)ref);
 }
 
 static void mpq_hmap_destructor(jks_hmap_key_t key, void *ref)

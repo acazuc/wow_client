@@ -32,8 +32,8 @@ static int luaAPI_GetTalentTabInfo(lua_State *L)
 	int tab = lua_tointeger(L, 1) - 1;
 	if (tab < 0 || (unsigned)tab >= sizeof(tabs) / sizeof(*tabs))
 		return luaL_argerror(L, 1, "invalid tab");
-	wow_dbc_row_t row;
-	wow_dbc_row_t spell_icon_row;
+	struct wow_dbc_row row;
+	struct wow_dbc_row spell_icon_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.talent_tab, &row, tabs[tab]))
 		return luaL_argerror(L, 1, "failed to get tab");
 	if (!dbc_get_row_indexed(g_wow->dbc.spell_icon, &spell_icon_row, wow_dbc_get_u32(&row, 72)))
@@ -58,7 +58,7 @@ static int luaAPI_GetNumTalents(lua_State *L)
 	size_t num = 0;
 	for (size_t i = 0; i < g_wow->dbc.talent->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.talent, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.talent, i);
 		if (wow_dbc_get_i32(&row, 4) != tabs[tab])
 			continue;
 		++num;
@@ -82,14 +82,14 @@ static int luaAPI_GetTalentInfo(lua_State *L)
 	int num = 0;
 	for (size_t i = 0; i < g_wow->dbc.talent->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.talent, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.talent, i);
 		if (wow_dbc_get_i32(&row, 4) != tabs[tab])
 			continue;
 		++num;
 		if (num != index)
 			continue;
-		wow_dbc_row_t spell_row;
-		wow_dbc_row_t spell_icon_row;
+		struct wow_dbc_row spell_row;
+		struct wow_dbc_row spell_icon_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.spell, &spell_row, wow_dbc_get_u32(&row, 16)))
 		{
 			LOG_ERROR("failed to get spell row %" PRIu32, wow_dbc_get_u32(&row, 16));

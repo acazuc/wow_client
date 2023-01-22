@@ -54,7 +54,7 @@ static void add_to_render(struct object *object)
 	if (object_fields_get_bit(&object->fields, GAMEOBJECT_FIELD_DISPLAYID))
 	{
 		object_fields_disable_bit(&object->fields, GAMEOBJECT_FIELD_DISPLAYID);
-		wow_dbc_row_t row;
+		struct wow_dbc_row row;
 		if (dbc_get_row_indexed(g_wow->dbc.game_object_display_info, &row, object_fields_get_u32(&object->fields, GAMEOBJECT_FIELD_DISPLAYID))) 
 		{
 			char filename[512];

@@ -142,7 +142,7 @@ static void on_field_changed(struct object *object, uint32_t field)
 		g_field_functions[field - UNIT_FIELD_MIN](object);
 }
 
-static bool get_char_section(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, wow_dbc_row_t *row)
+static bool get_char_section(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, struct wow_dbc_row *row)
 {
 	uint8_t race = unit_get_race(unit);
 	if (!race)
@@ -168,7 +168,7 @@ static bool get_char_section(const struct unit *unit, uint8_t base_section, uint
 
 static bool get_textures_names(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, char *tex1, char *tex2, char *tex3)
 {
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (!get_char_section(unit, base_section, variation, color, &row))
 		return false;
 	if (tex1)
@@ -189,14 +189,14 @@ static bool get_textures_names(const struct unit *unit, uint8_t base_section, ui
 	return true;
 }
 
-static void get_texture_file(char *name, wow_blp_file_t **texture)
+static void get_texture_file(char *name, struct wow_blp_file **texture)
 {
 	if (!name[0])
 	{
 		*texture = NULL;
 		return;
 	}
-	wow_mpq_file_t *mpq_file = wow_mpq_get_file(g_wow->mpq_compound, name);
+	struct wow_mpq_file *mpq_file = wow_mpq_get_file(g_wow->mpq_compound, name);
 	if (!mpq_file)
 	{
 		LOG_ERROR("file %s not found", name);
@@ -224,7 +224,7 @@ static void get_texture(char *name, struct blp_texture **texture)
 	blp_texture_ask_load(*texture);
 }
 
-static void get_textures_files(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, wow_blp_file_t **tex1, wow_blp_file_t **tex2, wow_blp_file_t **tex3)
+static void get_textures_files(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, struct wow_blp_file **tex1, struct wow_blp_file **tex2, struct wow_blp_file **tex3)
 {
 	char tex1_name[256];
 	char tex2_name[256];
@@ -270,7 +270,7 @@ static void get_textures(const struct unit *unit, uint8_t base_section, uint8_t 
 		get_texture(tex3_name, tex3);
 }
 
-void unit_get_skin_textures_files(const struct unit *unit, wow_blp_file_t **skin, wow_blp_file_t **skin_extra)
+void unit_get_skin_textures_files(const struct unit *unit, struct wow_blp_file **skin, struct wow_blp_file **skin_extra)
 {
 	if (!skin && !skin_extra)
 		return;
@@ -279,7 +279,7 @@ void unit_get_skin_textures_files(const struct unit *unit, wow_blp_file_t **skin
 	get_textures_files(unit, 0, 0, color, skin, skin_extra, NULL);
 }
 
-void unit_get_face_textures_files(const struct unit *unit, wow_blp_file_t **lower, wow_blp_file_t **upper)
+void unit_get_face_textures_files(const struct unit *unit, struct wow_blp_file **lower, struct wow_blp_file **upper)
 {
 	if (!lower && !upper)
 		return;
@@ -289,7 +289,7 @@ void unit_get_face_textures_files(const struct unit *unit, wow_blp_file_t **lowe
 	get_textures_files(unit, 1, face, color, lower, upper, NULL);
 }
 
-void unit_get_facial_hair_textures_files(const struct unit *unit, wow_blp_file_t **lower, wow_blp_file_t **upper)
+void unit_get_facial_hair_textures_files(const struct unit *unit, struct wow_blp_file **lower, struct wow_blp_file **upper)
 {
 	if (!lower && !upper)
 		return;
@@ -299,7 +299,7 @@ void unit_get_facial_hair_textures_files(const struct unit *unit, wow_blp_file_t
 	get_textures_files(unit, 2, style, color, lower, upper, NULL);
 }
 
-void unit_get_hair_textures_files(const struct unit *unit, wow_blp_file_t **hair, wow_blp_file_t **lower, wow_blp_file_t **upper)
+void unit_get_hair_textures_files(const struct unit *unit, struct wow_blp_file **hair, struct wow_blp_file **lower, struct wow_blp_file **upper)
 {
 	if (!hair && !lower && !upper)
 		return;
@@ -309,7 +309,7 @@ void unit_get_hair_textures_files(const struct unit *unit, wow_blp_file_t **hair
 	get_textures_files(unit, 3, style, color, hair, lower, upper);
 }
 
-void unit_get_underwear_textures_files(const struct unit *unit, wow_blp_file_t **pelvis, wow_blp_file_t **torso)
+void unit_get_underwear_textures_files(const struct unit *unit, struct wow_blp_file **pelvis, struct wow_blp_file **torso)
 {
 	if (!pelvis && !torso)
 		return;
@@ -379,7 +379,7 @@ static void add_m2_item(struct object *object, struct gx_m2_instance *m2, uint32
 		LOG_ERROR("no attachment id %" PRIu32, attachment_id);
 		return;
 	}
-	wow_m2_attachment_t *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
+	struct wow_m2_attachment *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
 	uint16_t bone_id = attachment->bone;
 	if (bone_id == UINT16_MAX)
 		return;
@@ -413,7 +413,7 @@ static void add_text_to_render(struct object *object)
 		LOG_ERROR("no attachment id %" PRIu32, attachment_id);
 		return;
 	}
-	wow_m2_attachment_t *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
+	struct wow_m2_attachment *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
 	uint16_t bone_id = attachment->bone;
 	if (bone_id == UINT16_MAX)
 		return;
@@ -494,7 +494,7 @@ static bool get_hair_geoset(uint8_t race, uint8_t gender, const uint8_t *hair_st
 	struct dbc *dbc = g_wow->dbc.char_hair_geosets;
 	for (size_t i = 0; i < dbc->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(dbc, i);
+		struct wow_dbc_row row = dbc_get_row(dbc, i);
 		if (wow_dbc_get_u32(&row, 4) == race
 		 && wow_dbc_get_u32(&row, 8) == gender
 		 && wow_dbc_get_u32(&row, 12) == *hair_style)
@@ -517,7 +517,7 @@ static bool get_facial_hair_geosets(uint8_t race, uint8_t gender, const uint8_t 
 	struct dbc *dbc = g_wow->dbc.character_facial_hair_styles;
 	for (size_t i = 0; i < dbc->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(dbc, i);
+		struct wow_dbc_row row = dbc_get_row(dbc, i);
 		if (wow_dbc_get_u32(&row, 0) == race
 		 && wow_dbc_get_u32(&row, 4) == gender
 		 && wow_dbc_get_u32(&row, 8) == *facial_hair)
@@ -538,12 +538,12 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 {
 	uint8_t race = unit_get_race(UNIT);
 	uint8_t gender = unit_get_gender(UNIT);
-	OPTIONAL_DEF(, wow_dbc_row_t) items_rows[11] = {{0}};
+	OPTIONAL_DEF(, struct wow_dbc_row) items_rows[11] = {{0}};
 	for (size_t i = 0; i < 11; ++i)
 	{
 		if (!UNIT->items[i].id)
 			continue;
-		wow_dbc_row_t item_row;
+		struct wow_dbc_row item_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_row, UNIT->items[i].id))
 		{
 			LOG_WARN("can't find item display %" PRIu32, UNIT->items[i].id);
@@ -557,7 +557,7 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 		uint32_t geoset_vis_id = wow_dbc_get_u32(&OPTIONAL_GET(items_rows[0]), unit_get_gender(UNIT) ? 56 : 52);
 		if (geoset_vis_id)
 		{
-			wow_dbc_row_t row;
+			struct wow_dbc_row row;
 			if (dbc_get_row_indexed(g_wow->dbc.helmet_geoset_vis_data, &row, geoset_vis_id))
 			{
 				uint32_t mask = (1 << (unit_get_race(UNIT) - 1));
@@ -813,7 +813,7 @@ static void unit_update_item(struct object *object, uint32_t i)
 #endif
 		return;
 	}
-	wow_dbc_row_t item_display_row;
+	struct wow_dbc_row item_display_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_display_row, UNIT->items[i].id))
 	{
 		LOG_WARN("can't find item display %" PRIu32, UNIT->items[i].id);

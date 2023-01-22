@@ -80,7 +80,7 @@ static int luaAPI_GetFriendInfo(lua_State *L)
 	const struct db_name *name = db_get_name(g_wow->db, social_friend->guid);
 	lua_pushstring(L, name->name);
 	lua_pushinteger(L, social_friend->level);
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (!social_friend->class_type)
 	{
 		lua_pushstring(L, "");

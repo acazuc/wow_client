@@ -982,7 +982,7 @@ static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batc
 				continue;
 			if (batch->holes & (1 << (z / 2 * 4 + x / 2)))
 				continue;
-			wow_dbc_row_t row; /* XXX: use cache for dbc_row of ground_effect_texture & ground_effect_doodad to lower CPU usage */
+			struct wow_dbc_row row; /* XXX: use cache for dbc_row of ground_effect_texture & ground_effect_doodad to lower CPU usage */
 			if (!dbc_get_row_indexed(g_wow->dbc.ground_effect_texture, &row, effect_id))
 				continue;
 			uint32_t density = wow_dbc_get_u32(&row, 20);
@@ -993,7 +993,7 @@ static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batc
 				uint32_t doodad_id = wow_dbc_get_u32(&row, 4 + i * 4);
 				if (doodad_id == 0xFFFFFFFF)
 					break;
-				wow_dbc_row_t doodad_row;
+				struct wow_dbc_row doodad_row;
 				if (!dbc_get_row_indexed(g_wow->dbc.ground_effect_doodad, &doodad_row, doodad_id))
 					continue;
 				char path[512];

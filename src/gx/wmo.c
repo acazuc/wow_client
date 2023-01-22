@@ -159,7 +159,7 @@ bool gx_wmo_load(struct gx_wmo *wmo, struct wow_wmo_file *file)
 		memcpy(jks_array_get(&wmo->mopt, 0), file->mopt.data, sizeof(*file->mopt.data) * file->mopt.data_nb);
 		for (size_t i = 0; i < wmo->mopt.size; ++i)
 		{
-			struct wow_vec3f *tmp = &((wow_mopt_data_t*)jks_array_get(&wmo->mopt, i))->normal;
+			struct wow_vec3f *tmp = &((struct wow_mopt_data*)jks_array_get(&wmo->mopt, i))->normal;
 			*tmp = (struct wow_vec3f){tmp->x, tmp->z, -tmp->y};
 		}
 	}
@@ -225,7 +225,7 @@ bool gx_wmo_load(struct gx_wmo *wmo, struct wow_wmo_file *file)
 #ifdef WITH_DEBUG_RENDERING
 	if (!gx_wmo_portals_load(&wmo->gx_portals, (struct wow_mopt_data*)wmo->mopt.data, wmo->mopt.size, (struct wow_vec3f*)wmo->mopv.data, wmo->mopv.size))
 		return false;
-	if (!gx_wmo_lights_load(&wmo->gx_lights, (wow_molt_data_t*)wmo->molt.data, wmo->molt.size))
+	if (!gx_wmo_lights_load(&wmo->gx_lights, (struct wow_molt_data*)wmo->molt.data, wmo->molt.size))
 		return false;
 #endif
 	wmo->loaded = true;

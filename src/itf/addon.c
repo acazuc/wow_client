@@ -277,7 +277,7 @@ cleanup:
 	return ret;
 }
 
-static wow_toc_file_t *ext_get_toc(struct addon *addon)
+static struct wow_toc_file *ext_get_toc(struct addon *addon)
 {
 	char filepath[512];
 	snprintf(filepath, sizeof(filepath), "%s/Interface/AddOns/%s/%s.toc", g_wow->game_path, addon->name, addon->name);
@@ -288,7 +288,7 @@ static wow_toc_file_t *ext_get_toc(struct addon *addon)
 		jks_array_destroy(&data);
 		return NULL;
 	}
-	wow_toc_file_t *toc = wow_toc_file_new((const uint8_t*)data.data, data.size);
+	struct wow_toc_file *toc = wow_toc_file_new((const uint8_t*)data.data, data.size);
 	jks_array_destroy(&data);
 	return toc;
 }
@@ -341,18 +341,18 @@ struct addon *ext_addon_new(struct interface *interface, const char *filename)
 	return addon_new(interface, filename, &ext_vtable, ADDON_EXT);
 }
 
-static wow_toc_file_t *int_get_toc(struct addon *addon)
+static struct wow_toc_file *int_get_toc(struct addon *addon)
 {
 	char filepath[512];
 	snprintf(filepath, sizeof(filepath), "Interface/AddOns/%s/%s.toc", addon->name, addon->name);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *file;
+	struct wow_mpq_file *file;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &file))
 	{
 		LOG_ERROR("failed to get toc file: %s", filepath);
 		return NULL;
 	}
-	wow_toc_file_t *toc = wow_toc_file_new((const uint8_t*)file->data, file->size);
+	struct wow_toc_file *toc = wow_toc_file_new((const uint8_t*)file->data, file->size);
 	cache_unref_by_ref_mpq(g_wow->cache, file);
 	return toc;
 }
@@ -362,7 +362,7 @@ static bool int_load_xml(struct addon *addon, const char *filename, const char *
 	char filepath[512];
 	get_filepath(addon, filepath, sizeof(filepath), filename, origin);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *mpq;
+	struct wow_mpq_file *mpq;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &mpq))
 	{
 		LOG_ERROR("failed to get xml file: %s", filepath);
@@ -380,7 +380,7 @@ static bool int_load_lua(struct addon *addon, const char *filename, const char *
 	char filepath[512];
 	get_filepath(addon, filepath, sizeof(filepath), filename, origin);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *mpq;
+	struct wow_mpq_file *mpq;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &mpq))
 	{
 		LOG_ERROR("failed to get lua file: %s", filepath);
@@ -405,18 +405,18 @@ struct addon *int_addon_new(struct interface *interface, const char *filename)
 	return addon_new(interface, filename, &int_vtable, ADDON_INT);
 }
 
-static wow_toc_file_t *src_get_toc(struct addon *addon)
+static struct wow_toc_file *src_get_toc(struct addon *addon)
 {
 	char filepath[512];
 	snprintf(filepath, sizeof(filepath), "Interface/%s/%s.toc", addon->name, addon->name);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *file;
+	struct wow_mpq_file *file;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &file))
 	{
 		LOG_ERROR("failed to get toc file: %s", filepath);
 		return NULL;
 	}
-	wow_toc_file_t *toc = wow_toc_file_new((const uint8_t*)file->data, file->size);
+	struct wow_toc_file *toc = wow_toc_file_new((const uint8_t*)file->data, file->size);
 	cache_unref_by_ref_mpq(g_wow->cache, file);
 	return toc;
 }
@@ -426,7 +426,7 @@ static bool src_load_xml(struct addon *addon, const char *filename, const char *
 	char filepath[512];
 	get_filepath(addon, filepath, sizeof(filepath), filename, origin);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *mpq;
+	struct wow_mpq_file *mpq;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &mpq))
 	{
 		LOG_ERROR("failed to get xml file: %s", filepath);
@@ -444,7 +444,7 @@ static bool src_load_lua(struct addon *addon, const char *filename, const char *
 	char filepath[512];
 	get_filepath(addon, filepath, sizeof(filepath), filename, origin);
 	normalize_mpq_filename(filepath, sizeof(filepath));
-	wow_mpq_file_t *mpq;
+	struct wow_mpq_file *mpq;
 	if (!cache_ref_by_key_mpq(g_wow->cache, filepath, &mpq))
 	{
 		LOG_ERROR("failed to get lua file: %s", filepath);

@@ -149,7 +149,7 @@ static int luaAPI_GetAvailableRaces(lua_State *L)
 		return luaL_error(L, "Usage: GetAvailableRaces()");
 	for (size_t i = 0; i < 10; ++i)
 	{
-		wow_dbc_row_t row;
+		struct wow_dbc_row row;
 		if (!dbc_get_row_indexed(g_wow->dbc.chr_races, &row, g_races[i].id))
 		{
 			LOG_INFO("nope");
@@ -212,7 +212,7 @@ static int luaAPI_SetSelectedRace(lua_State *L)
 	available_classes_nb = 0;
 	for (size_t i = 0; i < g_wow->dbc.char_base_info->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.char_base_info, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.char_base_info, i);
 		if (wow_dbc_get_u8(&row, 0) != g_races[selected_race - 1].id)
 			continue;
 		available_classes[available_classes_nb++] = wow_dbc_get_u8(&row, 1);
@@ -247,7 +247,7 @@ static int luaAPI_GetNameForRace(lua_State *L)
 		return luaL_error(L, "Usage: GetNameForRace()");
 	if (selected_race < 1 || selected_race > 10)
 		return 0;
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed(g_wow->dbc.chr_races, &row, g_races[selected_race - 1].id))
 	{
 		lua_pushstring(L, wow_dbc_get_str(&row, selected_sex == 2 ? 132 : 200));
@@ -286,7 +286,7 @@ static int luaAPI_GetClassesForRace(lua_State *L)
 			continue;
 		}
 		LOG_INFO("found class %u", class);
-		wow_dbc_row_t class_row;
+		struct wow_dbc_row class_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.chr_classes, &class_row, class))
 		{
 			LOG_WARN("class id %u not found", class_id);
@@ -350,7 +350,7 @@ static int luaAPI_GetSelectedClass(lua_State *L)
 	int argc = lua_gettop(L);
 	if (argc != 0)
 		return luaL_error(L, "Usage: GetSelectedClass()");
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed(g_wow->dbc.chr_classes, &row, g_classes[available_classes[selected_class]].id))
 	{
 		LOG_INFO("class filename: %s", wow_dbc_get_str(&row, selected_sex == 2 ? 92 : 160));
@@ -382,7 +382,7 @@ static int luaAPI_GetFacialHairCustomization(lua_State *L)
 	int argc = lua_gettop(L);
 	if (argc != 0)
 		return luaL_error(L, "Usage: GetFacialHairCustomization()");
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed(g_wow->dbc.chr_races, &row, selected_race))
 	{
 		lua_pushstring(L, wow_dbc_get_str(&row, 264)); //NONE, EARRINGS, FEATURES, HAIR, HORNS, MARKINGS, NORMAL, PIERCINGS, TUSKS
@@ -401,7 +401,7 @@ static int luaAPI_GetHairCustomization(lua_State *L)
 	int argc = lua_gettop(L);
 	if (argc != 0)
 		return luaL_error(L, "Usage: GetHairCustomization()");
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed(g_wow->dbc.chr_races, &row, selected_race))
 	{
 		lua_pushstring(L, wow_dbc_get_str(&row, 268)); //NORMAL, HORNS
@@ -684,7 +684,7 @@ static int luaAPI_GetCharacterInfo(lua_State *L)
 	}
 	const struct login_character *character = JKS_ARRAY_GET(&g_wow->network->world_socket->characters, idx - 1, struct login_character);
 	lua_pushstring(L, character->name);
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (dbc_get_row_indexed(g_wow->dbc.chr_races, &row, character->race_type))
 		lua_pushstring(L, wow_dbc_get_str(&row, character->gender ? 132 : 200));
 	else
@@ -824,7 +824,7 @@ static int luaAPI_GetRandomName(lua_State *L)
 	return 1;
 	for (uint32_t i = 0; i < dbc->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(dbc, i);
+		struct wow_dbc_row row = dbc_get_row(dbc, i);
 		uint32_t race = wow_dbc_get_u32(&row, 32);
 		if (race != selected_race) // shouldn't be checked against selected_race (see ChrRaces.dbc)
 			continue;

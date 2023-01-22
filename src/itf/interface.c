@@ -1170,8 +1170,8 @@ static bool load_addons(struct interface *interface)
 
 static gfx_cursor_t *load_cursor(const char *file)
 {
-	wow_mpq_file_t *mpq_file = NULL;
-	wow_blp_file_t *blp_file = NULL;
+	struct wow_mpq_file *mpq_file = NULL;
+	struct wow_blp_file *blp_file = NULL;
 	gfx_cursor_t *ret = NULL;
 	uint8_t *data = NULL;
 	uint32_t width;

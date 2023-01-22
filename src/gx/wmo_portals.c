@@ -83,7 +83,7 @@ bool gx_wmo_portals_load(struct gx_wmo_portals *portals, const struct wow_mopt_d
 	uint32_t indices_pos = 0;
 	for (uint32_t i = 0; i < mopt_nb; ++i)
 	{
-		const wow_mopt_data_t *data = &mopt[i];
+		const struct wow_mopt_data *data = &mopt[i];
 		uint32_t base = data->start_vertex;
 		uint32_t tmp = vertexes_pos;
 		for (uint32_t j = 0; j < data->count; ++j)

@@ -58,7 +58,7 @@ bool gx_m2_lights_load(struct gx_m2_lights *lights, const struct wow_m2_light *w
 	}
 	for (uint32_t i = 0; i < nb; ++i)
 	{
-		const wow_m2_light_t *light = &wow_lights[i];
+		const struct wow_m2_light *light = &wow_lights[i];
 		VEC3_SET(lights->init_data->vertexes[i].position, light->position.x, light->position.y, light->position.z);
 		VEC4_SET(lights->init_data->vertexes[i].color, 1, 0, 1, 1);
 		lights->init_data->vertexes[i].bone = light->bone;

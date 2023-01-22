@@ -59,7 +59,7 @@ next_stream:;
 
 static struct snd_stream *create_file_stream(const char *path)
 {
-	wow_mpq_file_t *file = wow_mpq_get_file(g_wow->mpq_compound, path);
+	struct wow_mpq_file *file = wow_mpq_get_file(g_wow->mpq_compound, path);
 	if (!file)
 	{
 		LOG_ERROR("failed to open file: %s", path);

@@ -463,7 +463,7 @@ struct gx_mclq *gx_mclq_new(struct map_tile *parent, struct wow_adt_file *file)
 				continue;
 			for (size_t i = 0; i < mcnk->mclq.data_nb; ++i)
 			{
-				wow_mclq_data_t *wow_mclq = &mcnk->mclq.data[i];
+				struct wow_mclq_data *wow_mclq = &mcnk->mclq.data[i];
 				if (is_uniform_batch(wow_mclq))
 				{
 					if (!init_uniform_batch(mclq, wow_mclq, cx, cz, min_pos, max_pos, first_min_max))

@@ -667,13 +667,13 @@ static int luaAPI_GetInventorySlotInfo(lua_State *L)
 			goto empty;
 		}
 		uint32_t item_template = object_fields_get_u32(&((struct object*)item)->fields, OBJECT_FIELD_ENTRY);
-		wow_dbc_row_t item_row;
+		struct wow_dbc_row item_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item, &item_row, item_template))
 		{
 			LOG_ERROR("unknown item: %" PRIu32, item_template);
 			goto empty;
 		}
-		wow_dbc_row_t item_display_row;
+		struct wow_dbc_row item_display_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_display_row, wow_dbc_get_u32(&item_row, 4)))
 		{
 			LOG_ERROR("unknown item display: %" PRIu32, item_template);
@@ -1356,13 +1356,13 @@ static int luaAPI_GetContainerItemInfo(lua_State *L)
 		goto err;
 	}
 	uint32_t item_template = object_fields_get_u32(&((struct object*)item)->fields, OBJECT_FIELD_ENTRY);
-	wow_dbc_row_t item_row;
+	struct wow_dbc_row item_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.item, &item_row, item_template))
 	{
 		LOG_ERROR("unknown item: %" PRIu32, item_template);
 		goto err;
 	}
-	wow_dbc_row_t item_display_row;
+	struct wow_dbc_row item_display_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_display_row, wow_dbc_get_u32(&item_row, 4)))
 	{
 		LOG_ERROR("unknown item display: %" PRIu32, item_template);

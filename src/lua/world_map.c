@@ -19,7 +19,7 @@
 
 static bool mapid_from_continent(uint32_t continent, uint32_t *mapid)
 {
-	wow_dbc_row_t mapid_row;
+	struct wow_dbc_row mapid_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.world_map_continent, &mapid_row, continent))
 		return false;
 	*mapid = wow_dbc_get_u32(&mapid_row, 4);
@@ -130,7 +130,7 @@ static struct
 
 static void update_continent(uint32_t id, struct world_map_data_area *area)
 {
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	bool found = false;
 	for (size_t i = 0; i < g_wow->dbc.world_map_continent->file->header.record_count; ++i)
 	{
@@ -208,7 +208,7 @@ void update_world_map_data(int32_t continent_id, int32_t zone_id, uint32_t zone_
 				bool found = false;
 				for (uint32_t i = 0; i < g_wow->dbc.world_map_area->file->header.record_count; ++i)
 				{
-					wow_dbc_row_t row = dbc_get_row(g_wow->dbc.world_map_area, i);
+					struct wow_dbc_row row = dbc_get_row(g_wow->dbc.world_map_area, i);
 					if (wow_dbc_get_i32(&row, 8) != 0)
 						continue;
 					int32_t display_id = wow_dbc_get_i32(&row, 32);
@@ -244,7 +244,7 @@ void update_world_map_data(int32_t continent_id, int32_t zone_id, uint32_t zone_
 				world_map_data.zone_height = world_map_data.continent_height;
 				for (uint32_t i = 0; i < g_wow->dbc.world_map_area->file->header.record_count; ++i)
 				{
-					wow_dbc_row_t row = dbc_get_row(g_wow->dbc.world_map_area, i);
+					struct wow_dbc_row row = dbc_get_row(g_wow->dbc.world_map_area, i);
 					if (!wow_dbc_get_i32(&row, 8)) //zoneid 0, for world map
 						continue;
 					int32_t display_id = wow_dbc_get_i32(&row, 32);
@@ -290,7 +290,7 @@ void update_world_map_data(int32_t continent_id, int32_t zone_id, uint32_t zone_
 			}
 			else
 			{
-				wow_dbc_row_t row;
+				struct wow_dbc_row row;
 				if (dbc_get_row_indexed(g_wow->dbc.world_map_area, &row, zone_id))
 				{
 					world_map_data.zone_min_x = wow_dbc_get_flt(&row, 20);
@@ -406,7 +406,7 @@ static int luaAPI_GetNumMapLandmarks(lua_State *L)
 	size_t n = 0;
 	for (size_t i = 0; i < g_wow->dbc.area_poi->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = wow_dbc_get_row(g_wow->dbc.area_poi->file, i);
+		struct wow_dbc_row row = wow_dbc_get_row(g_wow->dbc.area_poi->file, i);
 		uint32_t continent = wow_dbc_get_u32(&row, 28);
 		if (continent != mapid)
 			continue;
@@ -685,7 +685,7 @@ static int luaAPI_SetMapZoom(lua_State *L)
 	uint32_t nb = 1;
 	for (size_t i = 0; i < g_wow->dbc.world_map_area->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.world_map_area, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.world_map_area, i);
 		uint32_t display_id = wow_dbc_get_i32(&row, 32);
 		if (display_id != (uint32_t)-1)
 		{
@@ -720,9 +720,9 @@ static int luaAPI_GetMapContinents(lua_State *L)
 	uint32_t nb = 0;
 	for (size_t i = 0; i < g_wow->dbc.world_map_continent->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t continent_row = dbc_get_row(g_wow->dbc.world_map_continent, i);
+		struct wow_dbc_row continent_row = dbc_get_row(g_wow->dbc.world_map_continent, i);
 		uint32_t mapid = wow_dbc_get_u32(&continent_row, 4);
-		wow_dbc_row_t row;
+		struct wow_dbc_row row;
 		if (!dbc_get_row_indexed(g_wow->dbc.map, &row, mapid))
 		{
 			LOG_ERROR("failed to get map %" PRIu32, mapid);
@@ -752,7 +752,7 @@ static int luaAPI_GetMapZones(lua_State *L)
 	uint32_t nb = 0;
 	for (size_t i = 0; i < g_wow->dbc.world_map_area->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(g_wow->dbc.world_map_area, i);
+		struct wow_dbc_row row = dbc_get_row(g_wow->dbc.world_map_area, i);
 		uint32_t display_id = wow_dbc_get_i32(&row, 32);
 		if (display_id != (uint32_t)-1)
 		{
@@ -767,7 +767,7 @@ static int luaAPI_GetMapZones(lua_State *L)
 		uint32_t area_id = wow_dbc_get_u32(&row, 8);
 		if (!area_id)
 			continue;
-		wow_dbc_row_t area_row;
+		struct wow_dbc_row area_row;
 		if (!dbc_get_row_indexed(g_wow->dbc.area_table, &area_row, area_id))
 		{
 			LOG_ERROR("failed to get area %" PRIu32, area_id);
@@ -796,7 +796,7 @@ static int luaAPI_GetMapLandmarkInfo(lua_State *L)
 	int n = 0;
 	for (size_t i = 0; i < g_wow->dbc.area_poi->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = wow_dbc_get_row(g_wow->dbc.area_poi->file, i);
+		struct wow_dbc_row row = wow_dbc_get_row(g_wow->dbc.area_poi->file, i);
 		uint32_t continent = wow_dbc_get_u32(&row, 28);
 		if (continent != mapid)
 			continue;

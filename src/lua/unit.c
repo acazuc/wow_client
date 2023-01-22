@@ -99,7 +99,7 @@ static int luaAPI_UnitRace(lua_State *L)
 		LOG_ERROR("invalid race: %d", (int)race);
 		return 0;
 	}
-	wow_dbc_row_t row;
+	struct wow_dbc_row row;
 	if (!dbc_get_row_indexed(g_wow->dbc.chr_races, &row, races[race].id))
 	{
 		LOG_ERROR("unknown race: %d", races[race].id);
@@ -205,7 +205,7 @@ static int luaAPI_UnitClass(lua_State *L)
 	}
 	uint8_t class = unit_get_class(unit);
 	uint8_t gender = unit_get_gender(unit);
-	wow_dbc_row_t class_row;
+	struct wow_dbc_row class_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.chr_classes, &class_row, class))
 	{
 		LOG_ERROR("unknown class: %d", class);
@@ -903,13 +903,13 @@ static int luaAPI_GetInventoryItemTexture(lua_State *L)
 	}
 	if (item == 0)
 		return 0;
-	wow_dbc_row_t item_row;
+	struct wow_dbc_row item_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.item, &item_row, item))
 	{
 		LOG_ERROR("unknown item: %" PRIu32, item);
 		return 0;
 	}
-	wow_dbc_row_t item_display_row;
+	struct wow_dbc_row item_display_row;
 	if (!dbc_get_row_indexed(g_wow->dbc.item_display_info, &item_display_row, wow_dbc_get_u32(&item_row, 4)))
 	{
 		LOG_ERROR("unkwown item display: %" PRIu32, item);

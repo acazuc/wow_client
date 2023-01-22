@@ -90,7 +90,7 @@ bool map_tile_load(struct map_tile *tile, struct wow_adt_file *file)
 		bool has_liquids = false;
 		for (uint32_t i = 0; i < sizeof(file->mcnk) / sizeof(*file->mcnk); ++i)
 		{
-			wow_mcnk_t *mcnk = &file->mcnk[i];
+			struct wow_mcnk *mcnk = &file->mcnk[i];
 			if (mcnk->header.size_mclq <= 8 || memcmp("QLCM", (uint8_t*)&mcnk->mclq.header.magic, 4))
 				continue;
 			has_liquids = true;

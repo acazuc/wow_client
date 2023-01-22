@@ -60,7 +60,7 @@ static void batch_init(struct gx_wmo_batch *batch, struct gx_wmo_group *parent, 
 	VEC3_MAX(batch->aabb.p1, p0, p1);
 	batch->indices_offset = moba->start_index;
 	batch->indices_nb = moba->count;
-	wow_momt_data_t *momt = JKS_ARRAY_GET(&parent->parent->momt, moba->material_id, wow_momt_data_t);
+	struct wow_momt_data *momt = JKS_ARRAY_GET(&parent->parent->momt, moba->material_id, struct wow_momt_data);
 	batch->shader = momt->shader;
 	enum world_rasterizer_state rasterizer_state;
 	enum world_blend_state blend_state;
@@ -351,7 +351,7 @@ bool gx_wmo_group_load(struct gx_wmo_group *group, struct wow_wmo_group_file *fi
 		return false;
 	}
 	init_data_init(group->init_data);
-	wow_mogp_t *mogp = &file->mogp;
+	struct wow_mogp *mogp = &file->mogp;
 #if 0
 	LOG_ERROR("%s flags: %x", group->filename, mogp->flags);
 #endif
@@ -622,8 +622,8 @@ next_batch:
 		if (instance->traversed_portals[portal / 8] & (1 << (portal % 8)))
 			continue;
 		instance->traversed_portals[portal / 8] |= 1 << (portal % 8);
-		wow_mopr_data_t *mopr = (wow_mopr_data_t*)jks_array_get(&group->parent->mopr, group->portal_start + i);
-		wow_mopt_data_t *mopt = (wow_mopt_data_t*)jks_array_get(&group->parent->mopt, mopr->portal_index);
+		struct wow_mopr_data *mopr = jks_array_get(&group->parent->mopr, group->portal_start + i);
+		struct wow_mopt_data *mopt = jks_array_get(&group->parent->mopt, mopr->portal_index);
 		struct vec4f tmp = {mopt->normal.x, mopt->normal.y, mopt->normal.z, mopt->distance};
 		if ((VEC4_DOT(tmp, rpos) < 0) != (mopr->side < 0))
 			continue;

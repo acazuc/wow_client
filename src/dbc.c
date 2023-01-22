@@ -8,7 +8,7 @@
 
 MEMORY_DECL(DBC);
 
-struct dbc *dbc_new(wow_dbc_file_t *file)
+struct dbc *dbc_new(struct wow_dbc_file *file)
 {
 	struct dbc *dbc = mem_malloc(MEM_DBC, sizeof(*dbc));
 	if (!dbc)
@@ -26,12 +26,12 @@ void dbc_delete(struct dbc *dbc)
 	mem_free(MEM_DBC, dbc);
 }
 
-wow_dbc_row_t dbc_get_row(const struct dbc *dbc, uint32_t row)
+struct wow_dbc_row dbc_get_row(const struct dbc *dbc, uint32_t row)
 {
 	return wow_dbc_get_row(dbc->file, row);
 }
 
-bool dbc_get_row_indexed_str(struct dbc *dbc, wow_dbc_row_t *row, const char *index)
+bool dbc_get_row_indexed_str(struct dbc *dbc, struct wow_dbc_row *row, const char *index)
 {
 	uint32_t *data = jks_hmap_get(&dbc->index, JKS_HMAP_KEY_STR((char*)index));
 	if (!data)
@@ -40,7 +40,7 @@ bool dbc_get_row_indexed_str(struct dbc *dbc, wow_dbc_row_t *row, const char *in
 	return true;
 }
 
-bool dbc_get_row_indexed(struct dbc *dbc, wow_dbc_row_t *row, uint32_t index)
+bool dbc_get_row_indexed(struct dbc *dbc, struct wow_dbc_row *row, uint32_t index)
 {
 	uint32_t *data = jks_hmap_get(&dbc->index, JKS_HMAP_KEY_U32(index));
 	if (!data)
@@ -62,7 +62,7 @@ bool dbc_set_index(struct dbc *dbc, uint32_t column_offset, bool string_index)
 	{
 		for (uint32_t i = 0; i < dbc->file->header.record_count; ++i)
 		{
-			wow_dbc_row_t row = wow_dbc_get_row(dbc->file, i);
+			struct wow_dbc_row row = wow_dbc_get_row(dbc->file, i);
 			if (!jks_hmap_set(&dbc->index, JKS_HMAP_KEY_STR((char*)wow_dbc_get_str(&row, column_offset)), &i))
 				return false;
 		}
@@ -89,7 +89,7 @@ void dbc_dump(const struct dbc *dbc)
 	printf("\n");
 	for (uint32_t i = 0; i < dbc->file->header.record_count; ++i)
 	{
-		wow_dbc_row_t row = dbc_get_row(dbc, i);
+		struct wow_dbc_row row = dbc_get_row(dbc, i);
 		for (uint32_t j = 0; j < dbc->file->header.field_count; ++j)
 			printf("%12" PRId32 " | ", wow_dbc_get_u32(&row, j * 4));
 		printf("\n");
@@ -114,7 +114,7 @@ void dbc_dump_def(const struct dbc *dbc, const wow_dbc_def_t *def)
 	printf("\n");
 	for (size_t row_id = 0; row_id < dbc->file->header.record_count; ++row_id)
 	{
-		wow_dbc_row_t row = dbc_get_row(dbc, row_id);
+		struct wow_dbc_row row = dbc_get_row(dbc, row_id);
 		size_t offset = 0;
 		for (size_t i = 0; def[i].type != WOW_DBC_TYPE_END; ++i)
 		{

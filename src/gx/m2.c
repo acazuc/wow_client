@@ -1820,7 +1820,7 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 			data.light_count.x = 4;
 		for (int i = 0; i < data.light_count.x; ++i)
 		{
-			wow_m2_light_t *light = &instance->parent->lights[i];
+			struct wow_m2_light *light = &instance->parent->lights[i];
 			/* Ambient */
 			struct vec3f ambient_rgb;
 			if (!m2_instance_get_track_value_vec3f(instance, &light->ambient_color, &ambient_rgb))
@@ -2091,7 +2091,7 @@ static void update_matrix(struct gx_m2_instance *instance, struct gx_m2_render_p
 		MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mvp, g_wow->cull_frame->view_p, instance->render_frames[g_wow->cull_frame_id].mv);
 		return;
 	}
-	wow_m2_camera_t *camera = &instance->parent->cameras[instance->camera];
+	struct wow_m2_camera *camera = &instance->parent->cameras[instance->camera];
 	float fov = camera->fov / sqrt(1 + pow(params->aspect, 2));
 	struct mat4f p;
 	MAT4_PERSPECTIVE(p, fov, params->aspect, camera->near_clip, camera->far_clip);
