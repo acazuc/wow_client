@@ -65,6 +65,7 @@ static void initialize(struct gx_taxi *taxi)
 		LOG_ERROR("failed to parse TaxiPathNode.dbc");
 		goto end;
 	}
+	uint32_t prev = (uint32_t)-1;
 	for (size_t i = 0; i < file->header.record_count; ++i)
 	{
 		struct wow_dbc_row row = wow_dbc_get_row(file, i);
@@ -80,7 +81,8 @@ static void initialize(struct gx_taxi *taxi)
 		vec->x = wow_dbc_get_flt(&row, 16);
 		vec->y = wow_dbc_get_flt(&row, 24);
 		vec->z = -wow_dbc_get_flt(&row, 20);
-		if (vertexes.size > 1)
+		uint32_t path = wow_dbc_get_flt(&row, 4);
+		if (path == prev)
 		{
 			uint16_t *indice = jks_array_grow(&indices, 2);
 			if (!indice)
@@ -92,6 +94,7 @@ static void initialize(struct gx_taxi *taxi)
 			indice[0] = vertexes.size - 2;
 			indice[1] = vertexes.size - 1;
 		}
+		prev = path;
 	}
 	wow_dbc_file_delete(file);
 	if (!vertexes.size)
