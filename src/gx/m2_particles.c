@@ -415,6 +415,8 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 			break;
 		}
 	}
+	if (emitter->emitter->flags & WOW_M2_PARTICLE_FLAG_BURST)
+		VEC3_MULV(velocity, velocity, emitter->emitter->burst_multiplier);
 	if (emitter->emitter->bone != (uint16_t)-1 && emitter->emitter->bone < particles->parent->parent->bones_nb)
 	{
 		struct mat4f *bone_mat = JKS_ARRAY_GET(&particles->parent->render_frames[g_wow->cull_frame_id].bone_mats, emitter->emitter->bone, struct mat4f);
