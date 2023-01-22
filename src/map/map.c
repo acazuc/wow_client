@@ -1428,7 +1428,6 @@ void map_render(struct map *map, struct gx_frame *gx_frame)
 	render_wmo_portals(gx_frame);
 	render_wmo_lights(gx_frame);
 	render_m2_lights(gx_frame);
-	render_taxi(map);
 #endif
 	if (g_wow->render_opt & RENDER_OPT_SSR)
 	{
@@ -1448,6 +1447,7 @@ void map_render(struct map *map, struct gx_frame *gx_frame)
 	render_wmo_collisions(gx_frame);
 	render_m2_collisions(gx_frame);
 	render_m2_bones(gx_frame);
+	render_taxi(map);
 #endif
 	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 	if (!post_process)
