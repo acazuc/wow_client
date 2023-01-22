@@ -541,24 +541,22 @@ void gx_wmo_group_render(struct gx_wmo_group *group, struct jks_array *instances
 	}
 }
 
-static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct jks_array *frustums, struct vec4f rpos)
+static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct jks_array *frustums, struct vec4f rpos, struct jks_array *transformed)
 {
 	bool ret = false;
 	struct frustum *new_frustum;
-	struct jks_array transformed; /* struct vec4f */
-	jks_array_init(&transformed, sizeof(struct vec4f), NULL, &jks_array_memory_fn_GX);
 	struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, group->index);
 	for (size_t i = 0; i < group->doodads.size; ++i)
 	{
 		uint16_t doodad = *JKS_ARRAY_GET(&group->doodads, i, uint16_t);
 		if (doodad < instance->doodad_start || doodad >= instance->doodad_end)
 			continue;
-		struct gx_m2_instance *m2_instance = *(struct gx_m2_instance**)jks_array_get(&instance->m2, doodad - instance->doodad_start);
+		struct gx_m2_instance *m2_instance = *JKS_ARRAY_GET(&instance->m2, doodad - instance->doodad_start, struct gx_m2_instance*);
 		if (m2_instance->in_render_list)
 			continue;
 		for (size_t j = 0; j < frustums->size; ++j)
 		{
-			if (!frustum_check_fast((struct frustum*)jks_array_get(frustums, j), &m2_instance->aabb))
+			if (!frustum_check_fast(JKS_ARRAY_GET(frustums, j, struct frustum), &m2_instance->aabb))
 				goto next_doodad;
 		}
 		gx_m2_instance_add_to_render(m2_instance, true);
@@ -575,7 +573,7 @@ next_doodad:
 		}
 		for (size_t i = 0; i < frustums->size; ++i)
 		{
-			if (!frustum_check_fast((struct frustum*)jks_array_get(frustums, i), &batch_instance->aabb))
+			if (!frustum_check_fast(JKS_ARRAY_GET(frustums, i, struct frustum), &batch_instance->aabb))
 				goto next_batch;
 		}
 		batch_instance->render_frames[g_wow->cull_frame_id].culled = false;
@@ -599,11 +597,11 @@ next_batch:
 		if ((VEC3_DOT(mopt->normal, rpos) > mopt->distance) != (mopr->side < 0))
 			continue;
 		uint32_t base = mopt->start_vertex;
-		if (!jks_array_resize(&transformed, mopt->count))
+		if (!jks_array_resize(transformed, mopt->count))
 			goto err;
-		for (uint32_t j = 0; j < transformed.size; ++j)
+		for (uint32_t j = 0; j < transformed->size; ++j)
 		{
-			struct vec4f *dst = JKS_ARRAY_GET(&transformed, j, struct vec4f);
+			struct vec4f *dst = JKS_ARRAY_GET(transformed, j, struct vec4f);
 			struct wow_vec3f *vec = (struct wow_vec3f*)jks_array_get(&group->parent->mopv, base + j);
 			struct vec4f tmp;
 			VEC4_SET(tmp, vec->x, vec->y, vec->z, 1);
@@ -611,17 +609,17 @@ next_batch:
 		}
 		for (size_t j = 0; j < frustums->size; ++j)
 		{
-			if (!frustum_check_points((struct frustum*)jks_array_get(frustums, j), (struct vec4f*)transformed.data, transformed.size))
+			if (!frustum_check_points(JKS_ARRAY_GET(frustums, j, struct frustum), (struct vec4f*)transformed->data, transformed->size))
 				goto next_portal;
 		}
 		new_frustum = jks_array_grow(frustums, 1);
 		if (!new_frustum)
 			goto err;
 		frustum_init(new_frustum);
-		for (uint32_t j = 0; j < transformed.size; ++j)
+		for (uint32_t j = 0; j < transformed->size; ++j)
 		{
-			struct vec4f *t1 = JKS_ARRAY_GET(&transformed, j, struct vec4f);
-			struct vec4f *t2 = JKS_ARRAY_GET(&transformed, (j + 1) % transformed.size, struct vec4f);
+			struct vec4f *t1 = JKS_ARRAY_GET(transformed, j, struct vec4f);
+			struct vec4f *t2 = JKS_ARRAY_GET(transformed, (j + 1) % transformed->size, struct vec4f);
 			struct vec3f p1 = {t1->x, t1->y, t1->z};
 			struct vec3f p2 = {t2->x, t2->y, t2->z};
 			if (mopr->side < 0)
@@ -635,15 +633,14 @@ next_batch:
 					goto err;
 			}
 		}
-		cull_portal_rec(*(struct gx_wmo_group**)jks_array_get(&group->parent->groups, mopr->group_index), instance, frustums, rpos);
+		cull_portal_rec(*(struct gx_wmo_group**)jks_array_get(&group->parent->groups, mopr->group_index), instance, frustums, rpos, transformed);
 		if (!jks_array_resize(frustums, frustums->size - 1))
 			goto err;
-		instance->traversed_portals[portal / 8] &= ~(1 << (portal % 8));
 next_portal:;
+		instance->traversed_portals[portal / 8] &= ~(1 << (portal % 8));
 	}
 	ret = true;
 err:
-	jks_array_destroy(&transformed);
 	return ret;
 }
 
@@ -662,8 +659,11 @@ void gx_wmo_group_cull_portal(struct gx_wmo_group *group, struct gx_wmo_instance
 		jks_array_destroy(&frustums);
 		return;
 	}
-	if (!cull_portal_rec(group, instance, &frustums, rpos))
+	struct jks_array transformed; /* struct vec4f */
+	jks_array_init(&transformed, sizeof(struct vec4f), NULL, &jks_array_memory_fn_GX);
+	if (!cull_portal_rec(group, instance, &frustums, rpos, &transformed))
 		LOG_INFO("cull failed");
+	jks_array_destroy(&transformed);
 	jks_array_destroy(&frustums);
 }
 

@@ -674,11 +674,12 @@ void gx_wmo_instance_cull_portal(struct gx_wmo_instance *instance)
 	MAT4_VEC4_MUL(rpos, instance->m_inv, tmp);
 	for (size_t i = 0; i < wmo->groups.size; ++i)
 	{
+		struct gx_wmo_group *group = *JKS_ARRAY_GET(&wmo->groups, i, struct gx_wmo_group*);
 		struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, i);
-		if (group_instance->render_frames[g_wow->cull_frame_id].culled || !group_instance->render_frames[g_wow->cull_frame_id].cull_source)
+		if ((group->flags & WOW_MOGP_FLAGS_INDOOR) && (group_instance->render_frames[g_wow->cull_frame_id].culled || !group_instance->render_frames[g_wow->cull_frame_id].cull_source))
 			continue;
-		group_instance->render_frames[g_wow->cull_frame_id].cull_source = false;
-		gx_wmo_group_cull_portal(*(struct gx_wmo_group**)jks_array_get(&wmo->groups, i), instance, rpos);
+		group_instance->render_frames[g_wow->cull_frame_id].cull_source = !(group->flags & WOW_MOGP_FLAGS_INDOOR);
+		gx_wmo_group_cull_portal(group, instance, rpos);
 	}
 }
 
