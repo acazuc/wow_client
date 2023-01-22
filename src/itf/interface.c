@@ -226,7 +226,7 @@ struct interface *interface_new(void)
 	}
 	lua_checkstack(interface->L, 1024 * 16);
 	luaL_openlibs(interface->L);
-	interface->is_gluescreen = true;
+	interface->is_gluescreen = false;
 	lua_pushnumber(interface->L, M_PI);
 	lua_setglobal(interface->L, "PI");
 	for (char c = 'A'; c <= 'Z'; ++c)

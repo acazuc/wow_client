@@ -742,14 +742,14 @@ static void loop(void)
 		}
 		if (g_wow->map && culled_async)
 			loader_start_cull(g_wow->loader);
-		if (g_wow->map)
+		if (g_wow->map && (!g_wow->interface || !g_wow->interface->is_gluescreen))
 			map_render(g_wow->map, g_wow->draw_frame);
 		gfx_bind_render_target(g_wow->device, NULL);
 		gfx_set_viewport(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 		gfx_bind_pipeline_state(g_wow->device, &pipeline_state);
 		gfx_clear_depth_stencil(g_wow->device, NULL, 1, 0);
-		if (!g_wow->map)
-			gfx_clear_color(g_wow->device, NULL, GFX_RENDERTARGET_ATTACHMENT_COLOR0, (struct vec4f){.5, .7, 1, 1});
+		if (!g_wow->map || (g_wow->interface && g_wow->interface->is_gluescreen))
+			gfx_clear_color(g_wow->device, NULL, GFX_RENDERTARGET_ATTACHMENT_COLOR0, (struct vec4f){0, 0, 0, 1});
 		if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 			interface_render(g_wow->interface);
 		if (g_wow->wow_opt & WOW_OPT_RENDER_GUI)
@@ -1745,7 +1745,7 @@ int main(int ac, char **av)
 	g_wow->render_opt |= RENDER_OPT_FOG;
 	g_wow->render_opt |= RENDER_OPT_WMO_LIQUIDS;
 	g_wow->render_opt |= RENDER_OPT_SKYBOX;
-#if 1
+#if 0
 	g_wow->render_opt |= RENDER_OPT_M2_PARTICLES;
 #endif
 #if 0

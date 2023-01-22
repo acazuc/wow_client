@@ -136,7 +136,7 @@ struct snd *snd_new(void)
 		LOG_ERROR("failed to open stream: %s", Pa_GetErrorText(error));
 		return NULL;
 	}
-	//error = Pa_StartStream(snd->stream);
+	error = Pa_StartStream(snd->stream);
 	if (error)
 	{
 		LOG_ERROR("failed to start stream: %s", Pa_GetErrorText(error));
