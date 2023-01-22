@@ -434,33 +434,9 @@ bool gx_wmo_group_load(struct gx_wmo_group *group, struct wow_wmo_group_file *fi
 	for (size_t i = 0; i < group->parent->instances.size; ++i)
 	{
 		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&group->parent->instances, i, struct gx_wmo_instance*);
-		gx_wmo_group_set_m2_ambient(group, instance);
 		struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, group->index);
-		gx_wmo_group_instance_init(group_instance);
-		if (!jks_array_resize(&group_instance->batches, group->batches.size))
-		{
-			LOG_ERROR("failed to resize wmo group instance batches array");
-			return true;
-		}
-		for (size_t k = 0; k < group_instance->batches.size; ++k)
-			gx_wmo_batch_instance_init(jks_array_get(&group_instance->batches, k));
-		group_instance->aabb = group->aabb;
-		aabb_transform(&group_instance->aabb, &instance->m);
-#ifdef WITH_DEBUG_RENDERING
-		group_instance->gx_aabb.aabb = group_instance->aabb;
-		group_instance->gx_aabb.flags |= GX_AABB_DIRTY;
-#endif
-		for (size_t j = 0; j < group_instance->batches.size; ++j)
-		{
-			struct gx_wmo_batch_instance *batch_instance = jks_array_get(&group_instance->batches, j);
-			struct gx_wmo_batch *batch = jks_array_get(&group->batches, j);
-			batch_instance->aabb = batch->aabb;
-			aabb_transform(&batch_instance->aabb, &instance->m);
-#ifdef WITH_DEBUG_RENDERING
-			batch_instance->gx_aabb.aabb = batch_instance->aabb;
-			batch_instance->gx_aabb.flags |= GX_AABB_DIRTY;
-#endif
-		}
+		if (!gx_wmo_group_instance_on_load(instance, group, group_instance))
+			LOG_ERROR("failed to load group instance");
 	}
 	if (file->mobn.nodes_nb)
 	{
@@ -597,10 +573,6 @@ next_doodad:
 			if (!batch_instance->render_frames[g_wow->cull_frame_id].culled)
 				continue;
 		}
-		else if (group_instance->render_frames[g_wow->cull_frame_id].culled)
-		{
-			batch_instance->render_frames[g_wow->cull_frame_id].culled = true;
-		}
 		for (size_t i = 0; i < frustums->size; ++i)
 		{
 			if (!frustum_check_fast((struct frustum*)jks_array_get(frustums, i), &batch_instance->aabb))
@@ -624,8 +596,7 @@ next_batch:
 		instance->traversed_portals[portal / 8] |= 1 << (portal % 8);
 		struct wow_mopr_data *mopr = jks_array_get(&group->parent->mopr, group->portal_start + i);
 		struct wow_mopt_data *mopt = jks_array_get(&group->parent->mopt, mopr->portal_index);
-		struct vec4f tmp = {mopt->normal.x, mopt->normal.y, mopt->normal.z, mopt->distance};
-		if ((VEC4_DOT(tmp, rpos) < 0) != (mopr->side < 0))
+		if ((VEC3_DOT(mopt->normal, rpos) > mopt->distance) != (mopr->side < 0))
 			continue;
 		uint32_t base = mopt->start_vertex;
 		if (!jks_array_resize(&transformed, mopt->count))
@@ -634,6 +605,7 @@ next_batch:
 		{
 			struct vec4f *dst = JKS_ARRAY_GET(&transformed, j, struct vec4f);
 			struct wow_vec3f *vec = (struct wow_vec3f*)jks_array_get(&group->parent->mopv, base + j);
+			struct vec4f tmp;
 			VEC4_SET(tmp, vec->x, vec->y, vec->z, 1);
 			MAT4_VEC4_MUL(*dst, instance->m, tmp);
 		}
@@ -666,8 +638,8 @@ next_batch:
 		cull_portal_rec(*(struct gx_wmo_group**)jks_array_get(&group->parent->groups, mopr->group_index), instance, frustums, rpos);
 		if (!jks_array_resize(frustums, frustums->size - 1))
 			goto err;
-next_portal:
-		continue;
+		instance->traversed_portals[portal / 8] &= ~(1 << (portal % 8));
+next_portal:;
 	}
 	ret = true;
 err:

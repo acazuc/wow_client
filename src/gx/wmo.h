@@ -85,10 +85,10 @@ struct gx_wmo_batch_instance
 	struct aabb aabb;
 };
 
-void gx_wmo_batch_instance_init(struct gx_wmo_batch_instance *wmo);
-void gx_wmo_batch_instance_destroy(struct gx_wmo_batch_instance *wmo);
+void gx_wmo_batch_instance_init(struct gx_wmo_batch_instance *instance);
+void gx_wmo_batch_instance_destroy(struct gx_wmo_batch_instance *instance);
 #ifdef WITH_DEBUG_RENDERING
-void gx_wmo_batch_instance_render_aabb(struct gx_wmo_batch_instance *wmo, const struct mat4f *mvp);
+void gx_wmo_batch_instance_render_aabb(struct gx_wmo_batch_instance *instance, const struct mat4f *mvp);
 #endif
 
 struct gx_wmo_group_instance_frame
@@ -107,8 +107,9 @@ struct gx_wmo_group_instance
 	struct aabb aabb;
 };
 
-void gx_wmo_group_instance_init(struct gx_wmo_group_instance *wmo);
-void gx_wmo_group_instance_destroy(struct gx_wmo_group_instance *wmo);
+void gx_wmo_group_instance_init(struct gx_wmo_group_instance *instance);
+void gx_wmo_group_instance_destroy(struct gx_wmo_group_instance *instance);
+bool gx_wmo_group_instance_on_load(struct gx_wmo_instance *instance, struct gx_wmo_group *group, struct gx_wmo_group_instance *group_instance);
 
 struct gx_wmo_instance_frame
 {
@@ -143,6 +144,7 @@ struct gx_wmo_instance
 struct gx_wmo_instance *gx_wmo_instance_new(const char *filename);
 void gx_wmo_instance_delete(struct gx_wmo_instance *instance);
 void gx_wmo_instance_gc(struct gx_wmo_instance *instance);
+void gx_wmo_instance_on_load(struct gx_wmo_instance *instance);
 void gx_wmo_instance_load_doodad_set(struct gx_wmo_instance *instance);
 void gx_wmo_instance_cull_portal(struct gx_wmo_instance *instance);
 void gx_wmo_instance_update(struct gx_wmo_instance *instance, bool bypass_frustum);

@@ -139,6 +139,9 @@ static bool ctr(struct object *object, uint64_t guid)
 #if 0
 	VEC3_SET(WORLD_OBJECT->position, -10775.298828, 40.753269, -1721.312866);
 #endif
+#if 0 /* netherstorm collectors */
+	VEC3_SET(WORLD_OBJECT->position, 2577.359863, 297.467316, -3346.378662);
+#endif
 	return true;
 }
 

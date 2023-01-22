@@ -157,7 +157,10 @@ bool map_tile_load_childs(struct map_tile *tile, struct wow_adt_file *file)
 			gx_wmo_instance_set_mat(handle->instance, &mat1);
 			handle->instance->pos = pos;
 			handle->instance->doodad_set = modf->doodad_set;
-			gx_wmo_ask_load(handle->instance->parent);
+			if (handle->instance->parent->loaded)
+				gx_wmo_instance_on_load(handle->instance);
+			else
+				gx_wmo_ask_load(handle->instance->parent);
 			cache_unlock_wmo(g_wow->cache);
 		}
 		else

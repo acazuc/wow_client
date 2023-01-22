@@ -212,16 +212,7 @@ bool gx_wmo_load(struct gx_wmo *wmo, struct wow_wmo_file *file)
 		loader_push(g_wow->loader, ASYNC_TASK_WMO_GROUP_LOAD, group);
 	}
 	for (size_t i = 0; i < wmo->instances.size; ++i)
-	{
-		struct gx_wmo_instance *instance = *(struct gx_wmo_instance**)jks_array_get(&wmo->instances, i);
-		gx_wmo_instance_load_doodad_set(instance);
-		instance->traversed_portals = mem_zalloc(MEM_GX, (wmo->mopr.size + 7) / 8);
-		if (!instance->traversed_portals)
-			LOG_ERROR("failed to allocate traversed portals array");
-		if (!jks_array_resize(&instance->groups, wmo->groups.size))
-			LOG_ERROR("failed to allocate groups array");
-		gx_wmo_instance_update_aabb(instance);
-	}
+		gx_wmo_instance_on_load(*(struct gx_wmo_instance**)jks_array_get(&wmo->instances, i));
 #ifdef WITH_DEBUG_RENDERING
 	if (!gx_wmo_portals_load(&wmo->gx_portals, (struct wow_mopt_data*)wmo->mopt.data, wmo->mopt.size, (struct wow_vec3f*)wmo->mopv.data, wmo->mopv.size))
 		return false;
@@ -437,6 +428,37 @@ void gx_wmo_group_instance_destroy(struct gx_wmo_group_instance *instance)
 #endif
 }
 
+bool gx_wmo_group_instance_on_load(struct gx_wmo_instance *instance, struct gx_wmo_group *group, struct gx_wmo_group_instance *group_instance)
+{
+	gx_wmo_group_set_m2_ambient(group, instance);
+	gx_wmo_group_instance_init(group_instance);
+	if (!jks_array_resize(&group_instance->batches, group->batches.size))
+	{
+		LOG_ERROR("failed to resize wmo group instance batches array");
+		return true;
+	}
+	for (size_t k = 0; k < group_instance->batches.size; ++k)
+		gx_wmo_batch_instance_init(jks_array_get(&group_instance->batches, k));
+	group_instance->aabb = group->aabb;
+	aabb_transform(&group_instance->aabb, &instance->m);
+#ifdef WITH_DEBUG_RENDERING
+	group_instance->gx_aabb.aabb = group_instance->aabb;
+	group_instance->gx_aabb.flags |= GX_AABB_DIRTY;
+#endif
+	for (size_t j = 0; j < group_instance->batches.size; ++j)
+	{
+		struct gx_wmo_batch_instance *batch_instance = jks_array_get(&group_instance->batches, j);
+		struct gx_wmo_batch *batch = jks_array_get(&group->batches, j);
+		batch_instance->aabb = batch->aabb;
+		aabb_transform(&batch_instance->aabb, &instance->m);
+#ifdef WITH_DEBUG_RENDERING
+		batch_instance->gx_aabb.aabb = batch_instance->aabb;
+		batch_instance->gx_aabb.flags |= GX_AABB_DIRTY;
+#endif
+	}
+	return true;
+}
+
 #ifdef WITH_DEBUG_RENDERING
 static void gx_wmo_group_instance_render_aabb(struct gx_wmo_group *group, struct gx_wmo_group_instance *instance, const struct mat4f *mvp)
 {
@@ -492,35 +514,6 @@ struct gx_wmo_instance *gx_wmo_instance_new(const char *filename)
 		cache_unlock_wmo(g_wow->cache);
 		goto err;
 	}
-	if (wmo->parent->loaded)
-	{
-		if (!jks_array_resize(&wmo->groups, wmo->parent->groups.size))
-		{
-			cache_unlock_wmo(g_wow->cache);
-			goto err;
-		}
-		for (size_t i = 0; i < wmo->parent->groups.size; ++i)
-		{
-			struct gx_wmo_group_instance *group = jks_array_get(&wmo->groups, i);
-			gx_wmo_group_instance_init(group);
-			if (!jks_array_resize(&group->batches, (*(struct gx_wmo_group**)jks_array_get(&wmo->parent->groups, i))->batches.size))
-			{
-				cache_unlock_wmo(g_wow->cache);
-				goto err;
-			}
-			for (size_t j = 0; j < group->batches.size; ++j)
-			{
-				struct gx_wmo_batch_instance *batch = jks_array_get(&group->batches, j);
-				gx_wmo_batch_instance_init(batch);
-			}
-		}
-		wmo->traversed_portals = mem_zalloc(MEM_GX, (wmo->parent->mopr.size + 7) / 8);
-		if (!wmo->traversed_portals)
-		{
-			cache_unlock_wmo(g_wow->cache);
-			goto err;
-		}
-	}
 	cache_unlock_wmo(g_wow->cache);
 	return wmo;
 
@@ -569,6 +562,25 @@ void gx_wmo_instance_gc(struct gx_wmo_instance *instance)
 	render_gc_wmo(instance);
 }
 
+void gx_wmo_instance_on_load(struct gx_wmo_instance *instance)
+{
+	gx_wmo_instance_load_doodad_set(instance);
+	instance->traversed_portals = mem_zalloc(MEM_GX, (instance->parent->mopr.size + 7) / 8);
+	if (!instance->traversed_portals)
+		LOG_ERROR("failed to allocate traversed portals array");
+	if (!jks_array_resize(&instance->groups, instance->parent->groups.size))
+		LOG_ERROR("failed to allocate groups array");
+	for (size_t i = 0; i < instance->parent->groups.size; ++i)
+	{
+		struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, i);
+		struct gx_wmo_group *group = *(struct gx_wmo_group**)jks_array_get(&instance->parent->groups, i);
+		gx_wmo_group_instance_init(group_instance);
+		if (group->loaded)
+			gx_wmo_group_instance_on_load(instance, group, group_instance);
+	}
+	gx_wmo_instance_update_aabb(instance);
+}
+
 void gx_wmo_instance_load_doodad_set(struct gx_wmo_instance *instance)
 {
 	if (instance->doodad_set >= instance->parent->mods.size)
@@ -603,7 +615,10 @@ void gx_wmo_instance_load_doodad_set(struct gx_wmo_instance *instance)
 			struct vec4f tmp3;
 			MAT4_VEC4_MUL(tmp3, instance->m, tmp1);
 			VEC3_CPY(m2->pos, tmp3);
-			gx_m2_ask_load(m2->parent);
+			if (m2->parent->loaded)
+				gx_m2_instance_on_parent_loaded(m2);
+			else
+				gx_m2_ask_load(m2->parent);
 			cache_unlock_m2(g_wow->cache);
 		}
 		if (!jks_array_push_back(&instance->m2, &m2))

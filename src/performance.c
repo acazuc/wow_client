@@ -50,6 +50,7 @@ static const char *strings[PERFORMANCE_LAST] =
 	"WMO_COLLISIONS_RENDER",
 	"COLLISIONS",
 	"COLLISIONS_RENDER",
+	"TAXI_RENDER",
 };
 #endif
 
