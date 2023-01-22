@@ -174,20 +174,6 @@ static struct vec3f get_gravity(struct gx_m2_particles *particles, struct wow_m2
 	return gravity;
 }
 
-static struct vec3f update_acceleration(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct m2_particle *particle)
-{
-	struct vec3f gravity = get_gravity(particles, emitter);
-	struct vec3f abs_vel;
-	struct vec3f force;
-	struct vec3f ret;
-	float force_factor = .5 * emitter->drag;
-	VEC3_FN1(abs_vel, particle->velocity, fabs);
-	VEC3_MUL(force, abs_vel, particle->velocity);
-	VEC3_MULV(force, force, force_factor);
-	VEC3_SUB(ret, gravity, force);
-	return ret;
-}
-
 static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct m2_particle *particle)
 {
 	struct vec3f tmp;
@@ -200,6 +186,8 @@ static void update_position(struct gx_m2_particles *particles, struct wow_m2_par
 	VEC3_ADD(particle->position, particle->position, tmp);
 	VEC3_MULV(tmp, gravity, dt);
 	VEC3_ADD(particle->velocity, particle->velocity, tmp);
+	float drag = 1 - (emitter->drag * dt);
+	VEC3_MULV(particle->velocity, particle->velocity, drag);
 	particle->position.w = 1;
 }
 
