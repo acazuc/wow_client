@@ -632,7 +632,7 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (1 || aabb_intersect_sphere(&batch->aabb, params->center, params->radius))
+				if (aabb_intersect_aabb(&batch->aabb, &params->aabb))
 					add_chunk(tile, batch, params, triangles);
 			}
 		}
@@ -644,7 +644,7 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (batch->doodads_nb && aabb_intersect_sphere(&batch->objects_aabb, params->center, params->radius))
+				if (batch->doodads_nb && aabb_intersect_aabb(&batch->objects_aabb, &params->aabb))
 					add_objects(tile, batch, params, state, triangles);
 			}
 		}
@@ -656,7 +656,7 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (batch->wmos_nb && aabb_intersect_sphere(&batch->wmos_aabb, params->center, params->radius))
+				if (batch->wmos_nb && aabb_intersect_aabb(&batch->wmos_aabb, &params->aabb))
 					add_wmos(tile, batch, params, state, triangles);
 			}
 		}
