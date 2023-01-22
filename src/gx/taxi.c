@@ -81,7 +81,7 @@ static void initialize(struct gx_taxi *taxi)
 		vec->x = wow_dbc_get_flt(&row, 16);
 		vec->y = wow_dbc_get_flt(&row, 24);
 		vec->z = -wow_dbc_get_flt(&row, 20);
-		uint32_t path = wow_dbc_get_flt(&row, 4);
+		uint32_t path = wow_dbc_get_u32(&row, 4);
 		if (path == prev)
 		{
 			uint16_t *indice = jks_array_grow(&indices, 2);
