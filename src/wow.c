@@ -1333,9 +1333,10 @@ do \
 			return;
 		case GFX_KEY_Y:
 			RENDER_OPT_FLIP(RENDER_OPT_WMO_LIGHTS);
+			RENDER_OPT_FLIP(RENDER_OPT_M2_LIGHTS);
 			return;
 		case GFX_KEY_T:
-			RENDER_OPT_FLIP(RENDER_OPT_M2_LIGHTS);
+			RENDER_OPT_FLIP(RENDER_OPT_TAXI);
 			return;
 		case GFX_KEY_R:
 			RENDER_OPT_FLIP(RENDER_OPT_ADT_AABB);
@@ -1746,7 +1747,6 @@ int main(int ac, char **av)
 	g_wow->render_opt |= RENDER_OPT_FOG;
 	g_wow->render_opt |= RENDER_OPT_WMO_LIQUIDS;
 	g_wow->render_opt |= RENDER_OPT_SKYBOX;
-	g_wow->render_opt |= RENDER_OPT_TAXI;
 #if 0
 	g_wow->render_opt |= RENDER_OPT_M2_PARTICLES;
 #endif
