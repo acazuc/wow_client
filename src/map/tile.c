@@ -473,7 +473,6 @@ static void bsp_add_triangles(struct gx_wmo_instance *wmo, struct gx_wmo_group *
 		}
 		if (!jks_array_push_back(triangles_tracker, &indice))
 			LOG_ERROR("failed to add triangle to triangles tracker");
-		/* XXX somehow test if triangle has already been added */
 		indice *= 3;
 		add_wmo_point(wmo, group, &tmp->points[0], indice + 0);
 		add_wmo_point(wmo, group, &tmp->points[1], indice + 1);
