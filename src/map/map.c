@@ -8,6 +8,7 @@
 #include "gx/mcnk.h"
 #include "gx/mclq.h"
 #include "gx/text.h"
+#include "gx/taxi.h"
 #include "gx/wmo.h"
 #include "gx/wdl.h"
 #include "gx/m2.h"
@@ -126,6 +127,9 @@ void map_delete(struct map *map)
 	gx_skybox_delete(map->gx_skybox);
 	gx_wdl_delete(map->gx_wdl);
 	gfx_delete_texture(g_wow->device, &map->minimap.texture);
+#ifdef WITH_DEBUG_RENDERING
+	gx_taxi_delete(map->gx_taxi);
+#endif
 	pthread_mutex_destroy(&map->minimap.mutex);
 	mem_free(MEM_GX, map);
 }
@@ -854,6 +858,14 @@ map_found:
 		LOG_ERROR("failed to create wdl renderer");
 		return false;
 	}
+#ifdef WITH_DEBUG_RENDERING
+	map->gx_taxi = gx_taxi_new(id);
+	if (!map->gx_taxi)
+	{
+		LOG_ERROR("failed to create taxi renderer");
+		return false;
+	}
+#endif
 	return true;
 }
 
@@ -1097,6 +1109,16 @@ static void render_collisions(struct gx_frame *gx_frame)
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->collisions_triangles_pipeline_state);
 	gx_collisions_render(&gx_frame->gx_collisions, true);
 	PERFORMANCE_END(COLLISIONS_RENDER);
+}
+
+static void render_taxi(struct map *map)
+{
+	if (!(g_wow->render_opt & RENDER_OPT_TAXI))
+		return;
+	PERFORMANCE_BEGIN(TAXI_RENDER);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
+	gx_taxi_render(map->gx_taxi);
+	PERFORMANCE_END(TAXI_RENDER);
 }
 #endif
 
@@ -1406,6 +1428,7 @@ void map_render(struct map *map, struct gx_frame *gx_frame)
 	render_wmo_portals(gx_frame);
 	render_wmo_lights(gx_frame);
 	render_m2_lights(gx_frame);
+	render_taxi(map);
 #endif
 	if (g_wow->render_opt & RENDER_OPT_SSR)
 	{

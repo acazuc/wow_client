@@ -86,10 +86,11 @@ enum render_opt
 	RENDER_OPT_WMO_LIGHTS     = (1 << 18),
 	RENDER_OPT_WMO_PORTALS    = (1 << 19),
 	RENDER_OPT_WMO_LIQUIDS    = (1 << 20),
-	RENDER_OPT_SSR            = (1 << 21),
-	RENDER_OPT_SKYBOX         = (1 << 22),
-	RENDER_OPT_COLLISIONS     = (1 << 23),
-	RENDER_OPT_WMO_COLLISIONS = (1 << 24),
+	RENDER_OPT_WMO_COLLISIONS = (1 << 21),
+	RENDER_OPT_SSR            = (1 << 22),
+	RENDER_OPT_SKYBOX         = (1 << 23),
+	RENDER_OPT_COLLISIONS     = (1 << 24),
+	RENDER_OPT_TAXI           = (1 << 25),
 };
 
 struct dbc_list

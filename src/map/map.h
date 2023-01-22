@@ -15,6 +15,7 @@
 struct taxi_node;
 struct gx_skybox;
 struct gx_frame;
+struct gx_taxi;
 struct gx_wdl;
 
 struct taxi_link
@@ -79,6 +80,9 @@ struct map
 	uint16_t tiles[64 * 64]; /* List of loaded adts */
 	uint32_t tiles_nb;
 	struct minimap minimap;
+#ifdef WITH_DEBUG_RENDERING
+	struct gx_taxi *gx_taxi;
+#endif
 	struct gx_skybox *gx_skybox;
 	struct gx_wdl *gx_wdl;
 	char *name;

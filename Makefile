@@ -359,6 +359,7 @@ SRCS_NAME+= gx/aabb.c \
             gx/m2_collisions.c \
             gx/collisions.c \
             gx/wmo_collisions.c \
+            gx/taxi.c \
 
 endif
 
