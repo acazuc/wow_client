@@ -287,8 +287,8 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		scale *= particles->parent->scale;
 		struct vec4f right;
 		struct vec4f bot;
-		VEC3_MULV(right, g_wow->draw_frame->view_right, scale);
-		VEC3_MULV(bot, g_wow->draw_frame->view_bottom, scale);
+		VEC3_MULV(right, g_wow->cull_frame->view_right, scale);
+		VEC3_MULV(bot, g_wow->cull_frame->view_bottom, scale);
 		if (emitter->emitter->spin != 0)
 		{
 			float t = emitter->emitter->spin * lifetime + particle->spin_random + M_PI * .25;
