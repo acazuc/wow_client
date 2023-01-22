@@ -19,6 +19,7 @@ struct m2_particle
 {
 	uint64_t created;
 	uint64_t lifespan;
+	float spin_random;
 	struct vec4f position;
 	struct vec4f velocity;
 };

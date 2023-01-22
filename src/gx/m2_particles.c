@@ -288,13 +288,14 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		VEC4_CPY(vertexes[2].color, vertexes[0].color);
 		VEC4_CPY(vertexes[3].color, vertexes[0].color);
 		scale *= scale1 + (scale2 - scale1) * a;
+		scale *= particles->parent->scale;
 		struct vec4f right;
 		struct vec4f bot;
 		VEC3_MULV(right, g_wow->draw_frame->view_right, scale);
 		VEC3_MULV(bot, g_wow->draw_frame->view_bottom, scale);
 		if (emitter->emitter->spin != 0)
 		{
-			float t = emitter->emitter->spin * lifetime + M_PI * .25;
+			float t = emitter->emitter->spin * lifetime + particle->spin_random + M_PI * .25;
 			float c = cosf(t) * 1.4142;
 			float s = sinf(t) * 1.4142;
 			struct vec3f cx;
@@ -350,6 +351,7 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 		LOG_ERROR("failed to grow vertexes array");
 		return;
 	}
+	particle->spin_random = rand() / (float)RAND_MAX * M_PI * 2;
 	float speed;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->emission_speed, &speed))
 		speed = 0;
