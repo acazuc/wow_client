@@ -281,39 +281,39 @@ static void add_point(struct map_tile *tile, struct gx_mcnk_batch *batch, struct
 static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const struct collision_params *params, struct jks_array *triangles)
 {
 #if 1
-	float xmin = tile->gx_mcnk->pos.x + (-1 - (ssize_t)batch->x + 0) * CHUNK_WIDTH;
-	size_t z_end = params->aabb.p0.x <= xmin ? 0 : floorf((params->aabb.p0.x - xmin) / (CHUNK_WIDTH / 8));
+	float xmin = tile->gx_mcnk->pos.x - (1 + (ssize_t)batch->x) * CHUNK_WIDTH;
+	ssize_t z_end = floorf((params->aabb.p0.x - xmin) / (CHUNK_WIDTH / 8));
+	z_end = 8 - z_end;
 	if (z_end > 8)
 		z_end = 8;
-	z_end = 8 - z_end;
-	if (z_end < 8)
+	else if (z_end < 8)
 		z_end++;
-	size_t z_start = params->aabb.p1.x <= xmin ? 0 : ceilf((params->aabb.p1.x - xmin) / (CHUNK_WIDTH / 8));
-	if (z_start > 8)
-		z_start = 8;
+	ssize_t z_start = ceilf((params->aabb.p1.x - xmin) / (CHUNK_WIDTH / 8));
 	z_start = 8 - z_start;
-	if (z_start > 0)
+	if (z_start < 0)
+		z_start = 0;
+	else if (z_start > 0)
 		z_start--;
 	if (z_start >= z_end)
 		return;
-	float zmin = tile->gx_mcnk->pos.z + (batch->z) * CHUNK_WIDTH;
-	size_t x_end = params->aabb.p1.z <= zmin ? 0 : ceilf((params->aabb.p1.z - zmin) / (CHUNK_WIDTH / 8));
+	float zmin = tile->gx_mcnk->pos.z + batch->z * CHUNK_WIDTH;
+	ssize_t x_end = ceilf((params->aabb.p1.z - zmin) / (CHUNK_WIDTH / 8));
 	if (x_end > 8)
 		x_end = 8;
 	else if (x_end < 8)
 		x_end++;
-	size_t x_start = params->aabb.p0.z <= zmin ? 0 : floorf((params->aabb.p0.z - zmin) / (CHUNK_WIDTH / 8));
-	if (x_start > 8)
-		x_start = 8;
-	if (x_start > 0)
+	ssize_t x_start = floorf((params->aabb.p0.z - zmin) / (CHUNK_WIDTH / 8));
+	if (x_start < 0)
+		x_start = 0;
+	else if (x_start > 0)
 		x_start--;
 	if (x_start >= x_end)
 		return;
 #else
-	size_t x_start = 0;
-	size_t x_end = 8;
-	size_t z_start = 0;
-	size_t z_end = 8;
+	ssize_t x_start = 0;
+	ssize_t x_end = 8;
+	ssize_t z_start = 0;
+	ssize_t z_end = 8;
 #endif
 	size_t triangles_nb = triangles->size;
 	struct collision_triangle *tmp = jks_array_grow(triangles, (z_end - z_start) * (x_end - x_start) * 4);
@@ -323,9 +323,9 @@ static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const 
 		return;
 	}
 	size_t n = 0;
-	for (size_t z = z_start; z < z_end; ++z)
+	for (ssize_t z = z_start; z < z_end; ++z)
 	{
-		for (size_t x = x_start; x < x_end; ++x)
+		for (ssize_t x = x_start; x < x_end; ++x)
 		{
 			if (batch->holes & (1 << (z / 2 * 4 + x / 2)))
 				continue;
@@ -591,53 +591,46 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 {
 	if (!tile->gx_mcnk)
 		return;
-#if 0
-	//LOG_INFO("x: %f, z: %f", params->center.x, params->center.z);
-	float xmin = tile->pos.x - CHUNK_WIDTH;//tile->gx_mcnk->pos.x + (-1 - (ssize_t)batch->x + 0) * CHUNK_WIDTH
-	size_t z_end = params->aabb.p0.x <= xmin ? 0 : floorf((params->aabb.p0.x - xmin) / CHUNK_WIDTH);
-	//LOG_INFO("z_end: %u", z_end);
+#if 1
+	float xmin = tile->pos.x - CHUNK_WIDTH;
+	ssize_t z_end = floorf((params->aabb.p0.x - xmin) / CHUNK_WIDTH);
+	z_end = 16 - z_end;
 	if (z_end > 16)
 		z_end = 16;
-	z_end = 16 - z_end;
-	if (z_end < 16)
+	else if (z_end < 16)
 		z_end++;
-	size_t z_start = params->aabb.p1.x <= xmin ? 0 : ceilf((params->aabb.p1.x - xmin) / CHUNK_WIDTH);
-	//LOG_INFO("z_start: %u", z_start);
-	if (z_start > 16)
-		z_start = 16;
+	ssize_t z_start = ceilf((params->aabb.p1.x - xmin) / CHUNK_WIDTH);
 	z_start = 16 - z_start;
-	if (z_start > 0)
+	if (z_start < 0)
+		z_start = 0;
+	else if (z_start > 0)
 		z_start--;
 	if (z_start >= z_end)
 		return;
-	float zmin = tile->pos.z - CHUNK_WIDTH * 15;//tile->gx_mcnk->pos.z + (batch->z) * CHUNK_WIDTH;
-	size_t x_end = params->aabb.p1.z <= zmin ? 0 : ceilf((params->aabb.p1.z - zmin) / CHUNK_WIDTH);
-	//LOG_INFO("x_end: %u", x_end);
+	float zmin = tile->pos.z - CHUNK_WIDTH * 15;
+	ssize_t x_end = ceilf((params->aabb.p1.z - zmin) / CHUNK_WIDTH);
 	if (x_end > 16)
 		x_end = 16;
-	else if (x_end < 8)
+	else if (x_end < 16)
 		x_end++;
-	size_t x_start = params->aabb.p0.z <= zmin ? 0 : floorf((params->aabb.p0.z - zmin) / CHUNK_WIDTH);
-	//LOG_INFO("x_start: %u", x_start);
-	if (x_start > 16)
-		x_start = 16;
-	if (x_start > 0)
+	ssize_t x_start = floorf((params->aabb.p0.z - zmin) / CHUNK_WIDTH);
+	if (x_start < 0)
+		x_start = 0;
+	else if (x_start > 0)
 		x_start--;
 	if (x_start >= x_end)
-		return
-	//LOG_INFO("from %u/%u to %u/%u", x_start, z_start, x_end, z_end);
-	/* XXX get x / z bounds (like in add_chunk) to avoid axcessive aabb testing */
+		return;
 #else
-	size_t x_start = 0;
-	size_t x_end = 16;
-	size_t z_start = 0;
-	size_t z_end = 16;
+	ssize_t x_start = 0;
+	ssize_t x_end = 16;
+	ssize_t z_start = 0;
+	ssize_t z_end = 16;
 #endif
 	if (aabb_intersect_aabb(&tile->gx_mcnk->aabb, &params->aabb))
 	{
-		for (size_t x = x_start; x < x_end; ++x)
+		for (ssize_t x = x_start; x < x_end; ++x)
 		{
-			for (size_t z = z_start; z < z_end; ++z)
+			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
 				if (1 || aabb_intersect_sphere(&batch->aabb, params->center, params->radius))
@@ -647,9 +640,9 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 	}
 	if (aabb_intersect_aabb(&tile->gx_mcnk->objects_aabb, &params->aabb))
 	{
-		for (size_t x = x_start; x < x_end; ++x)
+		for (ssize_t x = x_start; x < x_end; ++x)
 		{
-			for (size_t z = z_start; z < z_end; ++z)
+			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
 				if (batch->doodads_nb && aabb_intersect_sphere(&batch->objects_aabb, params->center, params->radius))
@@ -659,9 +652,9 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 	}
 	if (aabb_intersect_aabb(&tile->gx_mcnk->wmos_aabb, &params->aabb))
 	{
-		for (size_t x = x_start; x < x_end; ++x)
+		for (ssize_t x = x_start; x < x_end; ++x)
 		{
-			for (size_t z = z_start; z < z_end; ++z)
+			for (ssize_t z = z_start; z < z_end; ++z)
 			{
 				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
 				if (batch->wmos_nb && aabb_intersect_sphere(&batch->wmos_aabb, params->center, params->radius))
