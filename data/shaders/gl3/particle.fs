@@ -11,12 +11,12 @@ layout(std140) uniform model_block
 {
 	mat4 mvp;
 	mat4 mv;
+	vec4 fog_color;
 	float alpha_test;
 };
 
 layout(std140) uniform scene_block
 {
-	vec4 fog_color;
 	vec2 fog_range;
 };
 

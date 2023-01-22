@@ -268,12 +268,12 @@ struct shader_particle_model_block
 {
 	struct mat4f mvp;
 	struct mat4f mv;
+	struct vec4f fog_color;
 	float alpha_test;
 };
 
 struct shader_particle_scene_block
 {
-	struct vec4f fog_color;
 	struct vec2f fog_range;
 };
 

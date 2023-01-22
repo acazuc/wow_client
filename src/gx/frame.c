@@ -113,7 +113,6 @@ do \
 static void build_particle_uniform_buffer(struct gx_frame *gx_frame)
 {
 	struct shader_particle_scene_block scene_block;
-	COPY_VEC3_A1(scene_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
 	scene_block.fog_range.y = g_wow->draw_frame->view_distance * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_END] / 36 / g_wow->map->fog_divisor;
 	scene_block.fog_range.x = scene_block.fog_range.y * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_START];
 	gfx_set_buffer_data(&gx_frame->particle_uniform_buffer, &scene_block, sizeof(scene_block), 0);

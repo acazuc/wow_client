@@ -107,27 +107,35 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 			case 0:
 				blend_state = WORLD_BLEND_OPAQUE;
 				emitter->alpha_test = 0;
+				emitter->fog_override = false;
 				break;
 			case 1:
 				blend_state = WORLD_BLEND_OPAQUE;
 				emitter->alpha_test = 224 / 255.;
+				emitter->fog_override = false;
 				break;
 			case 2:
 				blend_state = WORLD_BLEND_ALPHA;
 				emitter->alpha_test = 1 / 255.;
+				emitter->fog_override = false;
 				break;
 			case 3:
 				blend_state = WORLD_BLEND_NO_ALPHA_ADD;
 				emitter->alpha_test = 1 / 255.;
+				emitter->fog_override = true;
+				VEC3_SETV(emitter->fog_color, 0);
 				break;
 			case 4:
 				blend_state = WORLD_BLEND_ADD;
 				emitter->alpha_test = 1 / 255.;
+				emitter->fog_override = true;
+				VEC3_SETV(emitter->fog_color, 0);
 				break;
 			default:
 				LOG_INFO("unsupported blending: %d", (int)emitter->emitter->blending_type);
 				blend_state = WORLD_BLEND_ALPHA;
 				emitter->alpha_test = 0;
+				emitter->fog_override = false;
 				break;
 		}
 		emitter->pipeline_state = blend_state;
@@ -476,6 +484,10 @@ static void render_particles(struct gx_m2_particles *particles, struct m2_partic
 	struct mat4f model = get_matrix(particles, emitter);
 	MAT4_MUL(model_block.mvp, g_wow->draw_frame->view_vp, model);
 	MAT4_MUL(model_block.mv, g_wow->draw_frame->view_v, model);
+	if (emitter->fog_override)
+		VEC3_CPY(model_block.fog_color, emitter->fog_color);
+	else
+		VEC3_CPY(model_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
 	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	blp_texture_bind(emitter->texture, 0);

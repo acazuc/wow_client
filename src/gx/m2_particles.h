@@ -35,8 +35,10 @@ struct m2_particles_emitter
 	struct jks_array vertexes; /* struct shader_particle_input */
 	uint32_t pipeline_state;
 	float alpha_test;
+	struct vec3f fog_color;
 	uint64_t last_spawned;
 	uint16_t emitter_type;
+	bool fog_override;
 };
 
 struct gx_m2_particles
