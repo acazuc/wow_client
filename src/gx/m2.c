@@ -1854,6 +1854,11 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 				MAT4_VEC4_MUL(tmp, *bone_mat, data.lights[i].position);
 				VEC4_CPY(data.lights[i].position, tmp);
 			}
+			{
+				struct vec4f tmp;
+				MAT4_VEC4_MUL(tmp, instance->m, data.lights[i].position);
+				VEC4_CPY(data.lights[i].position, tmp);
+			}
 			/* Misc */
 			uint8_t enabled;
 			if (!m2_instance_get_track_value_uint8(instance, &light->visibility, &enabled))
