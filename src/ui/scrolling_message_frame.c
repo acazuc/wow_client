@@ -5,12 +5,15 @@
 
 #include "font/font.h"
 
+#include "xml/scrolling_message_frame.h"
+
 #include "wow_lua.h"
 #include "shaders.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
 
+#include <gfx/objects.h>
 #include <gfx/device.h>
 
 #include <jks/utf8.h>
@@ -28,7 +31,27 @@
 #define UI_FRAME (&scrolling_message_frame->frame)
 #define UI_FONT_INSTANCE (&scrolling_message_frame->font_instance)
 
-static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_frame, struct interface_font *font);
+struct ui_scrolling_message
+{
+	gfx_attributes_state_t attributes_state;
+	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
+	gfx_buffer_t vertexes_buffer;
+	gfx_buffer_t indices_buffer;
+	char *text;
+	float red;
+	float green;
+	float blue;
+	uint32_t id;
+	int32_t height;
+	size_t indices_nb;
+	bool initialized;
+	bool dirty_buffers;
+	struct interface_font *last_font; /* XXX should be in scrolling_message_frame ? */
+	uint32_t last_font_revision;
+};
+
+static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_frame, struct ui_scrolling_message *message, struct interface_font *font);
+static bool add_message(struct ui_scrolling_message_frame *scrolling_message_frame, const char *text, float r, float g, float b, int32_t id);
 static void on_font_height_changed(struct ui_object *object);
 static void on_color_changed(struct ui_object *object);
 static void on_shadow_color_changed(struct ui_object *object);
@@ -54,7 +77,14 @@ static const struct ui_font_instance_callbacks g_scrolling_message_frame_font_in
 
 static void message_dtr(void *ptr)
 {
-	mem_free(MEM_UI, ((struct ui_scrolling_message*)ptr)->text);
+	struct ui_scrolling_message *message = *(struct ui_scrolling_message**)ptr;
+	gfx_delete_attributes_state(g_wow->device, &message->attributes_state);
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+		gfx_delete_buffer(g_wow->device, &message->uniform_buffers[i]);
+	gfx_delete_buffer(g_wow->device, &message->vertexes_buffer);
+	gfx_delete_buffer(g_wow->device, &message->indices_buffer);
+	mem_free(MEM_UI, message->text);
+	mem_free(MEM_UI, message);
 }
 
 static bool ctr(struct ui_object *object, struct interface *interface, const char *name, struct ui_region *parent)
@@ -64,43 +94,37 @@ static bool ctr(struct ui_object *object, struct interface *interface, const cha
 	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
 	UI_OBJECT->mask |= UI_OBJECT_scrolling_message_frame;
 	ui_font_instance_init(interface, UI_FONT_INSTANCE, object, &g_scrolling_message_frame_font_instance_callbacks);
-	jks_array_init(&scrolling_message_frame->messages, sizeof(struct ui_scrolling_message), message_dtr, &jks_array_memory_fn_UI);
-	scrolling_message_frame->attributes_state = GFX_ATTRIBUTES_STATE_INIT();
-	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
-		scrolling_message_frame->uniform_buffers[i] = GFX_BUFFER_INIT();
-	scrolling_message_frame->vertexes_buffer = GFX_BUFFER_INIT();
-	scrolling_message_frame->indices_buffer = GFX_BUFFER_INIT();
-	scrolling_message_frame->initialized = false;
-	scrolling_message_frame->dirty_buffers = true;
-	scrolling_message_frame->last_font = NULL;
-	scrolling_message_frame->last_font_revision = 0;
-	{
-		struct ui_scrolling_message *message = jks_array_grow(&scrolling_message_frame->messages, 1);
-		if (!message)
-		{
-			LOG_ERROR("message allocation failed");
-			return false;
-		}
-		message->text = "ouioui";
-		message->red = 1;
-		message->green = .5;
-		message->blue = .5;
-		message->id = 1;
-	}
+	jks_array_init(&scrolling_message_frame->messages, sizeof(struct ui_scrolling_message*), message_dtr, &jks_array_memory_fn_UI);
+	ui_inset_init(&scrolling_message_frame->text_insets, 0, 0, 0, 0);
+	OPTIONAL_SET(UI_FONT_INSTANCE->font_height);
+	ui_value_init(&OPTIONAL_GET(UI_FONT_INSTANCE->font_height), 12);
+	UI_FONT_INSTANCE->font = strdup("Fonts\\FRIZQT__.TTF");
+	UI_FONT_INSTANCE->render_font = interface_ref_render_font(UI_OBJECT->interface, UI_FONT_INSTANCE->font, OPTIONAL_GET(UI_FONT_INSTANCE->font_height).abs);
+	add_message(scrolling_message_frame, "ouioui1", 1, .5, .5, 1);
+	add_message(scrolling_message_frame, "ouioui2", 1, .3, .8, 1);
+	add_message(scrolling_message_frame, "ouioui3", 1, .1, .1, 1);
+	add_message(scrolling_message_frame, "ouioui4", 1, .2, .6, 1);
 	return true;
 }
 
 static void dtr(struct ui_object *object)
 {
 	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
-	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
-		gfx_delete_buffer(g_wow->device, &scrolling_message_frame->uniform_buffers[i]);
-	gfx_delete_buffer(g_wow->device, &scrolling_message_frame->vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &scrolling_message_frame->indices_buffer);
-	gfx_delete_attributes_state(g_wow->device, &scrolling_message_frame->attributes_state);
 	jks_array_destroy(&scrolling_message_frame->messages);
 	ui_font_instance_destroy(UI_FONT_INSTANCE);
 	ui_frame_vtable.dtr(object);
+}
+
+static void load_xml(struct ui_object *object, const struct xml_layout_frame *layout_frame)
+{
+	ui_frame_vtable.load_xml(object, layout_frame);
+	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
+	const struct xml_scrolling_message_frame *xml_scrolling_message_frame = xml_clayout_frame_as_scrolling_message_frame(layout_frame);
+	if (xml_scrolling_message_frame)
+	{
+		if (OPTIONAL_ISSET(xml_scrolling_message_frame->text_insets))
+			ui_inset_init_xml(&scrolling_message_frame->text_insets, &OPTIONAL_GET(xml_scrolling_message_frame->text_insets));
+	}
 }
 
 static void render(struct ui_object *object)
@@ -110,41 +134,53 @@ static void render(struct ui_object *object)
 	struct interface_font *font = ui_font_instance_get_render_font(UI_FONT_INSTANCE);
 	if (!font)
 		return;
-	if (!scrolling_message_frame->initialized)
+	int32_t scissor_left = (ui_region_get_left(UI_REGION) + scrolling_message_frame->text_insets.abs.left) * (g_wow->render_width / (float)UI_OBJECT->interface->width);
+	int32_t scissor_top = (ui_region_get_top(UI_REGION) + scrolling_message_frame->text_insets.abs.top) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
+	int32_t scissor_width = (ui_region_get_width(UI_REGION) - scrolling_message_frame->text_insets.abs.left - scrolling_message_frame->text_insets.abs.right) * (g_wow->render_width / (float)UI_OBJECT->interface->width);
+	int32_t scissor_height = (ui_region_get_height(UI_REGION) - scrolling_message_frame->text_insets.abs.top - scrolling_message_frame->text_insets.abs.bottom) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
+	gfx_set_scissor(g_wow->device, scissor_left, g_wow->render_height - scissor_height - scissor_top, scissor_width, scissor_height);
+	int32_t y = 0;
+	for (size_t i = 0; i < scrolling_message_frame->messages.size; ++i)
 	{
-		for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
-			gfx_create_buffer(g_wow->device, &scrolling_message_frame->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ui_model_block), GFX_BUFFER_STREAM);
-		scrolling_message_frame->initialized = true;
+		struct ui_scrolling_message *message = *JKS_ARRAY_GET(&scrolling_message_frame->messages, i, struct ui_scrolling_message*);
+		if (!message->initialized)
+		{
+			for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
+				gfx_create_buffer(g_wow->device, &message->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ui_model_block), GFX_BUFFER_STREAM);
+			message->initialized = true;
+		}
+		if (message->dirty_buffers)
+		{
+			update_buffers(scrolling_message_frame, message, font);
+			message->last_font_revision = font->atlas->revision;
+			message->last_font = font;
+		}
+		if (!message->indices_nb)
+			return;
+		struct shader_ui_model_block model_block;
+		VEC4_SET(model_block.color, 1, 1, 1, 1);
+		VEC4_SET(model_block.uv_transform, 1, 0, 1, 0);
+		font_atlas_update(font->atlas);
+		if (message->last_font != font || font->atlas->revision != message->last_font_revision)
+		{
+			update_buffers(scrolling_message_frame, message, font);
+			message->last_font_revision = font->atlas->revision;
+			message->last_font = font;
+		}
+		interface_set_render_ctx(UI_OBJECT->interface, true);
+		font_atlas_bind(font->atlas, 0);
+		gfx_bind_attributes_state(g_wow->device, &message->attributes_state, &UI_OBJECT->interface->input_layout);
+		gfx_bind_pipeline_state(g_wow->device, &UI_OBJECT->interface->pipeline_states[INTERFACE_BLEND_ALPHA]);
+		model_block.alpha_test = 0;
+		model_block.use_mask = 0;
+		y -= message->height;
+		struct vec3f tmp = {(float)ui_region_get_left(UI_REGION), (float)ui_region_get_bottom(UI_REGION) + y, 0};
+		MAT4_TRANSLATE(model_block.mvp, UI_OBJECT->interface->mat, tmp);
+		gfx_set_buffer_data(&message->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
+		gfx_bind_constant(g_wow->device, 1, &message->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
+		gfx_draw_indexed(g_wow->device, message->indices_nb, 0);
 	}
-	if (scrolling_message_frame->dirty_buffers)
-	{
-		update_buffers(scrolling_message_frame, font);
-		scrolling_message_frame->last_font_revision = font->atlas->revision;
-		scrolling_message_frame->last_font = font;
-	}
-	if (!scrolling_message_frame->indices_nb)
-		return;
-	struct shader_ui_model_block model_block;
-	VEC4_SET(model_block.color, 1, 1, 1, 1);
-	VEC4_SET(model_block.uv_transform, 1, 0, 1, 0);
-	font_atlas_update(font->atlas);
-	if (scrolling_message_frame->last_font != font || font->atlas->revision != scrolling_message_frame->last_font_revision)
-	{
-		update_buffers(scrolling_message_frame, font);
-		scrolling_message_frame->last_font_revision = font->atlas->revision;
-		scrolling_message_frame->last_font = font;
-	}
-	interface_set_render_ctx(UI_OBJECT->interface, true);
-	font_atlas_bind(font->atlas, 0);
-	gfx_bind_attributes_state(g_wow->device, &scrolling_message_frame->attributes_state, &UI_OBJECT->interface->input_layout);
-	gfx_bind_pipeline_state(g_wow->device, &UI_OBJECT->interface->pipeline_states[INTERFACE_BLEND_ALPHA]);
-	model_block.alpha_test = 0;
-	model_block.use_mask = 0;
-	struct vec3f tmp = {(float)ui_region_get_left(UI_REGION), (float)ui_region_get_top(UI_REGION), 0};
-	MAT4_TRANSLATE(model_block.mvp, UI_OBJECT->interface->mat, tmp);
-	gfx_set_buffer_data(&scrolling_message_frame->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
-	gfx_bind_constant(g_wow->device, 1, &scrolling_message_frame->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
-	gfx_draw_indexed(g_wow->device, scrolling_message_frame->indices_nb, 0);
+	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 }
 
 static void on_click(struct ui_object *object, enum gfx_mouse_button button)
@@ -158,7 +194,7 @@ static struct ui_font_instance *as_font_instance(struct ui_object *object)
 	return &scrolling_message_frame->font_instance;
 }
 
-static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_frame, struct interface_font *font)
+static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_frame, struct ui_scrolling_message *message, struct interface_font *font)
 {
 	struct jks_array vertexes; /* struct shader_ui_input */
 	struct jks_array indices; /* uint16_t */
@@ -166,82 +202,119 @@ static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_
 	jks_array_init(&indices, sizeof(uint16_t), NULL, &jks_array_memory_fn_UI);
 	int32_t x = 0;
 	int32_t y = 0;
-	for (size_t i = 0; i < scrolling_message_frame->messages.size; ++i)
+	const char *iter = message->text;
+	const char *end = iter + strlen(message->text);
+	while (iter < end)
 	{
-		y -= font->font->height;
-		struct ui_scrolling_message *message = JKS_ARRAY_GET(&scrolling_message_frame->messages, i, struct ui_scrolling_message);
-		const char *iter = message->text;
-		const char *end = iter + strlen(message->text);
-		while (iter < end)
+		uint32_t character;
+		if (!utf8_next(&iter, end, &character))
+			break;
+		struct font_glyph *glyph = font_get_glyph(font->font, character);
+		if (!glyph)
+			continue;
+		float char_width = glyph->advance;
+		float char_render_left = x + glyph->offset_x;
+		float char_render_top = y + glyph->offset_y;
+		float char_render_right = char_render_left + glyph->width;
+		float char_render_bottom = char_render_top + glyph->height;
 		{
-			uint32_t character;
-			if (!utf8_next(&iter, end, &character))
-				break;
-			struct font_glyph *glyph = font_get_glyph(font->font, character);
-			if (!glyph)
-				continue;
-			float char_width = glyph->advance;
-			float char_render_left = x + glyph->offset_x;
-			float char_render_top = y + glyph->offset_y;
-			float char_render_right = char_render_left + glyph->width;
-			float char_render_bottom = char_render_top + glyph->height;
+			uint16_t *tmp = jks_array_grow(&indices, 6);
+			if (!tmp)
 			{
-				uint16_t *tmp = jks_array_grow(&indices, 6);
-				if (!tmp)
-				{
-					LOG_ERROR("failed to grow indices");
-					goto err;
-				}
-				tmp[0] = vertexes.size + 0;
-				tmp[1] = vertexes.size + 1;
-				tmp[2] = vertexes.size + 2;
-				tmp[3] = vertexes.size + 0;
-				tmp[4] = vertexes.size + 2;
-				tmp[5] = vertexes.size + 3;
-			}
-			struct shader_ui_input *vertex = jks_array_grow(&vertexes, 4);
-			if (!vertex)
-			{
-				LOG_ERROR("failed to grow vertex");
+				LOG_ERROR("failed to grow indices");
 				goto err;
 			}
-			{
-				struct vec2f tmp[4];
-				font_glyph_tex_coords(font->font, glyph, &tmp[0].x);
-				VEC2_CPY(vertex[0].uv, tmp[0]);
-				VEC2_CPY(vertex[1].uv, tmp[1]);
-				VEC2_CPY(vertex[2].uv, tmp[2]);
-				VEC2_CPY(vertex[3].uv, tmp[3]);
-			}
-			VEC2_SET(vertex[0].position, char_render_left , char_render_top);
-			VEC2_SET(vertex[1].position, char_render_right, char_render_top);
-			VEC2_SET(vertex[2].position, char_render_right, char_render_bottom);
-			VEC2_SET(vertex[3].position, char_render_left , char_render_bottom);
-			VEC4_SET(vertex[0].color, message->red, message->green, message->blue, 1);
-			VEC4_SET(vertex[1].color, message->red, message->green, message->blue, 1);
-			VEC4_SET(vertex[2].color, message->red, message->green, message->blue, 1);
-			VEC4_SET(vertex[3].color, message->red, message->green, message->blue, 1);
-			x += char_width;
+			tmp[0] = vertexes.size + 0;
+			tmp[1] = vertexes.size + 1;
+			tmp[2] = vertexes.size + 2;
+			tmp[3] = vertexes.size + 0;
+			tmp[4] = vertexes.size + 2;
+			tmp[5] = vertexes.size + 3;
 		}
+		struct shader_ui_input *vertex = jks_array_grow(&vertexes, 4);
+		if (!vertex)
+		{
+			LOG_ERROR("failed to grow vertex");
+			goto err;
+		}
+		/* XXX x overflow */
+		{
+			struct vec2f tmp[4];
+			font_glyph_tex_coords(font->font, glyph, &tmp[0].x);
+			VEC2_CPY(vertex[0].uv, tmp[0]);
+			VEC2_CPY(vertex[1].uv, tmp[1]);
+			VEC2_CPY(vertex[2].uv, tmp[2]);
+			VEC2_CPY(vertex[3].uv, tmp[3]);
+		}
+		VEC2_SET(vertex[0].position, char_render_left , char_render_top);
+		VEC2_SET(vertex[1].position, char_render_right, char_render_top);
+		VEC2_SET(vertex[2].position, char_render_right, char_render_bottom);
+		VEC2_SET(vertex[3].position, char_render_left , char_render_bottom);
+		VEC4_SET(vertex[0].color, message->red, message->green, message->blue, 1);
+		VEC4_SET(vertex[1].color, message->red, message->green, message->blue, 1);
+		VEC4_SET(vertex[2].color, message->red, message->green, message->blue, 1);
+		VEC4_SET(vertex[3].color, message->red, message->green, message->blue, 1);
+		x += char_width;
 	}
-	scrolling_message_frame->indices_nb = indices.size;
-	gfx_delete_buffer(g_wow->device, &scrolling_message_frame->vertexes_buffer);
-	gfx_delete_buffer(g_wow->device, &scrolling_message_frame->indices_buffer);
-	gfx_delete_attributes_state(g_wow->device, &scrolling_message_frame->attributes_state);
-	gfx_create_buffer(g_wow->device, &scrolling_message_frame->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes.data, vertexes.size * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
-	gfx_create_buffer(g_wow->device, &scrolling_message_frame->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_STATIC);
+	message->height = y + font->font->height;
+	message->indices_nb = indices.size;
+	gfx_delete_buffer(g_wow->device, &message->vertexes_buffer);
+	gfx_delete_buffer(g_wow->device, &message->indices_buffer);
+	gfx_delete_attributes_state(g_wow->device, &message->attributes_state);
+	gfx_create_buffer(g_wow->device, &message->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes.data, vertexes.size * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
+	gfx_create_buffer(g_wow->device, &message->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_STATIC);
 	gfx_attribute_bind_t binds[] =
 	{
-		{&scrolling_message_frame->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
-		{&scrolling_message_frame->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
-		{&scrolling_message_frame->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
+		{&message->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
+		{&message->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
+		{&message->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
 	};
-	gfx_create_attributes_state(g_wow->device, &scrolling_message_frame->attributes_state, binds, sizeof(binds) / sizeof(*binds), &scrolling_message_frame->indices_buffer, GFX_INDEX_UINT16);
+	gfx_create_attributes_state(g_wow->device, &message->attributes_state, binds, sizeof(binds) / sizeof(*binds), &message->indices_buffer, GFX_INDEX_UINT16);
 
 err:
 	jks_array_destroy(&vertexes);
 	jks_array_destroy(&indices);
-	scrolling_message_frame->dirty_buffers = false;
+	message->dirty_buffers = false;
+}
+
+static bool add_message(struct ui_scrolling_message_frame *scrolling_message_frame, const char *text, float r, float g, float b, int32_t id)
+{
+	struct ui_scrolling_message **messagep = jks_array_grow(&scrolling_message_frame->messages, 1);
+	if (!messagep)
+	{
+		LOG_ERROR("failed to grow scrolling message frame messages");
+		return false;
+	}
+	struct ui_scrolling_message *message = mem_malloc(MEM_UI, sizeof(*message));
+	if (!message)
+	{
+		LOG_ERROR("scrolling message allocation failed");
+		jks_array_resize(&scrolling_message_frame->messages, scrolling_message_frame->messages.size - 1);
+		return false;
+	}
+	message->text = mem_strdup(MEM_UI, text);
+	if (!message->text)
+	{
+		LOG_ERROR("scrolling message text allocation failed");
+		mem_free(MEM_UI, message);
+		jks_array_resize(&scrolling_message_frame->messages, scrolling_message_frame->messages.size - 1);
+		return false;
+	}
+	message->attributes_state = GFX_ATTRIBUTES_STATE_INIT();
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+		message->uniform_buffers[i] = GFX_BUFFER_INIT();
+	message->vertexes_buffer = GFX_BUFFER_INIT();
+	message->indices_buffer = GFX_BUFFER_INIT();
+	message->red = r;
+	message->green = g;
+	message->blue = b;
+	message->id = id;
+	message->initialized = false;
+	message->dirty_buffers = true;
+	message->last_font = NULL;
+	message->last_font_revision = 0;
+	*messagep = message;
+	return true;
 }
 
 static void on_font_height_changed(struct ui_object *object)
@@ -338,24 +411,8 @@ static int lua_AddMessage(lua_State *L)
 	const char *str = lua_tostring(L, 2);
 	if (!str)
 		return luaL_error(L, "failed to get text");
-	char *text = mem_malloc(MEM_UI, strlen(str));
-	if (!text)
-	{
-		LOG_ERROR("text allocation failed");
-		return 0;
-	}
-	struct ui_scrolling_message *message = jks_array_grow(&scrolling_message_frame->messages, 1);
-	if (!message)
-	{
-		LOG_ERROR("message allocation failed");
-		mem_free(MEM_UI, text);
-		return 0;
-	}
-	message->text = text;
-	message->red = lua_tonumber(L, 3);
-	message->green = lua_tonumber(L, 4);
-	message->blue = lua_tonumber(L, 5);
-	message->id = lua_tointeger(L, 6);
+	if (!add_message(scrolling_message_frame, str, lua_tonumber(L, 3), lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tointeger(L, 6)))
+		LOG_ERROR("failed to add message");
 	return 0;
 }
 
@@ -394,7 +451,6 @@ static bool register_methods(struct jks_array *methods)
 	return ui_frame_vtable.register_methods(methods);
 }
 
-UI_INH1(frame, void, load_xml, const struct xml_layout_frame*, layour_frame);
 UI_INH0(frame, void, post_load);
 UI_INH0(frame, void, register_in_interface);
 UI_INH0(frame, void, unregister_in_interface);

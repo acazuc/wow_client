@@ -116,6 +116,7 @@ ELEMENT_CAST_DEFINE(model_ffx);
 ELEMENT_CAST_DEFINE(movie_frame);
 ELEMENT_CAST_DEFINE(player_model);
 ELEMENT_CAST_DEFINE(scroll_frame);
+ELEMENT_CAST_DEFINE(scrolling_message_frame);
 ELEMENT_CAST_DEFINE(simple_html);
 ELEMENT_CAST_DEFINE(slider);
 ELEMENT_CAST_DEFINE(status_bar);

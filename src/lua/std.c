@@ -123,6 +123,16 @@ static int luaAPI_strfind(lua_State *L)
 	int argc = lua_gettop(L);
 	if (argc < 2)
 		return 0;
+#if 1
+	lua_getglobal(L, "string");
+	lua_pushstring(L, "find");
+	lua_gettable(L, -2);
+	lua_remove(L, -2);
+	for (int i = 0; i < argc; ++i)
+		lua_pushvalue(L, -1 - argc);
+	lua_call(L, argc, 1);
+	return 1;
+#else
 	const char *s = lua_tostring(L, 1);
 	if (!s)
 		return 0;
@@ -134,6 +144,7 @@ static int luaAPI_strfind(lua_State *L)
 		return 0;
 	lua_pushnumber(L, f - s + 1);
 	return 1;
+#endif
 }
 
 static int luaAPI_strrev(lua_State *L)

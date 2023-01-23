@@ -921,10 +921,18 @@ static int lua_GetInputLanguage(lua_State *L)
 	return 1;
 }
 
+static int lua_AddHistoryLine(lua_State *L)
+{
+	LUA_METHOD_EDIT_BOX();
+	if (argc != 2)
+		return luaL_error(L, "Usage: EditBox:AddHistoryLine(\"text\")");
+	LUA_UNIMPLEMENTED_METHOD();
+	return 0;
+}
+
 static bool register_methods(struct jks_array *methods)
 {
 	/*
-	   AddHistoryLine
 	   GetAltArrowKeyMode
 	   GetBlinkSpeed
 	   GetHistoryLines
@@ -959,6 +967,7 @@ static bool register_methods(struct jks_array *methods)
 	UI_REGISTER_METHOD(GetNumber);
 	UI_REGISTER_METHOD(SetNumber);
 	UI_REGISTER_METHOD(GetInputLanguage);
+	UI_REGISTER_METHOD(AddHistoryLine);
 	if (!ui_font_instance_register_methods(methods)) /* FontInstance only fill methods */
 		return false;
 	return ui_frame_vtable.register_methods(methods);

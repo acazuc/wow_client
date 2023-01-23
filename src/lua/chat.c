@@ -200,9 +200,24 @@ static int luaAPI_GetChatWindowChannels(lua_State *L)
 	int argc = lua_gettop(L);
 	if (argc != 1)
 		return luaL_error(L, "Usage: GetChatWindowChannels(index)");
+	LUA_UNIMPLEMENTED_FN();
 	lua_pushstring(L, "bonjour");
 	lua_pushnumber(L, 0);
 	return 1;
+}
+
+static int luaAPI_SendChatMessage(lua_State *L)
+{
+	LUA_VERBOSE_FN();
+	int argc = lua_gettop(L);
+	if (argc < 1 || argc > 4)
+		return luaL_error(L, "Usage: SendChatMessage(message[, chatType, language, target])");
+	/* XXX chatType, language, target */
+	const char *message = lua_tostring(L, 1);
+	if (!message)
+		return luaL_argerror(L, 1, "failed to get message string");
+	LUA_UNIMPLEMENTED_FN();
+	return 0;
 }
 
 void register_chat_functions(lua_State *L)
@@ -223,4 +238,5 @@ void register_chat_functions(lua_State *L)
 	LUA_REGISTER_FN(AddChatWindowMessages);
 	LUA_REGISTER_FN(RemoveChatWindowMessages);
 	LUA_REGISTER_FN(GetChatWindowChannels);
+	LUA_REGISTER_FN(SendChatMessage);
 }
