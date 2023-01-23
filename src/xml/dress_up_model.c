@@ -1,5 +1,5 @@
-#include "dress_up_model.h"
-#include "internal.h"
+#include "xml/dress_up_model.h"
+#include "xml/internal.h"
 
 #include "ui/dress_up_model.h"
 

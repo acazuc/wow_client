@@ -1,5 +1,5 @@
-#include "simple_html.h"
-#include "internal.h"
+#include "xml/simple_html.h"
+#include "xml/internal.h"
 
 #include "ui/simple_html.h"
 

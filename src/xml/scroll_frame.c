@@ -1,5 +1,5 @@
-#include "scroll_frame.h"
-#include "internal.h"
+#include "xml/scroll_frame.h"
+#include "xml/internal.h"
 
 #include "ui/scroll_frame.h"
 

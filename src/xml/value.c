@@ -1,5 +1,5 @@
-#include "value.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/value.h"
 
 #include "memory.h"
 #include "log.h"

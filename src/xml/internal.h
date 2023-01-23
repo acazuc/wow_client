@@ -1,6 +1,8 @@
 #ifndef XML_INTERNAL_H
 #define XML_INTERNAL_H
 
+#include <jks/optional.h>
+
 struct xml_attr
 {
 	const char *name;

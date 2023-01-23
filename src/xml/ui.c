@@ -1,13 +1,12 @@
-#include "ui.h"
-#include "internal.h"
-
 #include "itf/interface.h"
 #include "itf/addon.h"
 
 #include "xml/layout_frame.h"
+#include "xml/internal.h"
 #include "xml/include.h"
 #include "xml/script.h"
 #include "xml/font.h"
+#include "xml/ui.h"
 
 #include "lua/lua_script.h"
 

@@ -1,5 +1,5 @@
-#include "anchors.h"
-#include "internal.h"
+#include "xml/anchors.h"
+#include "xml/internal.h"
 
 #include "memory.h"
 #include "log.h"

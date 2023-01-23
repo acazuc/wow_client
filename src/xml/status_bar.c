@@ -1,5 +1,5 @@
-#include "status_bar.h"
-#include "internal.h"
+#include "xml/status_bar.h"
+#include "xml/internal.h"
 
 #include "ui/status_bar.h"
 

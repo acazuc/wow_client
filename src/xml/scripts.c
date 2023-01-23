@@ -1,5 +1,5 @@
-#include "scripts.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/scripts.h"
 
 #include "memory.h"
 #include "log.h"

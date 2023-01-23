@@ -1,5 +1,5 @@
-#include "message_frame.h"
-#include "internal.h"
+#include "xml/message_frame.h"
+#include "xml/internal.h"
 
 #include "ui/message_frame.h"
 

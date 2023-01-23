@@ -1,5 +1,5 @@
-#include "resize_bounds.h"
-#include "internal.h"
+#include "xml/resize_bounds.h"
+#include "xml/internal.h"
 
 #include <string.h>
 

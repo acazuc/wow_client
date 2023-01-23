@@ -1,5 +1,5 @@
-#include "game_tooltip.h"
-#include "internal.h"
+#include "xml/game_tooltip.h"
+#include "xml/internal.h"
 
 #include "ui/game_tooltip.h"
 

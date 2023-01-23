@@ -1,5 +1,5 @@
-#include "model.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/model.h"
 
 #include "ui/model.h"
 

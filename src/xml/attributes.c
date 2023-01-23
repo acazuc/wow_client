@@ -1,5 +1,5 @@
-#include "attributes.h"
-#include "internal.h"
+#include "xml/attributes.h"
+#include "xml/internal.h"
 
 #include "memory.h"
 #include "log.h"

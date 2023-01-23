@@ -1,5 +1,5 @@
-#include "world_frame.h"
-#include "internal.h"
+#include "xml/world_frame.h"
+#include "xml/internal.h"
 
 #include "ui/world_frame.h"
 

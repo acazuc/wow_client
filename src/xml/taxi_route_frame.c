@@ -1,5 +1,5 @@
-#include "taxi_route_frame.h"
-#include "internal.h"
+#include "xml/taxi_route_frame.h"
+#include "xml/internal.h"
 
 #include "ui/taxi_route_frame.h"
 

@@ -1,5 +1,5 @@
-#include "tex_coords.h"
-#include "internal.h"
+#include "xml/tex_coords.h"
+#include "xml/internal.h"
 
 #include <string.h>
 

@@ -1,6 +1,3 @@
-#include "element.h"
-#include "internal.h"
-
 #include "xml/scrolling_message_frame.h"
 #include "xml/taxi_route_frame.h"
 #include "xml/dress_up_model.h"
@@ -19,9 +16,11 @@
 #include "xml/model_ffx.h"
 #include "xml/cooldown.h"
 #include "xml/edit_box.h"
+#include "xml/internal.h"
 #include "xml/include.h"
 #include "xml/texture.h"
 #include "xml/minimap.h"
+#include "xml/element.h"
 #include "xml/button.h"
 #include "xml/slider.h"
 #include "xml/script.h"

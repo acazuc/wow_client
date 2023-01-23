@@ -1,5 +1,5 @@
-#include "color_select.h"
-#include "internal.h"
+#include "xml/color_select.h"
+#include "xml/internal.h"
 
 #include "ui/color_select.h"
 

@@ -1,5 +1,5 @@
-#include "inset.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/inset.h"
 
 #include "memory.h"
 #include "log.h"

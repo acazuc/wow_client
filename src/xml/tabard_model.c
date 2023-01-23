@@ -1,5 +1,5 @@
-#include "tabard_model.h"
-#include "internal.h"
+#include "xml/tabard_model.h"
+#include "xml/internal.h"
 
 #include "ui/tabard_model.h"
 

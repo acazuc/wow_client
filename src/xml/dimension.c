@@ -1,8 +1,7 @@
-#include "dimension.h"
-#include "internal.h"
+#include "xml/dimension.h"
+#include "xml/internal.h"
 
 #include "memory.h"
-
 #include "log.h"
 
 #include <string.h>

@@ -1,5 +1,5 @@
-#include "include.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/include.h"
 
 #include "memory.h"
 

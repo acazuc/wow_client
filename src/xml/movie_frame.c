@@ -1,5 +1,5 @@
-#include "movie_frame.h"
-#include "internal.h"
+#include "xml/movie_frame.h"
+#include "xml/internal.h"
 
 #include "ui/movie_frame.h"
 

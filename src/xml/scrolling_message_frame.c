@@ -1,5 +1,5 @@
-#include "scrolling_message_frame.h"
-#include "internal.h"
+#include "xml/scrolling_message_frame.h"
+#include "xml/internal.h"
 
 #include "ui/scrolling_message_frame.h"
 

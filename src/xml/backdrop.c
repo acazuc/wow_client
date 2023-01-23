@@ -1,5 +1,5 @@
-#include "backdrop.h"
-#include "internal.h"
+#include "xml/backdrop.h"
+#include "xml/internal.h"
 
 #include "memory.h"
 

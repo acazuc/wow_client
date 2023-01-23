@@ -1,5 +1,5 @@
-#include "texture.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/texture.h"
 
 #include "ui/texture.h"
 

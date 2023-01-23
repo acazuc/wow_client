@@ -1,5 +1,5 @@
-#include "color.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/color.h"
 
 #include <string.h>
 

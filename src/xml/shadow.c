@@ -1,5 +1,5 @@
-#include "shadow.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/shadow.h"
 
 #include <string.h>
 

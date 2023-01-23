@@ -1,5 +1,5 @@
-#include "check_button.h"
-#include "internal.h"
+#include "xml/check_button.h"
+#include "xml/internal.h"
 
 #include "ui/check_button.h"
 

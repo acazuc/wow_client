@@ -1,5 +1,5 @@
-#include "button.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/button.h"
 
 #include "ui/button.h"
 

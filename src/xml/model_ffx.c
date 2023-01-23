@@ -1,5 +1,5 @@
-#include "model_ffx.h"
-#include "internal.h"
+#include "xml/model_ffx.h"
+#include "xml/internal.h"
 
 #include "ui/model_ffx.h"
 

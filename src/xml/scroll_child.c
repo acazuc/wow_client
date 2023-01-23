@@ -1,5 +1,5 @@
-#include "scroll_child.h"
-#include "internal.h"
+#include "xml/scroll_child.h"
+#include "xml/internal.h"
 
 #include "xml/layout_frame.h"
 

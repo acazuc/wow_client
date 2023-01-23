@@ -1,7 +1,6 @@
-#include "frames.h"
-#include "internal.h"
-
 #include "xml/layout_frame.h"
+#include "xml/internal.h"
+#include "xml/frames.h"
 
 #include "memory.h"
 #include "log.h"

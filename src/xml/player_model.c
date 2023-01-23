@@ -1,5 +1,5 @@
-#include "player_model.h"
-#include "internal.h"
+#include "xml/player_model.h"
+#include "xml/internal.h"
 
 #include "ui/player_model.h"
 

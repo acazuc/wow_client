@@ -1,5 +1,5 @@
-#include "gradient.h"
-#include "internal.h"
+#include "xml/gradient.h"
+#include "xml/internal.h"
 
 #include "memory.h"
 

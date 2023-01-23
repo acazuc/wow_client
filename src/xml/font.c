@@ -1,5 +1,5 @@
-#include "font.h"
-#include "internal.h"
+#include "xml/internal.h"
+#include "xml/font.h"
 
 #include "ui/font.h"
 
