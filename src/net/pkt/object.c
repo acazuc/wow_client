@@ -1,5 +1,4 @@
 #include "net/packets.h"
-
 #include "net/packet.h"
 
 #include "obj/container.h"

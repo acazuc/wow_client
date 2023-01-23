@@ -1,9 +1,8 @@
-#include "net/packets.h"
-
 #include "itf/interface.h"
 
 #include "game/social.h"
 
+#include "net/packets.h"
 #include "net/packet.h"
 #include "net/opcode.h"
 

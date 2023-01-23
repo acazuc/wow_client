@@ -10,7 +10,7 @@
 enum frame_point
 {
 #define ENUM_DEFINE(val) FRAMEPOINT_##val,
-ENUM_FRAMEPOINT
+	ENUM_FRAMEPOINT
 #undef ENUM_DEFINE
 };
 
@@ -22,7 +22,7 @@ const char *frame_point_to_string(enum frame_point frame_point);
 enum frame_strata
 {
 #define ENUM_DEFINE(val) FRAMESTRATA_##val,
-ENUM_FRAMESTRATA
+	ENUM_FRAMESTRATA
 #undef ENUM_DEFINE
 };
 
@@ -34,7 +34,7 @@ const char *frame_strata_to_string(enum frame_strata frame_strata);
 enum draw_layer
 {
 #define ENUM_DEFINE(val) DRAWLAYER_##val,
-ENUM_DRAWLAYER
+	ENUM_DRAWLAYER
 #undef ENUM_DEFINE
 };
 
@@ -46,7 +46,7 @@ const char *draw_layer_to_string(enum draw_layer draw_layer);
 enum alpha_mode
 {
 #define ENUM_DEFINE(val) ALPHA_##val,
-ENUM_ALPHA
+	ENUM_ALPHA
 #undef ENUM_DEFINE
 };
 
@@ -58,7 +58,7 @@ const char *alpha_mode_to_string(enum alpha_mode alpha_mode);
 enum outline_type
 {
 #define ENUM_DEFINE(val) OUTLINE_##val,
-ENUM_OUTLINE
+	ENUM_OUTLINE
 #undef ENUM_DEFINE
 };
 
@@ -70,7 +70,7 @@ const char *outline_to_string(enum outline_type outline_type);
 enum justify_v_type
 {
 #define ENUM_DEFINE(val) JUSTIFYV_##val,
-ENUM_JUSTIFYV
+	ENUM_JUSTIFYV
 #undef ENUM_DEFINE
 };
 
@@ -82,7 +82,7 @@ const char *justify_v_to_string(enum justify_v_type justify_v);
 enum justify_h_type
 {
 #define ENUM_DEFINE(val) JUSTIFYH_##val,
-ENUM_JUSTIFYH
+	ENUM_JUSTIFYH
 #undef ENUM_DEFINE
 };
 
@@ -94,7 +94,7 @@ const char *justify_h_to_string(enum justify_h_type justify_h);
 enum insert_mode
 {
 #define ENUM_DEFINE(val) INSERT_##val,
-ENUM_INSERT
+	ENUM_INSERT
 #undef ENUM_DEFINE
 };
 
@@ -106,7 +106,7 @@ const char *insert_mode_to_string(enum insert_mode insert_mode);
 enum orientation
 {
 #define ENUM_DEFINE(val) ORIENTATION_##val,
-ENUM_ORIENTATION
+	ENUM_ORIENTATION
 #undef ENUM_DEFINE
 };
 
@@ -118,7 +118,7 @@ const char *orientation_to_string(enum orientation orientation);
 enum attribute_type
 {
 #define ENUM_DEFINE(val) ATTRIBUTE_##val,
-ENUM_ATTRIBUTE
+	ENUM_ATTRIBUTE
 #undef ENUM_DEFINE
 };
 
@@ -130,7 +130,7 @@ const char *attribute_type_to_string(enum attribute_type attribute_type);
 enum blend_mode
 {
 #define ENUM_DEFINE(val) BLEND_##val,
-ENUM_BLEND
+	ENUM_BLEND
 #undef ENUM_DEFINE
 };
 
@@ -142,7 +142,7 @@ const char *blend_mode_to_string(enum blend_mode blend_mode);
 enum anchor_point
 {
 #define ENUM_DEFINE(val) ANCHOR_##val,
-ENUM_ANCHOR
+	ENUM_ANCHOR
 #undef ENUM_DEFINE
 };
 
@@ -178,7 +178,7 @@ OPTIONAL_DEF(optional_inset_type, enum inset_type);
 enum event_type
 {
 #define ENUM_DEFINE(val) EVENT_##val,
-ENUM_EVENT
+	ENUM_EVENT
 #undef ENUM_DEFINE
 };
 
@@ -223,7 +223,7 @@ const char *inventory_slot_to_string(enum inventory_slot slot);
 enum cursor_type
 {
 #define ENUM_DEFINE(val) CURSOR_##val,
-ENUM_CURSOR
+	ENUM_CURSOR
 #undef ENUM_DEFINE
 };
 
@@ -231,5 +231,34 @@ OPTIONAL_DEF(optional_cursor_type, enum cursor_type);
 
 bool cursor_type_from_string(const char *value, enum cursor_type *type);
 const char *cursor_type_to_string(enum cursor_type type);
+
+enum chat_msg
+{
+#define ENUM_DEFINE(val) CHAT_MSG_##val,
+	ENUM_CHAT_MSG
+#undef ENUM_DEFINE
+	CHAT_MSG_ADDON = 0xFFFFFFFF
+};
+
+OPTIONAL_DEF(optional_chat_msg, enum chat_msg);
+
+/* strings with CHAT_MSG_ */
+bool chat_msg_from_string(const char *value, enum chat_msg *type);
+const char *chat_msg_to_string(enum chat_msg type);
+
+/* strings without CHAT_MSG_ */
+bool chat_channel_from_string(const char *value, enum chat_msg *type);
+const char *chat_channel_to_string(enum chat_msg type);
+
+enum chat_flag
+{
+	CHAT_FLAG_NONE = 0x0,
+	CHAT_FLAG_AFK  = 0x1,
+	CHAT_FLAG_DND  = 0x2,
+	CHAT_FLAG_GM   = 0x4,
+};
+
+bool chat_flag_from_string(const char *value, enum chat_flag *flag);
+const char *chat_flag_to_string(enum chat_flag flag);
 
 #endif

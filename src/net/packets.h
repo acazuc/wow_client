@@ -46,6 +46,8 @@ bool net_smsg_initial_spells(struct net_packet_reader *packet);
 bool net_smsg_time_sync_req(struct net_packet_reader *packet);
 bool net_smsg_questgiver_status(struct net_packet_reader *packet);
 bool net_smsg_motd(struct net_packet_reader *packet);
+bool net_cmsg_messagechat(struct net_packet_writer *packet, uint32_t channel, uint32_t lang, const char *target, const char *message);
+bool net_smsg_messagechat(struct net_packet_reader *packet);
 
 /* movement */
 bool net_smsg_move(struct net_packet_reader *packet);

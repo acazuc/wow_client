@@ -1,10 +1,9 @@
-#include "net/packets.h"
-
 #include "game/group.h"
 
 #include "itf/interface.h"
 #include "itf/enum.h"
 
+#include "net/packets.h"
 #include "net/packet.h"
 #include "net/opcode.h"
 

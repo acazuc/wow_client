@@ -314,3 +314,82 @@ const char *cursor_type_to_string(enum cursor_type type)
 	return enum_to_string(type, cursor_types, sizeof(cursor_types) / sizeof(*cursor_types));
 }
 
+static const char *chat_msg[] =
+{
+#define ENUM_DEFINE(val) "CHAT_MSG_" #val,
+	ENUM_CHAT_MSG
+#undef ENUM_DEFINE
+};
+
+bool chat_msg_from_string(const char *value, enum chat_msg *type)
+{
+	if (!strcmp(value, "CHAT_MSG_ADDON"))
+	{
+		*type = CHAT_MSG_ADDON;
+		return true;
+	}
+	return enum_from_string(value, chat_msg, sizeof(chat_msg) / sizeof(*chat_msg), (int*)type);
+}
+
+const char *chat_msg_to_string(enum chat_msg type)
+{
+	if (type == CHAT_MSG_ADDON)
+		return "CHAT_MSG_ADDON";
+	return enum_to_string(type, chat_msg, sizeof(chat_msg) / sizeof(*chat_msg));
+}
+
+static const char *chat_channel[] =
+{
+#define ENUM_DEFINE(val) #val,
+	ENUM_CHAT_MSG
+#undef ENUM_DEFINE
+};
+
+bool chat_channel_from_string(const char *value, enum chat_msg *type)
+{
+	if (!strcmp(value, "ADDON"))
+	{
+		*type = CHAT_MSG_ADDON;
+		return true;
+	}
+	return enum_from_string(value, chat_channel, sizeof(chat_channel) / sizeof(*chat_channel), (int*)type);
+}
+
+const char *chat_channel_to_string(enum chat_msg type)
+{
+	if (type == CHAT_MSG_ADDON)
+		return "ADDON";
+	return enum_to_string(type, chat_channel, sizeof(chat_channel) / sizeof(*chat_channel));
+}
+
+bool chat_flag_from_string(const char *value, enum chat_flag *flag)
+{
+#define DO_TEST(str, en) \
+	if (!strcmp(value, str)) \
+	{ \
+		*flag = en; \
+		return true; \
+	}
+	DO_TEST("NONE", CHAT_FLAG_NONE);
+	DO_TEST("AFK", CHAT_FLAG_AFK);
+	DO_TEST("DND", CHAT_FLAG_DND);
+	DO_TEST("GM", CHAT_FLAG_GM);
+	return false;
+#undef DO_TEST
+}
+
+const char *chat_flag_to_string(enum chat_flag flag)
+{
+#define DO_TEST(str, en) \
+	case en: \
+		return str;
+	switch (flag)
+	{
+	DO_TEST("NONE", CHAT_FLAG_NONE);
+	DO_TEST("AFK", CHAT_FLAG_AFK);
+	DO_TEST("DND", CHAT_FLAG_DND);
+	DO_TEST("GM", CHAT_FLAG_GM);
+	}
+	return NULL;
+#undef DO_TEST
+}

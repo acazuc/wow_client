@@ -1,8 +1,7 @@
-#include "net/packets.h"
-
 #include "itf/interface.h"
 
 #include "net/world_socket.h"
+#include "net/packets.h"
 #include "net/network.h"
 #include "net/packet.h"
 #include "net/opcode.h"

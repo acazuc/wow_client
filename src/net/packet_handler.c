@@ -91,6 +91,7 @@ bool net_packet_handler_init(struct net_packet_handler *handler)
 	SET_HANDLE(MSG_MOVE_SET_FACING, net_smsg_move);
 	SET_HANDLE(MSG_MOVE_SET_PITCH, net_smsg_move);
 	SET_HANDLE(MSG_MOVE_HEARTBEAT, net_smsg_move);
+	SET_HANDLE(SMSG_MESSAGECHAT, net_smsg_messagechat);
 
 #undef SET_HANDLE
 

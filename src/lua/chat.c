@@ -1,7 +1,14 @@
-#include "functions.h"
+#include "lua/functions.h"
+
+#include "itf/enum.h"
+
+#include "net/network.h"
+#include "net/packets.h"
+#include "net/packet.h"
 
 #include "wow_lua.h"
 #include "log.h"
+#include "wow.h"
 
 static int luaAPI_GetChatTypeIndex(lua_State *L)
 {
@@ -216,7 +223,24 @@ static int luaAPI_SendChatMessage(lua_State *L)
 	const char *message = lua_tostring(L, 1);
 	if (!message)
 		return luaL_argerror(L, 1, "failed to get message string");
-	LUA_UNIMPLEMENTED_FN();
+	enum chat_msg msg_type;
+	if (argc > 1)
+	{
+		const char *channel = lua_tostring(L, 2);
+		if (!channel)
+			return luaL_argerror(L, 2, "failed to get channel string");
+		if (!chat_channel_from_string(channel, &msg_type))
+			return luaL_argerror(L, 2, "unknown channel");
+	}
+	else
+	{
+		msg_type = CHAT_MSG_SAY;
+	}
+	struct net_packet_writer packet;
+	if (!net_cmsg_messagechat(&packet, msg_type, 0, NULL, message)
+	 || !net_send_packet(g_wow->network, &packet))
+		LOG_ERROR("failed to write messagechat packet");
+	net_packet_writer_destroy(&packet);
 	return 0;
 }
 

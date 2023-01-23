@@ -98,7 +98,7 @@ static bool ctr(struct ui_object *object, struct interface *interface, const cha
 	ui_inset_init(&scrolling_message_frame->text_insets, 0, 0, 0, 0);
 	OPTIONAL_SET(UI_FONT_INSTANCE->font_height);
 	ui_value_init(&OPTIONAL_GET(UI_FONT_INSTANCE->font_height), 12);
-	UI_FONT_INSTANCE->font = strdup("Fonts\\FRIZQT__.TTF");
+	UI_FONT_INSTANCE->font = strdup("Fonts\\arialn.TTF");
 	UI_FONT_INSTANCE->render_font = interface_ref_render_font(UI_OBJECT->interface, UI_FONT_INSTANCE->font, OPTIONAL_GET(UI_FONT_INSTANCE->font_height).abs);
 	add_message(scrolling_message_frame, "ouioui1", 1, .5, .5, 1);
 	add_message(scrolling_message_frame, "ouioui2", 1, .3, .8, 1);
@@ -140,9 +140,9 @@ static void render(struct ui_object *object)
 	int32_t scissor_height = (ui_region_get_height(UI_REGION) - scrolling_message_frame->text_insets.abs.top - scrolling_message_frame->text_insets.abs.bottom) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
 	gfx_set_scissor(g_wow->device, scissor_left, g_wow->render_height - scissor_height - scissor_top, scissor_width, scissor_height);
 	int32_t y = 0;
-	for (size_t i = 0; i < scrolling_message_frame->messages.size; ++i)
+	for (size_t i = scrolling_message_frame->messages.size; i > 0; --i)
 	{
-		struct ui_scrolling_message *message = *JKS_ARRAY_GET(&scrolling_message_frame->messages, i, struct ui_scrolling_message*);
+		struct ui_scrolling_message *message = *JKS_ARRAY_GET(&scrolling_message_frame->messages, i - 1, struct ui_scrolling_message*);
 		if (!message->initialized)
 		{
 			for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)

@@ -1,9 +1,10 @@
 #include "net/packets.h"
-
 #include "net/packet.h"
+#include "net/opcode.h"
 
 #include "itf/interface.h"
 
+#include "wow_lua.h"
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
@@ -210,5 +211,85 @@ bool net_smsg_motd(struct net_packet_reader *packet)
 		jks_array_push_back(&lines, &dup);
 	}
 	jks_array_destroy(&lines);
+	return true;
+}
+
+bool net_cmsg_messagechat(struct net_packet_writer *packet, uint32_t channel, uint32_t lang, const char *target, const char *message)
+{
+	net_packet_writer_init(packet, CMSG_MESSAGECHAT);
+	if (!net_write_u32(packet, channel)
+	 || !net_write_u32(packet, lang)
+	 || (target && !net_write_str(packet, target))
+	 || !net_write_str(packet, message))
+		return false;
+	return true;
+}
+
+bool net_smsg_messagechat(struct net_packet_reader *packet)
+{
+	uint8_t channel;
+	uint32_t lang;
+	if (!net_read_u8(packet, &channel)
+	 || !net_read_u32(packet, &lang))
+		return false;
+	if (channel == CHAT_MSG_MONSTER_SAY || channel == CHAT_MSG_MONSTER_YELL || channel == CHAT_MSG_MONSTER_EMOTE)
+	{
+		const char *name;
+		uint64_t guid;
+		const char *msg;
+		uint8_t unk;
+		if (!net_read_str(packet, &name)
+		 || !net_read_u64(packet, &guid)
+		 || !net_read_str(packet, &msg)
+		 || !net_read_u8(packet, &unk))
+			return false;
+		/* XXX */
+	}
+	else
+	{
+		uint64_t author;
+		uint32_t unk;
+		if (!net_read_u64(packet, &author)
+		 || !net_read_u32(packet, &unk))
+			return false;
+		if (channel == CHAT_MSG_CHANNEL)
+		{
+			const char *channel_name;
+			if (!net_read_str(packet, &channel_name))
+				return false;
+		}
+		uint64_t target;
+		uint32_t msg_size;
+		const char *msg;
+		uint8_t flags;
+		if (!net_read_u64(packet, &target)
+		 || !net_read_u32(packet, &msg_size)
+		 || !net_read_str(packet, &msg)
+		 || !net_read_u8(packet, &flags))
+			return false;
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, msg);
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "player");
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "Common");
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "2. Trade - City");
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "");
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "");
+		lua_pushnil(g_wow->interface->L);
+		lua_pushnumber(g_wow->interface->L, 1); /* zone channelID */
+		lua_pushnil(g_wow->interface->L);
+		lua_pushnumber(g_wow->interface->L, 0); /* channel index */
+		lua_pushnil(g_wow->interface->L);
+		lua_pushstring(g_wow->interface->L, "Trade - City"); /* base name */
+		lua_pushnil(g_wow->interface->L);
+		lua_pushnumber(g_wow->interface->L, 0); /* language */
+		lua_pushnil(g_wow->interface->L);
+		lua_pushnumber(g_wow->interface->L, 0); /* lineID */
+		interface_execute_event(g_wow->interface, EVENT_CHAT_MSG_SAY, 11);
+	}
 	return true;
 }

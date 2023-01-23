@@ -1433,6 +1433,13 @@ static int lua_SetToplevel(lua_State *L)
 	return 0;
 }
 
+static int lua_StartSizing(lua_State *L)
+{
+	LUA_METHOD_FRAME();
+	LUA_UNIMPLEMENTED_METHOD();
+	return 0;
+}
+
 static bool register_methods(struct jks_array *methods)
 {
 	/*
@@ -1465,7 +1472,6 @@ static bool register_methods(struct jks_array *methods)
 	   SetResizable
 	   SetUserPlaced
 	   StartMoving
-	   StartSizing
 	   UnregisterAllEvents
 	 */
 	UI_REGISTER_METHOD(GetScript);
@@ -1507,6 +1513,7 @@ static bool register_methods(struct jks_array *methods)
 	UI_REGISTER_METHOD(SetMovable);
 	UI_REGISTER_METHOD(SetFrameStrata);
 	UI_REGISTER_METHOD(SetToplevel);
+	UI_REGISTER_METHOD(StartSizing);
 	return ui_region_vtable.register_methods(methods);
 }
 
