@@ -543,6 +543,8 @@ void gx_wmo_group_render(struct gx_wmo_group *group, struct jks_array *instances
 
 static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *instance, struct jks_array *frustums, struct vec4f rpos, struct jks_array *transformed)
 {
+	if (!group->loaded)
+		return true;
 	bool ret = false;
 	struct frustum *new_frustum;
 	struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, group->index);

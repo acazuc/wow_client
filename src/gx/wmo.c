@@ -370,14 +370,13 @@ static void check_frustum(struct gx_wmo *wmo, struct gx_wmo_instance *instance)
 			}
 		}
 		group_instance->render_frames[g_wow->cull_frame_id].culled = !frustum_check_fast(&instance->frustum, &group->aabb);
-		if (!group_instance->render_frames[g_wow->cull_frame_id].culled)
+		if (group_instance->render_frames[g_wow->cull_frame_id].culled)
+			continue;
+		group_instance->render_frames[g_wow->cull_frame_id].cull_source = true;
+		for (size_t j = 0; j < group_instance->batches.size; ++j)
 		{
-			group_instance->render_frames[g_wow->cull_frame_id].cull_source = true;
-			for (size_t j = 0; j < group_instance->batches.size; ++j)
-			{
-				struct gx_wmo_batch_instance *batch = jks_array_get(&group_instance->batches, j);
-				batch->render_frames[g_wow->cull_frame_id].culled = true;
-			}
+			struct gx_wmo_batch_instance *batch = jks_array_get(&group_instance->batches, j);
+			batch->render_frames[g_wow->cull_frame_id].culled = true;
 		}
 	}
 }
