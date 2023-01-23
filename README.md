@@ -24,7 +24,6 @@ Wow client targeting wow TBC 2.4.3 8606
 - clone [libwow](https://github.com/acazuc/libwow) in `lib/sl_lib/libwow/libwow`: `git clone https://github.com/acazuc/libwow lib/sl_lib/libwow/libwow`
 - clone [jks](https://github.com/acazuc/jks) in `lib/sl_lib/jks/jks`: `git clone https://github.com/acazuc/jks lib/sl_lib/jks/jks`
 - clone [gfx](https://github.com/acazuc/gfx) in `lib/sl_lib/gfx/gfx`: `git clone https://github.com/acazuc/gfx lib/sl_lib/gfx/gfx`
-- `cd lib/sl_lib && SL_LIBS="zlib libpng freetype glfw lua libxml2 jks gfx libwow portaudio libsamplerate" sh build.sh -d -t linux_64 -m static && cd ../..`
 - `cp config.sample config`
 - `make lib`
 - `make`

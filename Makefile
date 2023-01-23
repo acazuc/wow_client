@@ -429,6 +429,6 @@ clean:
 	@rm -f $(NAME)
 
 lib:
-	@cd lib/sl_lib && SL_LIBS="$(SL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -xb -t "$(TARGET)_64" -m static -o "$(PWD)/$(LIB_DIR)" -j6
+	@cd lib/sl_lib && SL_LIBS="$(SL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(TARGET)_64" -m static -o "$(PWD)/$(LIB_DIR)" -j6
 
 .PHONY: clean size objsize lib
