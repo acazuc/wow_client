@@ -1,8 +1,7 @@
-#include "slider.h"
+#include "ui/texture.h"
+#include "ui/slider.h"
 
 #include "xml/slider.h"
-
-#include "ui/texture.h"
 
 #include "wow_lua.h"
 #include "log.h"

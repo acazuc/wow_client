@@ -1,9 +1,8 @@
-#include "edit_box.h"
+#include "ui/font_string.h"
+#include "ui/edit_box.h"
 
 #include "itf/interface.h"
 #include "itf/font.h"
-
-#include "ui/font_string.h"
 
 #include "xml/edit_box.h"
 

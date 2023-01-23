@@ -1,4 +1,4 @@
-#include "tex_coords.h"
+#include "ui/tex_coords.h"
 
 #include "xml/tex_coords.h"
 

@@ -1,4 +1,4 @@
-#include "game_tooltip.h"
+#include "ui/game_tooltip.h"
 
 #include "xml/game_tooltip.h"
 

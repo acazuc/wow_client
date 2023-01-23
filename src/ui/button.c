@@ -1,9 +1,8 @@
-#include "button.h"
-
 #include "itf/interface.h"
 
 #include "ui/font_string.h"
 #include "ui/texture.h"
+#include "ui/button.h"
 #include "ui/font.h"
 
 #include "lua/functions.h"

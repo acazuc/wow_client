@@ -1,4 +1,4 @@
-#include "gradient.h"
+#include "ui/gradient.h"
 
 #include "xml/gradient.h"
 

@@ -1,10 +1,9 @@
-#include "region.h"
+#include "ui/region.h"
+#include "ui/frame.h"
 
 #include "itf/interface.h"
 
 #include "xml/layout_frame.h"
-
-#include "ui/frame.h"
 
 #include "wow_lua.h"
 #include "memory.h"

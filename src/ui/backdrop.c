@@ -1,10 +1,9 @@
-#include "backdrop.h"
+#include "ui/backdrop.h"
+#include "ui/region.h"
 
 #include "itf/interface.h"
 
 #include "xml/backdrop.h"
-
-#include "ui/region.h"
 
 #include "shaders.h"
 #include "memory.h"

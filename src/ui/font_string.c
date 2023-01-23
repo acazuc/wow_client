@@ -1,4 +1,5 @@
-#include "font_string.h"
+#include "ui/font_string.h"
+#include "ui/font.h"
 
 #include "itf/interface.h"
 #include "itf/font.h"
@@ -8,8 +9,6 @@
 #include "lua/functions.h"
 
 #include "font/font.h"
-
-#include "ui/font.h"
 
 #include "shaders.h"
 #include "wow_lua.h"

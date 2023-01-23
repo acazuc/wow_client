@@ -1,8 +1,7 @@
-#include "status_bar.h"
+#include "ui/status_bar.h"
+#include "ui/texture.h"
 
 #include "xml/status_bar.h"
-
-#include "ui/texture.h"
 
 #include "wow_lua.h"
 #include "log.h"

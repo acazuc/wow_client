@@ -1,8 +1,7 @@
-#include "check_button.h"
+#include "ui/check_button.h"
+#include "ui/texture.h"
 
 #include "xml/check_button.h"
-
-#include "ui/texture.h"
 
 #include "wow_lua.h"
 #include "log.h"

@@ -1,4 +1,5 @@
-#include "scrolling_message_frame.h"
+#include "ui/scrolling_message_frame.h"
+#include "ui/font_string.h"
 
 #include "itf/interface.h"
 #include "itf/font.h"
@@ -96,10 +97,7 @@ static bool ctr(struct ui_object *object, struct interface *interface, const cha
 	ui_font_instance_init(interface, UI_FONT_INSTANCE, object, &g_scrolling_message_frame_font_instance_callbacks);
 	jks_array_init(&scrolling_message_frame->messages, sizeof(struct ui_scrolling_message*), message_dtr, &jks_array_memory_fn_UI);
 	ui_inset_init(&scrolling_message_frame->text_insets, 0, 0, 0, 0);
-	OPTIONAL_SET(UI_FONT_INSTANCE->font_height);
-	ui_value_init(&OPTIONAL_GET(UI_FONT_INSTANCE->font_height), 12);
-	UI_FONT_INSTANCE->font = strdup("Fonts\\arialn.TTF");
-	UI_FONT_INSTANCE->render_font = interface_ref_render_font(UI_OBJECT->interface, UI_FONT_INSTANCE->font, OPTIONAL_GET(UI_FONT_INSTANCE->font_height).abs);
+	scrolling_message_frame->font_string = NULL;
 	add_message(scrolling_message_frame, "ouioui1", 1, .5, .5, 1);
 	add_message(scrolling_message_frame, "ouioui2", 1, .3, .8, 1);
 	add_message(scrolling_message_frame, "ouioui3", 1, .1, .1, 1);
@@ -112,6 +110,7 @@ static void dtr(struct ui_object *object)
 	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
 	jks_array_destroy(&scrolling_message_frame->messages);
 	ui_font_instance_destroy(UI_FONT_INSTANCE);
+	ui_object_delete((struct ui_object*)scrolling_message_frame->font_string);
 	ui_frame_vtable.dtr(object);
 }
 
@@ -124,7 +123,38 @@ static void load_xml(struct ui_object *object, const struct xml_layout_frame *la
 	{
 		if (OPTIONAL_ISSET(xml_scrolling_message_frame->text_insets))
 			ui_inset_init_xml(&scrolling_message_frame->text_insets, &OPTIONAL_GET(xml_scrolling_message_frame->text_insets));
+		if (OPTIONAL_ISSET(xml_scrolling_message_frame->font_string))
+		{
+			if (!scrolling_message_frame->font_string)
+			{
+				scrolling_message_frame->font_string = ui_font_string_new(UI_OBJECT->interface, ((struct xml_layout_frame*)&OPTIONAL_GET(xml_scrolling_message_frame->font_string))->name, UI_REGION);
+				if (scrolling_message_frame->font_string)
+				{
+					scrolling_message_frame->font_string->layered_region.draw_layer = DRAWLAYER_OVERLAY;
+					if (!jks_array_push_back(&UI_FRAME->regions_to_load, &scrolling_message_frame->font_string))
+						LOG_ERROR("failed to add region to load");
+					if (!jks_array_push_back(&UI_FRAME->layers[DRAWLAYER_OVERLAY], &scrolling_message_frame->font_string))
+						LOG_ERROR("failed to add region to layer");
+				}
+			}
+			ui_object_load_xml((struct ui_object*)scrolling_message_frame->font_string, (struct xml_layout_frame*)&OPTIONAL_GET(xml_scrolling_message_frame->font_string));
+		}
 	}
+}
+
+static void post_load(struct ui_object *object)
+{
+	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
+	if (scrolling_message_frame->font_string)
+		scrolling_message_frame->font_instance.font_instance = scrolling_message_frame->font_string->font_instance.font_instance;
+	if (!scrolling_message_frame->font_instance.font_instance)
+	{
+		OPTIONAL_SET(UI_FONT_INSTANCE->font_height);
+		ui_value_init(&OPTIONAL_GET(UI_FONT_INSTANCE->font_height), 9);
+		UI_FONT_INSTANCE->font = strdup("Fonts\\arialn.TTF");
+		UI_FONT_INSTANCE->render_font = interface_ref_render_font(UI_OBJECT->interface, UI_FONT_INSTANCE->font, OPTIONAL_GET(UI_FONT_INSTANCE->font_height).abs);
+	}
+	ui_frame_vtable.post_load(object);
 }
 
 static void render(struct ui_object *object)
@@ -451,7 +481,6 @@ static bool register_methods(struct jks_array *methods)
 	return ui_frame_vtable.register_methods(methods);
 }
 
-UI_INH0(frame, void, post_load);
 UI_INH0(frame, void, register_in_interface);
 UI_INH0(frame, void, unregister_in_interface);
 UI_INH0(frame, void, eval_name);

@@ -1,8 +1,7 @@
-#include "font_instance.h"
+#include "ui/font_instance.h"
+#include "ui/font.h"
 
 #include "font/font.h"
-
-#include "ui/font.h"
 
 #include "itf/interface.h"
 #include "itf/font.h"

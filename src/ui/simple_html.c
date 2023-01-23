@@ -1,10 +1,9 @@
-#include "simple_html.h"
+#include "ui/simple_html.h"
+#include "ui/font_string.h"
 
 #include "itf/interface.h"
 
 #include "xml/simple_html.h"
-
-#include "ui/font_string.h"
 
 #include "wow_lua.h"
 #include "memory.h"

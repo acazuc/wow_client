@@ -1,4 +1,4 @@
-#include "model.h"
+#include "ui/model.h"
 
 #include "itf/interface.h"
 

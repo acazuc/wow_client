@@ -1,4 +1,4 @@
-#include "dress_up_model.h"
+#include "ui/dress_up_model.h"
 
 #include "xml/dress_up_model.h"
 

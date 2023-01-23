@@ -1,4 +1,4 @@
-#include "cooldown.h"
+#include "ui/cooldown.h"
 
 #include "xml/cooldown.h"
 

@@ -1,4 +1,4 @@
-#include "minimap.h"
+#include "ui/minimap.h"
 
 #include "itf/interface.h"
 

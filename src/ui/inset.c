@@ -1,4 +1,4 @@
-#include "inset.h"
+#include "ui/inset.h"
 
 #include "xml/inset.h"
 

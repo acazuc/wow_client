@@ -1,4 +1,4 @@
-#include "dimension.h"
+#include "ui/dimension.h"
 
 #include "xml/dimension.h"
 

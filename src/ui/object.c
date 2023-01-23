@@ -1,5 +1,3 @@
-#include "object.h"
-
 #include "ui/scrolling_message_frame.h"
 #include "ui/taxi_route_frame.h"
 #include "ui/layered_region.h"
@@ -24,6 +22,7 @@
 #include "ui/region.h"
 #include "ui/button.h"
 #include "ui/slider.h"
+#include "ui/object.h"
 #include "ui/model.h"
 #include "ui/color.h"
 #include "ui/font.h"

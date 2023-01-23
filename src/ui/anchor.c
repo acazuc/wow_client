@@ -1,10 +1,9 @@
-#include "anchor.h"
+#include "ui/anchor.h"
+#include "ui/region.h"
 
 #include "itf/interface.h"
 
 #include "xml/anchors.h"
-
-#include "ui/region.h"
 
 #include "memory.h"
 #include "log.h"
