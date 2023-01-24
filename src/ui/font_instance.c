@@ -27,7 +27,7 @@ void ui_font_instance_init(struct interface *interface, struct ui_font_instance 
 	font_instance->render_font = NULL;
 	OPTIONAL_UNSET(font_instance->font_height);
 	OPTIONAL_UNSET(font_instance->color);
-	OPTIONAL_UNSET(font_instance->shadow_color);
+	OPTIONAL_UNSET(font_instance->shadow);
 	OPTIONAL_UNSET(font_instance->spacing);
 	OPTIONAL_UNSET(font_instance->outline);
 	OPTIONAL_UNSET(font_instance->monochrome);
@@ -227,8 +227,8 @@ static int lua_GetShadowColor(lua_State *L)
 	LUA_METHOD_FONT_INSTANCE();
 	if (argc != 1)
 		return luaL_error(L, "Usage: FontInstance:GetShadowColor()");
-	const struct ui_color *color = ui_font_instance_get_shadow_color(font_instance);
-	ui_push_lua_color(L, color);
+	const struct ui_shadow *shadow = ui_font_instance_get_shadow(font_instance);
+	ui_push_lua_color(L, shadow && OPTIONAL_ISSET(shadow->color) ? &OPTIONAL_GET(shadow->color) : NULL);
 	return 4;
 }
 
@@ -240,7 +240,16 @@ static int lua_SetShadowColor(lua_State *L)
 	struct ui_color color;
 	if (!ui_get_lua_color(L, 2, &color))
 		return luaL_argerror(L, 2, "color expected");
-	ui_font_instance_set_shadow_color(font_instance, &color);
+	//ui_font_instance_set_shadow_color(font_instance, &color);
+	return 0;
+}
+
+static int lua_GetFontObject(lua_State *L)
+{
+	LUA_METHOD_FONT_INSTANCE();
+	if (argc != 1)
+		return luaL_error(L, "Usage: FontInstance:GetFontObject()");
+	LUA_UNIMPLEMENTED_METHOD();
 	return 0;
 }
 
@@ -253,13 +262,26 @@ static int lua_SetFontObject(lua_State *L)
 	return 0;
 }
 
+static int lua_GetShadowOffset(lua_State *L)
+{
+	LUA_METHOD_FONT_INSTANCE();
+	if (argc != 1)
+		return luaL_error(L, "Usage: FontInstance:GetShadowOffset()");
+	LUA_UNIMPLEMENTED_METHOD();
+	return 0;
+}
+
+static int lua_SetShadowOffset(lua_State *L)
+{
+	LUA_METHOD_FONT_INSTANCE();
+	if (argc != 3)
+		return luaL_error(L, "Usage: FontInstance:SetShadowOffset(x, y)");
+	LUA_UNIMPLEMENTED_METHOD();
+	return 0;
+}
+
 bool ui_font_instance_register_methods(struct jks_array *methods)
 {
-	/*
-	   GetFontObject
-	   GetShadowOffset
-	   SetShadowOffset
-	 */
 	UI_REGISTER_METHOD(GetJustifyH);
 	UI_REGISTER_METHOD(SetJustifyH);
 	UI_REGISTER_METHOD(GetJustifyV);
@@ -272,7 +294,10 @@ bool ui_font_instance_register_methods(struct jks_array *methods)
 	UI_REGISTER_METHOD(SetFont);
 	UI_REGISTER_METHOD(GetShadowColor);
 	UI_REGISTER_METHOD(SetShadowColor);
+	UI_REGISTER_METHOD(GetFontObject);
 	UI_REGISTER_METHOD(SetFontObject);
+	UI_REGISTER_METHOD(GetShadowOffset);
+	UI_REGISTER_METHOD(SetShadowOffset);
 	return true;
 }
 
@@ -300,21 +325,21 @@ void ui_font_instance_set_color(struct ui_font_instance *font_instance, const st
 	font_instance->callbacks->on_color_changed(font_instance->object);
 }
 
-const struct ui_color *ui_font_instance_get_shadow_color(const struct ui_font_instance *font_instance)
+const struct ui_shadow *ui_font_instance_get_shadow(const struct ui_font_instance *font_instance)
 {
-	if (OPTIONAL_ISSET(font_instance->shadow_color))
-		return &OPTIONAL_GET(font_instance->shadow_color);
+	if (OPTIONAL_ISSET(font_instance->shadow))
+		return &OPTIONAL_GET(font_instance->shadow);
 	if (font_instance->font_instance)
-		return ui_font_instance_get_shadow_color(&font_instance->font_instance->font_instance);
+		return ui_font_instance_get_shadow(&font_instance->font_instance->font_instance);
 	return NULL;
 }
 
-void ui_font_instance_set_shadow_color(struct ui_font_instance *font_instance, const struct ui_color *color)
+void ui_font_instance_set_shadow(struct ui_font_instance *font_instance, const struct ui_shadow *shadow)
 {
-	if (OPTIONAL_ISSET(font_instance->shadow_color) && ui_color_eq(&OPTIONAL_GET(font_instance->shadow_color), color))
+	if (OPTIONAL_ISSET(font_instance->shadow) && ui_shadow_eq(&OPTIONAL_GET(font_instance->shadow), shadow))
 		return;
-	OPTIONAL_CTR(font_instance->shadow_color, *color);
-	font_instance->callbacks->on_shadow_color_changed(font_instance->object);
+	OPTIONAL_CTR(font_instance->shadow, *shadow);
+	font_instance->callbacks->on_shadow_changed(font_instance->object);
 }
 
 float ui_font_instance_get_spacing(const struct ui_font_instance *font_instance)

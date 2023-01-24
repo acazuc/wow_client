@@ -32,6 +32,8 @@
 #define UI_FRAME (&scrolling_message_frame->frame)
 #define UI_FONT_INSTANCE (&scrolling_message_frame->font_instance)
 
+#define OUTLINE_OFFSET .5
+
 struct ui_scrolling_message
 {
 	gfx_attributes_state_t attributes_state;
@@ -42,20 +44,20 @@ struct ui_scrolling_message
 	float red;
 	float green;
 	float blue;
-	uint32_t id;
 	int32_t height;
 	size_t indices_nb;
 	bool initialized;
 	bool dirty_buffers;
 	struct interface_font *last_font; /* XXX should be in scrolling_message_frame ? */
 	uint32_t last_font_revision;
+	uint32_t id;
 };
 
 static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_frame, struct ui_scrolling_message *message, struct interface_font *font);
 static bool add_message(struct ui_scrolling_message_frame *scrolling_message_frame, const char *text, float r, float g, float b, int32_t id);
 static void on_font_height_changed(struct ui_object *object);
 static void on_color_changed(struct ui_object *object);
-static void on_shadow_color_changed(struct ui_object *object);
+static void on_shadow_changed(struct ui_object *object);
 static void on_spacing_changed(struct ui_object *object);
 static void on_outline_changed(struct ui_object *object);
 static void on_monochrome_changed(struct ui_object *object);
@@ -68,7 +70,7 @@ static const struct ui_font_instance_callbacks g_scrolling_message_frame_font_in
 {
 	.on_font_height_changed = on_font_height_changed,
 	.on_color_changed = on_color_changed,
-	.on_shadow_color_changed = on_shadow_color_changed,
+	.on_shadow_changed = on_shadow_changed,
 	.on_spacing_changed = on_spacing_changed,
 	.on_outline_changed = on_outline_changed,
 	.on_monochrome_changed = on_monochrome_changed,
@@ -146,8 +148,8 @@ static void post_load(struct ui_object *object)
 {
 	struct ui_scrolling_message_frame *scrolling_message_frame = (struct ui_scrolling_message_frame*)object;
 	if (scrolling_message_frame->font_string)
-		scrolling_message_frame->font_instance.font_instance = scrolling_message_frame->font_string->font_instance.font_instance;
-	if (!scrolling_message_frame->font_instance.font_instance)
+		UI_FONT_INSTANCE->font_instance = scrolling_message_frame->font_string->font_instance.font_instance;
+	if (!UI_FONT_INSTANCE->font_instance)
 	{
 		OPTIONAL_SET(UI_FONT_INSTANCE->font_height);
 		ui_value_init(&OPTIONAL_GET(UI_FONT_INSTANCE->font_height), 9);
@@ -234,6 +236,99 @@ static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_
 	int32_t y = 0;
 	const char *iter = message->text;
 	const char *end = iter + strlen(message->text);
+	int32_t max_x = (OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x ? OPTIONAL_GET(UI_REGION->size).abs.x : ui_region_get_width(UI_REGION));
+	enum outline_type outline = ui_font_instance_get_outline(UI_FONT_INSTANCE);
+	if (outline == OUTLINE_NONE)
+		goto outline_end;
+	struct font *outline_font = outline == OUTLINE_THICK ? font->outline_thick : font->outline_normal;
+	while (iter < end)
+	{
+		uint32_t character;
+		if (!utf8_next(&iter, end, &character))
+			break;
+		struct font_glyph *glyph = font_get_glyph(outline_font, character);
+		if (!glyph)
+			continue;
+		float char_width = glyph->advance;
+		if (x + char_width > max_x)
+		{
+			x = 0;
+			y += font->font->height;
+		}
+		float char_render_left = x + glyph->offset_x + OUTLINE_OFFSET;
+		float char_render_top = y + glyph->offset_y + OUTLINE_OFFSET;
+		float char_render_right = char_render_left + glyph->width;
+		float char_render_bottom = char_render_top + glyph->height;
+		{
+			uint16_t *tmp = jks_array_grow(&indices, 6);
+			if (!tmp)
+			{
+				LOG_ERROR("failed to grow indices");
+				goto err;
+			}
+			tmp[0] = vertexes.size + 0;
+			tmp[1] = vertexes.size + 1;
+			tmp[2] = vertexes.size + 2;
+			tmp[3] = vertexes.size + 0;
+			tmp[4] = vertexes.size + 2;
+			tmp[5] = vertexes.size + 3;
+		}
+		struct shader_ui_input *vertex = jks_array_grow(&vertexes, 4);
+		if (!vertex)
+		{
+			LOG_ERROR("failed to grow vertex");
+			goto err;
+		}
+		{
+			struct vec2f tmp[4];
+			font_glyph_tex_coords(outline_font, glyph, &tmp[0].x);
+			VEC2_CPY(vertex[0].uv, tmp[0]);
+			VEC2_CPY(vertex[1].uv, tmp[1]);
+			VEC2_CPY(vertex[2].uv, tmp[2]);
+			VEC2_CPY(vertex[3].uv, tmp[3]);
+		}
+		VEC2_SET(vertex[0].position, char_render_left , char_render_top);
+		VEC2_SET(vertex[1].position, char_render_right, char_render_top);
+		VEC2_SET(vertex[2].position, char_render_right, char_render_bottom);
+		VEC2_SET(vertex[3].position, char_render_left , char_render_bottom);
+		VEC4_SET(vertex[0].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[1].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[2].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[3].color, 0, 0, 0, 1);
+		x += char_width;
+	}
+
+outline_end:;
+
+	const struct ui_shadow *shadow = ui_font_instance_get_shadow(UI_FONT_INSTANCE);
+	if (!shadow)
+		goto shadow_end;
+	const struct ui_color *shadow_color;
+	struct ui_color default_shadow_color;
+	if (OPTIONAL_ISSET(shadow->color))
+	{
+		shadow_color = &OPTIONAL_GET(shadow->color);
+	}
+	else
+	{
+		VEC4_SET(default_shadow_color, 0, 0, 0, 1);
+		shadow_color = &default_shadow_color;
+	}
+	const struct ui_dimension *shadow_offset;
+	struct ui_dimension default_shadow_offset;
+	if (OPTIONAL_ISSET(shadow->offset))
+	{
+		shadow_offset = &OPTIONAL_GET(shadow->offset);
+	}
+	else
+	{
+		ui_dimension_init(&default_shadow_offset, 0, 0);
+		shadow_offset = &default_shadow_offset;
+	}
+	iter = message->text;
+	end = iter + strlen(message->text);
+	x = 0;
+	y = 0;
 	while (iter < end)
 	{
 		uint32_t character;
@@ -243,6 +338,74 @@ static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_
 		if (!glyph)
 			continue;
 		float char_width = glyph->advance;
+		if (x + char_width > max_x)
+		{
+			x = 0;
+			y += font->font->height;
+		}
+		float char_render_left = x + glyph->offset_x + shadow_offset->abs.x;
+		float char_render_top = y + glyph->offset_y - shadow_offset->abs.y;
+		float char_render_right = char_render_left + glyph->width;
+		float char_render_bottom = char_render_top + glyph->height;
+		{
+			uint16_t *tmp = jks_array_grow(&indices, 6);
+			if (!tmp)
+			{
+				LOG_ERROR("failed to grow indices");
+				goto err;
+			}
+			tmp[0] = vertexes.size + 0;
+			tmp[1] = vertexes.size + 1;
+			tmp[2] = vertexes.size + 2;
+			tmp[3] = vertexes.size + 0;
+			tmp[4] = vertexes.size + 2;
+			tmp[5] = vertexes.size + 3;
+		}
+		struct shader_ui_input *vertex = jks_array_grow(&vertexes, 4);
+		if (!vertex)
+		{
+			LOG_ERROR("failed to grow vertex");
+			goto err;
+		}
+		{
+			struct vec2f tmp[4];
+			font_glyph_tex_coords(font->font, glyph, &tmp[0].x);
+			VEC2_CPY(vertex[0].uv, tmp[0]);
+			VEC2_CPY(vertex[1].uv, tmp[1]);
+			VEC2_CPY(vertex[2].uv, tmp[2]);
+			VEC2_CPY(vertex[3].uv, tmp[3]);
+		}
+		VEC2_SET(vertex[0].position, char_render_left , char_render_top);
+		VEC2_SET(vertex[1].position, char_render_right, char_render_top);
+		VEC2_SET(vertex[2].position, char_render_right, char_render_bottom);
+		VEC2_SET(vertex[3].position, char_render_left , char_render_bottom);
+		VEC4_CPY(vertex[0].color, *shadow_color);
+		VEC4_CPY(vertex[1].color, *shadow_color);
+		VEC4_CPY(vertex[2].color, *shadow_color);
+		VEC4_CPY(vertex[3].color, *shadow_color);
+		x += char_width;
+	}
+
+shadow_end:
+
+	iter = message->text;
+	end = iter + strlen(message->text);
+	x = 0;
+	y = 0;
+	while (iter < end)
+	{
+		uint32_t character;
+		if (!utf8_next(&iter, end, &character))
+			break;
+		struct font_glyph *glyph = font_get_glyph(font->font, character);
+		if (!glyph)
+			continue;
+		float char_width = glyph->advance;
+		if (x + char_width > max_x)
+		{
+			x = 0;
+			y += font->font->height;
+		}
 		float char_render_left = x + glyph->offset_x;
 		float char_render_top = y + glyph->offset_y;
 		float char_render_right = char_render_left + glyph->width;
@@ -267,7 +430,6 @@ static void update_buffers(struct ui_scrolling_message_frame *scrolling_message_
 			LOG_ERROR("failed to grow vertex");
 			goto err;
 		}
-		/* XXX x overflow */
 		{
 			struct vec2f tmp[4];
 			font_glyph_tex_coords(font->font, glyph, &tmp[0].x);
@@ -338,11 +500,11 @@ static bool add_message(struct ui_scrolling_message_frame *scrolling_message_fra
 	message->red = r;
 	message->green = g;
 	message->blue = b;
-	message->id = id;
 	message->initialized = false;
 	message->dirty_buffers = true;
 	message->last_font = NULL;
 	message->last_font_revision = 0;
+	message->id = id;
 	*messagep = message;
 	return true;
 }
@@ -357,7 +519,7 @@ static void on_color_changed(struct ui_object *object)
 	(void)object;
 }
 
-static void on_shadow_color_changed(struct ui_object *object)
+static void on_shadow_changed(struct ui_object *object)
 {
 	(void)object;
 }

@@ -56,7 +56,7 @@ static void rel_dtr(struct xml_element *element)
 
 static enum xml_parse_attribute_status rel_parse_attribute(struct xml_element *element, const struct xml_attr *attribute)
 {
-	struct xml_rel_dimension *rel_dimension = (struct xml_rel_dimension_*)element;
+	struct xml_rel_dimension *rel_dimension = (struct xml_rel_dimension*)element;
 	XML_ELEMENT_ATTRIBUTE_TEST_FLOAT(attribute, "x", &rel_dimension->x);
 	XML_ELEMENT_ATTRIBUTE_TEST_FLOAT(attribute, "y", &rel_dimension->y);
 	return xml_element_vtable.parse_attribute(element, attribute);

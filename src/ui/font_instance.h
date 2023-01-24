@@ -3,6 +3,7 @@
 
 #include "itf/enum.h"
 
+#include "ui/shadow.h"
 #include "ui/object.h"
 #include "ui/value.h"
 #include "ui/color.h"
@@ -21,7 +22,7 @@ struct ui_font_instance_callbacks
 {
 	ui_font_instance_changed_cb_t on_font_height_changed;
 	ui_font_instance_changed_cb_t on_color_changed;
-	ui_font_instance_changed_cb_t on_shadow_color_changed;
+	ui_font_instance_changed_cb_t on_shadow_changed;
 	ui_font_instance_changed_cb_t on_spacing_changed;
 	ui_font_instance_changed_cb_t on_outline_changed;
 	ui_font_instance_changed_cb_t on_monochrome_changed;
@@ -34,7 +35,7 @@ struct ui_font_instance
 	struct interface *interface;
 	struct optional_ui_value font_height;
 	struct optional_ui_color color;
-	struct optional_ui_color shadow_color;
+	struct optional_ui_shadow shadow;
 	struct optional_float spacing;
 	struct optional_outline_type outline;
 	struct optional_bool monochrome;
@@ -53,8 +54,8 @@ struct interface_font *ui_font_instance_get_render_font(const struct ui_font_ins
 const struct ui_value *ui_font_instance_get_font_height(const struct ui_font_instance *font_instance);
 const struct ui_color *ui_font_instance_get_color(const struct ui_font_instance *font_instance);
 void ui_font_instance_set_color(struct ui_font_instance *font_instance, const struct ui_color *color);
-const struct ui_color *ui_font_instance_get_shadow_color(const struct ui_font_instance *font_instance);
-void ui_font_instance_set_shadow_color(struct ui_font_instance *font_instance, const struct ui_color *color);
+const struct ui_shadow *ui_font_instance_get_shadow(const struct ui_font_instance *font_instance);
+void ui_font_instance_set_shadow(struct ui_font_instance *font_instance, const struct ui_shadow *shadow);
 float ui_font_instance_get_spacing(const struct ui_font_instance *font_instance);
 void ui_font_instance_set_spacing(struct ui_font_instance *font_instance, float spacing);
 enum outline_type ui_font_instance_get_outline(const struct ui_font_instance *font_instance);

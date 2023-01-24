@@ -15,6 +15,7 @@ static void ctr(struct xml_element *element)
 {
 	xml_frame_vtable.ctr(element);
 	struct xml_scrolling_message_frame *scrolling_message_frame = (struct xml_scrolling_message_frame*)element;
+	((struct xml_layout_frame*)scrolling_message_frame)->mask |= XML_LAYOUT_FRAME_scrolling_message_frame;
 	OPTIONAL_UNSET(scrolling_message_frame->font_string);
 	OPTIONAL_UNSET(scrolling_message_frame->text_insets);
 	scrolling_message_frame->font = NULL;

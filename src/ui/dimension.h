@@ -35,5 +35,6 @@ OPTIONAL_DEF(optional_ui_dimension, struct ui_dimension);
 
 void ui_dimension_init_xml(struct ui_dimension *dimension, const struct xml_dimension *xml);
 void ui_dimension_init(struct ui_dimension *dimension, int32_t x, int32_t y);
+bool ui_dimension_eq(const struct ui_dimension *d1, const struct ui_dimension *d2);
 
 #endif

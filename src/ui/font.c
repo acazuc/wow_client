@@ -25,7 +25,7 @@ MEMORY_DECL(UI);
 
 static void on_font_height_changed(struct ui_object *object);
 static void on_color_changed(struct ui_object *object);
-static void on_shadow_color_changed(struct ui_object *object);
+static void on_shadow_changed(struct ui_object *object);
 static void on_spacing_changed(struct ui_object *object);
 static void on_outline_changed(struct ui_object *object);
 static void on_monochrome_changed(struct ui_object *object);
@@ -36,7 +36,7 @@ static const struct ui_font_instance_callbacks g_font_font_instance_callbacks =
 {
 	.on_font_height_changed = on_font_height_changed,
 	.on_color_changed = on_color_changed,
-	.on_shadow_color_changed = on_shadow_color_changed,
+	.on_shadow_changed = on_shadow_changed,
 	.on_spacing_changed = on_spacing_changed,
 	.on_outline_changed = on_outline_changed,
 	.on_monochrome_changed = on_monochrome_changed,
@@ -143,6 +143,11 @@ static void load_xml(struct ui_object *object, const struct xml_layout_frame *la
 		const struct ui_value *font_height = ui_font_instance_get_font_height(UI_FONT_INSTANCE);
 		UI_FONT_INSTANCE->render_font = interface_ref_render_font(UI_OBJECT->interface, UI_FONT_INSTANCE->font, font_height ? font_height->abs : 0);
 	}
+	if (OPTIONAL_ISSET(xml_font->shadow))
+	{
+		OPTIONAL_SET(UI_FONT_INSTANCE->shadow);
+		ui_shadow_init_xml(&OPTIONAL_GET(UI_FONT_INSTANCE->shadow), &OPTIONAL_GET(xml_font->shadow));
+	}
 }
 
 static struct ui_font_instance *as_font_instance(struct ui_object *object)
@@ -191,14 +196,14 @@ static void on_color_changed(struct ui_object *object)
 	}
 }
 
-static void on_shadow_color_changed(struct ui_object *object)
+static void on_shadow_changed(struct ui_object *object)
 {
 	struct ui_font *font = (struct ui_font*)object;
 	for (size_t i = 0; i < font->childs.size; ++i)
 	{
 		struct ui_font_instance *child = *JKS_ARRAY_GET(&font->childs, i, struct ui_font_instance*);
-		if (!OPTIONAL_ISSET(child->shadow_color))
-			child->callbacks->on_shadow_color_changed(child->object);
+		if (!OPTIONAL_ISSET(child->shadow))
+			child->callbacks->on_shadow_changed(child->object);
 	}
 }
 

@@ -42,7 +42,7 @@ static void on_changed(void *ptr);
 static void load_font_string(struct ui_edit_box *edit_box);
 static void on_font_height_changed(struct ui_object *object);
 static void on_color_changed(struct ui_object *object);
-static void on_shadow_color_changed(struct ui_object *object);
+static void on_shadow_changed(struct ui_object *object);
 static void on_spacing_changed(struct ui_object *object);
 static void on_outline_changed(struct ui_object *object);
 static void on_monochrome_changed(struct ui_object *object);
@@ -53,7 +53,7 @@ static const struct ui_font_instance_callbacks g_edit_box_font_instance_callback
 {
 	.on_font_height_changed = on_font_height_changed,
 	.on_color_changed = on_color_changed,
-	.on_shadow_color_changed = on_shadow_color_changed,
+	.on_shadow_changed = on_shadow_changed,
 	.on_spacing_changed = on_spacing_changed,
 	.on_outline_changed = on_outline_changed,
 	.on_monochrome_changed = on_monochrome_changed,
@@ -623,7 +623,7 @@ static void on_color_changed(struct ui_object *object)
 	/* XXX */
 }
 
-static void on_shadow_color_changed(struct ui_object *object)
+static void on_shadow_changed(struct ui_object *object)
 {
 	(void)object;
 	/* XXX */

@@ -228,6 +228,7 @@ SRCS_NAME = wow.c \
             ui/movie_frame.c \
             ui/taxi_route_frame.c \
             ui/world_frame.c \
+            ui/shadow.c \
             xml/element.c \
             xml/layout_frame.c \
             xml/frame.c \

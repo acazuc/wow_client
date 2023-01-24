@@ -35,7 +35,7 @@
 #define UI_LAYERED_REGION (&font_string->layered_region)
 #define UI_FONT_INSTANCE (&font_string->font_instance)
 
-#define SHADOW_OFFSET .5
+#define OUTLINE_OFFSET .5
 
 MEMORY_DECL(UI);
 
@@ -43,7 +43,7 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 static void load_render_font(struct ui_font_string *font_string);
 static void on_font_height_changed(struct ui_object *object);
 static void on_color_changed(struct ui_object *object);
-static void on_shadow_color_changed(struct ui_object *object);
+static void on_shadow_changed(struct ui_object *object);
 static void on_spacing_changed(struct ui_object *object);
 static void on_outline_changed(struct ui_object *object);
 static void on_monochrome_changed(struct ui_object *object);
@@ -54,7 +54,7 @@ static const struct ui_font_instance_callbacks g_font_string_font_instance_callb
 {
 	.on_font_height_changed = on_font_height_changed,
 	.on_color_changed = on_color_changed,
-	.on_shadow_color_changed = on_shadow_color_changed,
+	.on_shadow_changed = on_shadow_changed,
 	.on_spacing_changed = on_spacing_changed,
 	.on_outline_changed = on_outline_changed,
 	.on_monochrome_changed = on_monochrome_changed,
@@ -377,11 +377,6 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 	jks_array_init(&indices, sizeof(uint16_t), NULL, &jks_array_memory_fn_UI);
 	int32_t base_x = ui_font_string_get_text_left(font_string);
 	int32_t base_y = ui_font_string_get_text_top(font_string);
-	const struct ui_color *shadow_color = ui_font_instance_get_shadow_color(UI_FONT_INSTANCE);
-	struct ui_color default_shadow_color;
-	VEC4_SET(default_shadow_color, 0, 0, 0, 1);
-	if (!shadow_color)
-		shadow_color = &default_shadow_color;
 	float spacing = 0;/* ui_font_instance_get_spacing(UI_FONT_INSTANCE); */
 	const char *iter = font_string->text;
 	const char *end = iter + strlen(font_string->text);
@@ -391,7 +386,7 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 	int32_t max_x = base_x + (OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x ? OPTIONAL_GET(UI_REGION->size).abs.x : ui_region_get_width(UI_REGION));
 	max_x++;
 	if (outline == OUTLINE_NONE)
-		goto shadow_end;
+		goto outline_end;
 	struct font *outline_font = outline == OUTLINE_THICK ? font->outline_thick : font->outline_normal;
 	while (iter < end)
 	{
@@ -447,8 +442,8 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 			x = base_x;
 			y += font->font->height;
 		}
-		float char_render_left = x + glyph->offset_x + SHADOW_OFFSET;
-		float char_render_top = y + glyph->offset_y + SHADOW_OFFSET;
+		float char_render_left = x + glyph->offset_x + OUTLINE_OFFSET;
+		float char_render_top = y + glyph->offset_y + OUTLINE_OFFSET;
 		float char_render_right = char_render_left + glyph->width;
 		float char_render_bottom = char_render_top + glyph->height;
 		{
@@ -474,6 +469,135 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 		{
 			struct vec2f tmp[4];
 			font_glyph_tex_coords(outline_font, glyph, &tmp[0].x);
+			VEC2_CPY(vertex[0].uv, tmp[0]);
+			VEC2_CPY(vertex[1].uv, tmp[1]);
+			VEC2_CPY(vertex[2].uv, tmp[2]);
+			VEC2_CPY(vertex[3].uv, tmp[3]);
+		}
+		VEC2_SET(vertex[0].position, char_render_left , char_render_top);
+		VEC2_SET(vertex[1].position, char_render_right, char_render_top);
+		VEC2_SET(vertex[2].position, char_render_right, char_render_bottom);
+		VEC2_SET(vertex[3].position, char_render_left , char_render_bottom);
+		VEC4_SET(vertex[0].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[1].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[2].color, 0, 0, 0, 1);
+		VEC4_SET(vertex[3].color, 0, 0, 0, 1);
+		x += char_width;
+		x += spacing;
+	}
+
+outline_end:;
+
+	const struct ui_shadow *shadow = ui_font_instance_get_shadow(UI_FONT_INSTANCE);
+	if (!shadow)
+		goto shadow_end;
+	const struct ui_color *shadow_color;
+	struct ui_color default_shadow_color;
+	if (OPTIONAL_ISSET(shadow->color))
+	{
+		shadow_color = &OPTIONAL_GET(shadow->color);
+	}
+	else
+	{
+		VEC4_SET(default_shadow_color, 0, 0, 0, 1);
+		shadow_color = &default_shadow_color;
+	}
+	const struct ui_dimension *shadow_offset;
+	struct ui_dimension default_shadow_offset;
+	if (OPTIONAL_ISSET(shadow->offset))
+	{
+		shadow_offset = &OPTIONAL_GET(shadow->offset);
+	}
+	else
+	{
+		ui_dimension_init(&default_shadow_offset, 0, 0);
+		shadow_offset = &default_shadow_offset;
+	}
+	iter = font_string->text;
+	end = iter + strlen(font_string->text);
+	x = base_x;
+	y = base_y;
+	while (iter < end)
+	{
+		uint32_t character;
+		if (!utf8_next(&iter, end, &character))
+			goto shadow_end;
+		if (character == '|')
+		{
+			uint32_t next_character;
+			if (!utf8_next(&iter, end, &next_character))
+				break;
+			if (next_character == 'c')
+			{
+				for (int i = 0; i < 8 && iter < end; ++i)
+				{
+					uint32_t tmp;
+					if (!utf8_next(&iter, end, &tmp))
+						goto shadow_end;
+				}
+				continue;
+			}
+			else if (next_character == 'r')
+			{
+				continue;
+			}
+			else if (next_character == 'H')
+			{
+				/* TODO */
+				continue;
+			}
+			else if (next_character == '|')
+			{
+			}
+			else
+			{
+				uint32_t tmp;
+				if (!utf8_prev(&iter, (const char*)font_string->text, &tmp))
+					goto shadow_end;
+			}
+		}
+		if (character == '\n')
+		{
+			x = base_x;
+			y += font->font->height;
+			continue;
+		}
+		struct font_glyph *glyph = font_get_glyph(font->font, character);
+		if (!glyph)
+			continue;
+		float char_width = glyph->advance;
+		if (x + char_width > max_x)
+		{
+			x = base_x;
+			y += font->font->height;
+		}
+		float char_render_left = x + glyph->offset_x + shadow_offset->abs.x;
+		float char_render_top = y + glyph->offset_y - shadow_offset->abs.y;
+		float char_render_right = char_render_left + glyph->width;
+		float char_render_bottom = char_render_top + glyph->height;
+		{
+			uint16_t *tmp = jks_array_grow(&indices, 6);
+			if (!tmp)
+			{
+				LOG_ERROR("failed to grow indices");
+				goto err;
+			}
+			tmp[0] = vertexes.size + 0;
+			tmp[1] = vertexes.size + 1;
+			tmp[2] = vertexes.size + 2;
+			tmp[3] = vertexes.size + 0;
+			tmp[4] = vertexes.size + 2;
+			tmp[5] = vertexes.size + 3;
+		}
+		struct shader_ui_input *vertex = jks_array_grow(&vertexes, 4);
+		if (!vertex)
+		{
+			LOG_ERROR("failed to grow vertex");
+			goto err;
+		}
+		{
+			struct vec2f tmp[4];
+			font_glyph_tex_coords(font->font, glyph, &tmp[0].x);
 			VEC2_CPY(vertex[0].uv, tmp[0]);
 			VEC2_CPY(vertex[1].uv, tmp[1]);
 			VEC2_CPY(vertex[2].uv, tmp[2]);
@@ -791,7 +915,7 @@ static void on_color_changed(struct ui_object *object)
 	font_string->dirty_buffers = true;
 }
 
-static void on_shadow_color_changed(struct ui_object *object)
+static void on_shadow_changed(struct ui_object *object)
 {
 	struct ui_font_string *font_string = (struct ui_font_string*)object;
 	font_string->dirty_buffers = true;

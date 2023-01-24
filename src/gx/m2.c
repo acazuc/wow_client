@@ -1810,7 +1810,7 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 		}
 		else
 		{
-			LOG_ERROR("too much bones (%u)", instance->parent->bones_nb);
+			LOG_ERROR("too much bones (%u, %s)", instance->parent->bones_nb, instance->parent->filename);
 		}
 	}
 	if (instance->enable_lights)

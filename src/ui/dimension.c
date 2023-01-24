@@ -66,3 +66,16 @@ static void load_xml(struct ui_dimension *dimension, const struct xml_dimension 
 		}
 	}
 }
+
+bool ui_dimension_eq(const struct ui_dimension *d1, const struct ui_dimension *d2)
+{
+	if (d1->type == DIMENSION_ABSOLUTE)
+	{
+		if (d2->type != DIMENSION_ABSOLUTE)
+			return false;
+		return d1->abs.x == d2->abs.x && d1->abs.y == d2->abs.y;
+	}
+	if (d2->type == DIMENSION_ABSOLUTE)
+		return false;
+	return d1->rel.x == d2->rel.x && d1->rel.y == d2->rel.y;
+}

@@ -316,7 +316,7 @@ static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
 		return;
 	}
 	int32_t right = ui_region_get_right(region);
-	if (event->x > right - region->hit_rect_insets.abs.right)
+	if (event->x > right + region->hit_rect_insets.abs.right)
 	{
 		region->hovered = false;
 		return;
@@ -328,7 +328,7 @@ static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
 		return;
 	}
 	int32_t bottom = ui_region_get_bottom(region);
-	if (event->y > bottom - region->hit_rect_insets.abs.bottom)
+	if (event->y > bottom + region->hit_rect_insets.abs.bottom)
 	{
 		region->hovered = false;
 		return;
