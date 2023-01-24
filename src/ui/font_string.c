@@ -286,6 +286,7 @@ void ui_font_string_update_size(struct ui_font_string *font_string, struct inter
 	const char *end = iter + strlen(font_string->text);
 	int32_t tmp_width = 0;
 	float spacing = 0;/* ui_font_instance_get_spacing(UI_FONT_INSTANCE); */
+	int32_t max_x = OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x ? OPTIONAL_GET(UI_REGION->size).abs.x : INT32_MAX - 1;
 	while (iter < end)
 	{
 		uint32_t character;
@@ -336,7 +337,7 @@ void ui_font_string_update_size(struct ui_font_string *font_string, struct inter
 		if (!glyph)
 			continue;
 		float char_width = glyph->advance;
-		if (OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x && tmp_width + char_width > OPTIONAL_GET(UI_REGION->size).abs.x + 1)
+		if (tmp_width + char_width > max_x + 1)
 		{
 			font_string->text_height += font->font->height;
 			if (tmp_width > font_string->text_width)
@@ -387,7 +388,8 @@ static void update_buffers(struct ui_font_string *font_string, struct interface_
 	int32_t x = base_x;
 	int32_t y = base_y;
 	enum outline_type outline = ui_font_instance_get_outline(UI_FONT_INSTANCE);
-	int32_t max_x = OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x ? OPTIONAL_GET(UI_REGION->size).abs.x : ui_region_get_width(UI_REGION);
+	int32_t max_x = base_x + (OPTIONAL_ISSET(UI_REGION->size) && OPTIONAL_GET(UI_REGION->size).abs.x ? OPTIONAL_GET(UI_REGION->size).abs.x : ui_region_get_width(UI_REGION));
+	max_x++;
 	if (outline == OUTLINE_NONE)
 		goto shadow_end;
 	struct font *outline_font = outline == OUTLINE_THICK ? font->outline_thick : font->outline_normal;
