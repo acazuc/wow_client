@@ -596,7 +596,7 @@ next_batch:
 		instance->traversed_portals[portal / 8] |= 1 << (portal % 8);
 		struct wow_mopr_data *mopr = jks_array_get(&group->parent->mopr, group->portal_start + i);
 		struct wow_mopt_data *mopt = jks_array_get(&group->parent->mopt, mopr->portal_index);
-		if ((VEC3_DOT(mopt->normal, rpos) > mopt->distance) != (mopr->side < 0))
+		if ((VEC3_DOT(mopt->normal, rpos) + mopt->distance < 0) != (mopr->side < 0))
 			continue;
 		uint32_t base = mopt->start_vertex;
 		if (!jks_array_resize(transformed, mopt->count))
