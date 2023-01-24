@@ -207,25 +207,25 @@ static bool build_m2_collisions(gfx_shader_state_t *shader_state)
 	return load_shader_state(shader_state, "m2_collisions", attributes, constants, samplers);
 }
 
-static bool build_chromaber(gfx_shader_state_t *shader_state)
+static bool build_wmo_portals(gfx_shader_state_t *shader_state)
 {
 	static const gfx_shader_attribute_t attributes[] =
 	{
 		{"vs_position", 0},
-		{"vs_uv", 1},
+		{"vs_color", 1},
 		{NULL, 0}
 	};
 	static const gfx_shader_constant_t constants[] =
 	{
 		{"model_block", 1},
+		{"mesh_block", 0},
 		{NULL, 0}
 	};
 	static const gfx_shader_sampler_t samplers[] =
 	{
-		{"color_tex", 0},
 		{NULL, 0}
 	};
-	return load_shader_state(shader_state, "chromaber", attributes, constants, samplers);
+	return load_shader_state(shader_state, "wmo_portals", attributes, constants, samplers);
 }
 
 static bool build_bloom_merge(gfx_shader_state_t *shader_state)
@@ -319,6 +319,27 @@ static bool build_mclq_magma(gfx_shader_state_t *shader_state)
 		{NULL, 0}
 	};
 	return load_shader_state(shader_state, "mclq_magma", attributes, constants, samplers);
+}
+
+static bool build_chromaber(gfx_shader_state_t *shader_state)
+{
+	static const gfx_shader_attribute_t attributes[] =
+	{
+		{"vs_position", 0},
+		{"vs_uv", 1},
+		{NULL, 0}
+	};
+	static const gfx_shader_constant_t constants[] =
+	{
+		{"model_block", 1},
+		{NULL, 0}
+	};
+	static const gfx_shader_sampler_t samplers[] =
+	{
+		{"color_tex", 0},
+		{NULL, 0}
+	};
+	return load_shader_state(shader_state, "chromaber", attributes, constants, samplers);
 }
 
 static bool build_m2_lights(gfx_shader_state_t *shader_state)
@@ -835,11 +856,12 @@ bool shaders_build(struct shaders *shaders)
 
 	BUILD_SHADER(ssao_denoiser);
 	BUILD_SHADER(m2_collisions);
-	BUILD_SHADER(chromaber);
+	BUILD_SHADER(wmo_portals);
 	BUILD_SHADER(bloom_merge);
 	BUILD_SHADER(bloom_blur);
 	BUILD_SHADER(mclq_water);
 	BUILD_SHADER(mclq_magma);
+	BUILD_SHADER(chromaber);
 	BUILD_SHADER(m2_lights);
 	BUILD_SHADER(m2_bones);
 	BUILD_SHADER(particle);
@@ -878,6 +900,7 @@ void shaders_clean(struct shaders *shaders)
 
 	CLEAN_SHADER(ssao_denoiser);
 	CLEAN_SHADER(m2_collisions);
+	CLEAN_SHADER(wmo_portals);
 	CLEAN_SHADER(bloom_merge);
 	CLEAN_SHADER(bloom_blur);
 	CLEAN_SHADER(mclq_water);

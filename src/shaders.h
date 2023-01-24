@@ -19,6 +19,16 @@ struct shader_basic_model_block
 	struct mat4f mvp;
 };
 
+struct shader_wmo_portals_model_block
+{
+	struct mat4f mvp;
+};
+
+struct shader_wmo_portals_mesh_block
+{
+	struct vec4f color;
+};
+
 struct shader_bloom_blur_model_block
 {
 	struct mat4f mvp;
@@ -293,6 +303,12 @@ struct shader_m2_collisions_input
 	struct vec3f position;
 };
 
+struct shader_wmo_portals_input
+{
+	struct vec3f position;
+	struct vec4f color;
+};
+
 struct shader_m2_lights_input
 {
 	struct vec3f position;
@@ -374,6 +390,7 @@ struct shaders
 {
 	gfx_shader_state_t ssao_denoiser;
 	gfx_shader_state_t m2_collisions;
+	gfx_shader_state_t wmo_portals;
 	gfx_shader_state_t bloom_merge;
 	gfx_shader_state_t bloom_blur;
 	gfx_shader_state_t mclq_water;

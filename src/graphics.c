@@ -35,8 +35,8 @@ static const gfx_input_layout_bind_t g_m2_collisions_binds[] =
 
 static const gfx_input_layout_bind_t g_wmo_portals_binds[] =
 {
-	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, position)},
-	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, color)},
+	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, position)},
+	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, color)},
 };
 
 static const gfx_input_layout_bind_t g_collisions_binds[] =
@@ -301,7 +301,7 @@ bool graphics_init(struct graphics *graphics)
 		GFX_PRIMITIVE_LINES);
 	gfx_create_pipeline_state(g_wow->device,
 		&graphics->wmo_portals_pipeline_state,
-		&g_wow->shaders->basic,
+		&g_wow->shaders->wmo_portals,
 		&graphics->world_rasterizer_states[WORLD_RASTERIZER_UNCULLED],
 		&graphics->world_depth_stencil_states[WORLD_DEPTH_STENCIL_R_NO],
 		&graphics->world_blend_states[WORLD_BLEND_ALPHA],

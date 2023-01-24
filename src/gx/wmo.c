@@ -159,8 +159,8 @@ bool gx_wmo_load(struct gx_wmo *wmo, struct wow_wmo_file *file)
 		memcpy(jks_array_get(&wmo->mopt, 0), file->mopt.data, sizeof(*file->mopt.data) * file->mopt.data_nb);
 		for (size_t i = 0; i < wmo->mopt.size; ++i)
 		{
-			struct wow_vec3f *tmp = &((struct wow_mopt_data*)jks_array_get(&wmo->mopt, i))->normal;
-			*tmp = (struct wow_vec3f){tmp->x, tmp->z, -tmp->y};
+			struct wow_mopt_data *mopt = jks_array_get(&wmo->mopt, i);
+			mopt->normal = (struct wow_vec3f){mopt->normal.x, mopt->normal.z, -mopt->normal.y};
 		}
 	}
 	if (file->momt.data_nb)
@@ -304,8 +304,7 @@ void gx_wmo_render_portals(struct gx_wmo *wmo)
 	for (size_t i = 0; i < wmo->render_frames[g_wow->draw_frame_id].to_render.size; ++i)
 	{
 		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&wmo->render_frames[g_wow->draw_frame_id].to_render, i, struct gx_wmo_instance*);
-		gx_wmo_portals_update(&wmo->gx_portals, &instance->render_frames[g_wow->draw_frame_id].mvp);
-		gx_wmo_portals_render(&wmo->gx_portals);
+		gx_wmo_portals_render(&wmo->gx_portals, instance);
 	}
 }
 
