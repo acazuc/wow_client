@@ -208,6 +208,11 @@ static int luaAPI_gsub(lua_State *L)
 	return 1;
 }
 
+static int luaAPI_strreplace(lua_State *L)
+{
+	return luaAPI_gsub(L);
+}
+
 static int luaAPI_date(lua_State *L)
 {
 	int argc = lua_gettop(L);
@@ -802,6 +807,7 @@ void register_std_functions(lua_State *L)
 	LUA_REGISTER_FN(strrev);
 	LUA_REGISTER_FN(strlen);
 	LUA_REGISTER_FN(gsub);
+	LUA_REGISTER_FN(strreplace);
 	register_alias(L, "string", "match", "strmatch");
 
 	LUA_REGISTER_FN(getglobal);
