@@ -237,7 +237,7 @@ static int luaAPI_GetAddOnDependencies(lua_State *L)
 	int index = lua_tointeger(L, 1);
 	if (index < 1 || (unsigned)index > g_wow->interface->ext_addons.size)
 		return luaL_argerror(L, 1, "out of range");
-	struct addon *addon = *JKS_ARRAY_GET(&g_wow->interface->ext_addons, index - 1, struct addot*);
+	struct addon *addon = *JKS_ARRAY_GET(&g_wow->interface->ext_addons, index - 1, struct addon*);
 	for (size_t i = 0; i < addon->dependencies.size; ++i)
 		lua_pushstring(L, *JKS_ARRAY_GET(&addon->dependencies, i, const char*));
 	return addon->dependencies.size;
