@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 struct gx_wmo_collisions_init_data;
+struct gx_wmo_instance;
 struct wow_mopy_data;
 struct wow_mobn_node;
 struct wow_vec3f;
@@ -25,6 +26,6 @@ void gx_wmo_collisions_init(struct gx_wmo_collisions *collisions);
 void gx_wmo_collisions_destroy(struct gx_wmo_collisions *collisions);
 bool gx_wmo_collisions_load(struct gx_wmo_collisions *collisions, const uint16_t *mobr, uint32_t mobr_nb, const uint16_t *movi, const struct wow_vec3f *movt, const struct wow_mopy_data *mopy);
 void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions);
-void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, const struct mat4f *mvp, bool triangles);
+void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_wmo_instance *instance, bool triangles);
 
 #endif

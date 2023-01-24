@@ -28,7 +28,7 @@ MEMORY_DECL(GX);
 
 #ifdef WITH_DEBUG_RENDERING
 static void gx_wmo_group_instance_render_aabb(struct gx_wmo_group *group, struct gx_wmo_group_instance *instance, const struct mat4f *mvp);
-static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, const struct mat4f *mvp, bool triangles);
+static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, struct gx_wmo_instance *instance, bool triangles);
 #endif
 
 struct gx_wmo *gx_wmo_new(const char *filename)
@@ -335,7 +335,7 @@ void gx_wmo_render_collisions(struct gx_wmo *wmo, bool triangles)
 			struct gx_wmo_group *group = *(struct gx_wmo_group**)jks_array_get(&wmo->groups, j);
 			if (!group || !group->loaded)
 				continue;
-			gx_wmo_group_instance_render_collisions(group, &instance->render_frames[g_wow->draw_frame_id].mvp, triangles);
+			gx_wmo_group_instance_render_collisions(group, instance, triangles);
 		}
 	}
 }
@@ -473,10 +473,10 @@ static void gx_wmo_group_instance_render_aabb(struct gx_wmo_group *group, struct
 	gx_aabb_render(&instance->gx_aabb);
 }
 
-static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, const struct mat4f *mvp, bool triangles)
+static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, struct gx_wmo_instance *instance, bool triangles)
 {
 	if (group->flags & WOW_MOGP_FLAGS_BSP)
-		gx_wmo_collisions_render(&group->gx_collisions, mvp, triangles);
+		gx_wmo_collisions_render(&group->gx_collisions, instance, triangles);
 }
 #endif
 

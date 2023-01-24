@@ -1,4 +1,5 @@
 #include "gx/wmo_collisions.h"
+#include "gx/wmo.h"
 
 #include "graphics.h"
 #include "shaders.h"
@@ -78,7 +79,7 @@ bool gx_wmo_collisions_load(struct gx_wmo_collisions *collisions, const uint16_t
 		if (set[triangle_id / 8] & (1 << (triangle_id % 8)))
 			continue;
 		uint8_t flags = mopy[triangle_id].flags;
-		if (!((flags & WOW_MOPY_FLAGS_COLLISION) || ((flags & WOW_MOPY_FLAGS_RENDER) && !(flags & WOW_MOPY_FLAGS_DETAIL))))
+		if (!((flags & WOW_MOPY_FLAGS_COLLISION) || ((flags & WOW_MOPY_FLAGS_RENDER) && !(flags & WOW_MOPY_FLAGS_DETAIL))) && mopy[triangle_id].material_id != 0xFF)
 			continue;
 		set[triangle_id / 8] |= (1 << (triangle_id % 8));
 		collisions->indices_nb += 3;
@@ -115,14 +116,14 @@ void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions)
 	gfx_create_attributes_state(g_wow->device, &collisions->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 }
 
-void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, const struct mat4f *mvp, bool triangles)
+void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_wmo_instance *instance, bool triangles)
 {
 	if (!collisions->attributes_state.handle.ptr)
 		return;
 	if (!collisions->indices_nb)
 		return;
 	struct shader_aabb_mesh_block mesh_block;
-	mesh_block.mvp = *mvp;
+	mesh_block.mvp = instance->render_frames[g_wow->draw_frame_id].mvp;
 	if (triangles)
 		VEC4_SET(mesh_block.color, .2, 1, .2, .1);
 	else
