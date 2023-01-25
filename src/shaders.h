@@ -8,6 +8,11 @@
 
 #include <gfx/objects.h>
 
+struct shader_wmo_collisions_mesh_block
+{
+	struct vec4f color;
+};
+
 struct shader_aabb_mesh_block
 {
 	struct mat4f mvp;
@@ -388,6 +393,7 @@ struct shader_ui_input
 
 struct shaders
 {
+	gfx_shader_state_t wmo_collisions;
 	gfx_shader_state_t ssao_denoiser;
 	gfx_shader_state_t m2_collisions;
 	gfx_shader_state_t wmo_portals;

@@ -3,6 +3,9 @@
 
 #include <gfx/objects.h>
 
+#include <stdbool.h>
+#include <stddef.h>
+
 struct gx_m2_collisions_init_data;
 struct gx_m2_instance;
 struct gx_m2;
@@ -22,6 +25,6 @@ void gx_m2_collisions_init(struct gx_m2_collisions *collisions);
 void gx_m2_collisions_destroy(struct gx_m2_collisions *collisions);
 bool gx_m2_collisions_load(struct gx_m2_collisions *collisions, struct gx_m2 *m2);
 void gx_m2_collisions_initialize(struct gx_m2_collisions *collisions);
-void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct gx_m2_instance **instances, uint32_t instances_nb, bool triangles);
+void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct gx_m2_instance **instances, size_t instances_nb, bool triangles);
 
 #endif

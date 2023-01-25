@@ -28,7 +28,6 @@ MEMORY_DECL(GX);
 
 #ifdef WITH_DEBUG_RENDERING
 static void gx_wmo_group_instance_render_aabb(struct gx_wmo_group *group, struct gx_wmo_group_instance *instance, const struct mat4f *mvp);
-static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, struct gx_wmo_instance *instance, bool triangles);
 #endif
 
 struct gx_wmo *gx_wmo_new(const char *filename)
@@ -324,19 +323,14 @@ void gx_wmo_render_collisions(struct gx_wmo *wmo, bool triangles)
 {
 	if (!wmo->initialized)
 		return;
-	for (size_t i = 0; i < wmo->render_frames[g_wow->draw_frame_id].to_render.size; ++i)
+	for (size_t i = 0; i < wmo->groups.size; ++i)
 	{
-		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&wmo->render_frames[g_wow->draw_frame_id].to_render, i, struct gx_wmo_instance*);
-		for (size_t j = 0; j < wmo->groups.size; ++j)
-		{
-			struct gx_wmo_group_instance *group_instance = jks_array_get(&instance->groups, j);
-			if (group_instance->render_frames[g_wow->draw_frame_id].culled)
-				continue;
-			struct gx_wmo_group *group = *(struct gx_wmo_group**)jks_array_get(&wmo->groups, j);
-			if (!group || !group->loaded)
-				continue;
-			gx_wmo_group_instance_render_collisions(group, instance, triangles);
-		}
+		struct gx_wmo_group *group = *(struct gx_wmo_group**)jks_array_get(&wmo->groups, i);
+		if (!group || !group->loaded)
+			continue;
+		if (!(group->flags & WOW_MOGP_FLAGS_BSP))
+			continue;
+		gx_wmo_collisions_render(&group->gx_collisions, wmo->render_frames[g_wow->draw_frame_id].to_render.data, wmo->render_frames[g_wow->draw_frame_id].to_render.size, i, triangles);
 	}
 }
 #endif
@@ -471,12 +465,6 @@ static void gx_wmo_group_instance_render_aabb(struct gx_wmo_group *group, struct
 		VEC4_SET(instance->gx_aabb.color, 0, 1, 0, 1);
 	gx_aabb_update(&instance->gx_aabb, mvp);
 	gx_aabb_render(&instance->gx_aabb);
-}
-
-static void gx_wmo_group_instance_render_collisions(struct gx_wmo_group *group, struct gx_wmo_instance *instance, bool triangles)
-{
-	if (group->flags & WOW_MOGP_FLAGS_BSP)
-		gx_wmo_collisions_render(&group->gx_collisions, instance, triangles);
 }
 #endif
 

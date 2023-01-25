@@ -39,7 +39,7 @@ void gx_m2_lights_destroy(struct gx_m2_lights *lights)
 	gfx_delete_attributes_state(g_wow->device, &lights->attributes_state);
 }
 
-bool gx_m2_lights_load(struct gx_m2_lights *lights, const struct wow_m2_light *wow_lights, uint32_t nb)
+bool gx_m2_lights_load(struct gx_m2_lights *lights, const struct wow_m2_light *wow_lights, size_t nb)
 {
 	lights->lights_nb = nb;
 	if (!lights->lights_nb)
@@ -56,7 +56,7 @@ bool gx_m2_lights_load(struct gx_m2_lights *lights, const struct wow_m2_light *w
 		LOG_ERROR("allocation failed");
 		goto err;
 	}
-	for (uint32_t i = 0; i < nb; ++i)
+	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct wow_m2_light *light = &wow_lights[i];
 		VEC3_SET(lights->init_data->vertexes[i].position, light->position.x, light->position.y, light->position.z);
@@ -87,7 +87,7 @@ void gx_m2_lights_initialize(struct gx_m2_lights *lights)
 	lights->init_data = NULL;
 }
 
-void gx_m2_lights_render(struct gx_m2_lights *lights, const struct gx_m2_instance **instances, uint32_t nb)
+void gx_m2_lights_render(struct gx_m2_lights *lights, const struct gx_m2_instance **instances, size_t nb)
 {
 	if (!lights->lights_nb)
 		return;
@@ -95,7 +95,7 @@ void gx_m2_lights_render(struct gx_m2_lights *lights, const struct gx_m2_instanc
 		return;
 	gfx_set_point_size(g_wow->device, 5);
 	gfx_bind_attributes_state(g_wow->device, &lights->attributes_state, &g_wow->graphics->m2_lights_input_layout);
-	for (uint32_t i = 0; i < nb; ++i)
+	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
 		if (!instance->uniform_buffers[g_wow->draw_frame_id].handle.u64)

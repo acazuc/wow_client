@@ -237,7 +237,7 @@ bool graphics_init(struct graphics *graphics)
 	graphics->aabb_pipeline_state = GFX_PIPELINE_STATE_INIT();
 	gfx_create_pipeline_state(g_wow->device,
 		&graphics->wmo_collisions_triangles_pipeline_state,
-		&g_wow->shaders->aabb,
+		&g_wow->shaders->wmo_collisions,
 		&graphics->collisions_triangles_rasterizer_state,
 		&graphics->world_depth_stencil_states[WORLD_DEPTH_STENCIL_R_NO],
 		&graphics->world_blend_states[WORLD_BLEND_ALPHA],
@@ -261,7 +261,7 @@ bool graphics_init(struct graphics *graphics)
 		GFX_PRIMITIVE_TRIANGLES);
 	gfx_create_pipeline_state(g_wow->device,
 		&graphics->wmo_collisions_lines_pipeline_state,
-		&g_wow->shaders->aabb,
+		&g_wow->shaders->wmo_collisions,
 		&graphics->collisions_lines_rasterizer_state,
 		&graphics->world_depth_stencil_states[WORLD_DEPTH_STENCIL_R_NO],
 		&graphics->world_blend_states[WORLD_BLEND_ALPHA],

@@ -4,6 +4,7 @@
 #include <gfx/objects.h>
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct gx_wmo_collisions_init_data;
 struct gx_wmo_instance;
@@ -26,6 +27,6 @@ void gx_wmo_collisions_init(struct gx_wmo_collisions *collisions);
 void gx_wmo_collisions_destroy(struct gx_wmo_collisions *collisions);
 bool gx_wmo_collisions_load(struct gx_wmo_collisions *collisions, const uint16_t *mobr, uint32_t mobr_nb, const uint16_t *movi, const struct wow_vec3f *movt, const struct wow_mopy_data *mopy);
 void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions);
-void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_wmo_instance *instance, bool triangles);
+void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, const struct gx_wmo_instance **instances, size_t instances_nb, size_t group_idx, bool triangles);
 
 #endif

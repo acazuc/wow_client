@@ -163,6 +163,26 @@ cleanup:
 	return ret;
 }
 
+static bool build_wmo_collisions(gfx_shader_state_t *shader_state)
+{
+	static const gfx_shader_attribute_t attributes[] =
+	{
+		{"vs_position", 0},
+		{NULL, 0}
+	};
+	static const gfx_shader_constant_t constants[] =
+	{
+		{"model_block", 1},
+		{"mesh_block", 0},
+		{NULL, 0}
+	};
+	static const gfx_shader_sampler_t samplers[] =
+	{
+		{NULL, 0}
+	};
+	return load_shader_state(shader_state, "wmo_collisions", attributes, constants, samplers);
+}
+
 static bool build_ssao_denoiser(gfx_shader_state_t *shader_state)
 {
 	static const gfx_shader_attribute_t attributes[] =
@@ -854,6 +874,7 @@ bool shaders_build(struct shaders *shaders)
 			return false; \
 	} while (0)
 
+	BUILD_SHADER(wmo_collisions);
 	BUILD_SHADER(ssao_denoiser);
 	BUILD_SHADER(m2_collisions);
 	BUILD_SHADER(wmo_portals);
@@ -898,6 +919,7 @@ void shaders_clean(struct shaders *shaders)
 		gfx_delete_shader_state(g_wow->device, &shaders->name); \
 	} while (0)
 
+	CLEAN_SHADER(wmo_collisions);
 	CLEAN_SHADER(ssao_denoiser);
 	CLEAN_SHADER(m2_collisions);
 	CLEAN_SHADER(wmo_portals);

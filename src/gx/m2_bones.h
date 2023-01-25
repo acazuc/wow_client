@@ -4,6 +4,7 @@
 #include <gfx/objects.h>
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct gx_m2_bones_init_data;
 struct gx_m2_instance;
@@ -24,7 +25,7 @@ void gx_m2_bones_init(struct gx_m2_bones *bones);
 void gx_m2_bones_destroy(struct gx_m2_bones *bones);
 bool gx_m2_bones_load(struct gx_m2_bones *bones, const struct wow_m2_bone *wow_bones, uint32_t nb);
 void gx_m2_bones_initialize(struct gx_m2_bones *bones);
-void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, uint32_t instances_nb);
-void gx_m2_bones_render_lines(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, uint32_t instances_nb);
+void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, size_t instances_nb);
+void gx_m2_bones_render_lines(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, size_t instances_nb);
 
 #endif

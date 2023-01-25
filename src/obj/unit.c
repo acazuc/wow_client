@@ -142,7 +142,7 @@ static void on_field_changed(struct object *object, uint32_t field)
 		g_field_functions[field - UNIT_FIELD_MIN](object);
 }
 
-static bool get_char_section(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, struct wow_dbc_row *row)
+static bool get_char_section(const struct unit *unit, uint8_t gender, uint8_t base_section, uint8_t variation, uint8_t color, struct wow_dbc_row *row)
 {
 	uint8_t race = unit_get_race(unit);
 	if (!race)
@@ -150,7 +150,6 @@ static bool get_char_section(const struct unit *unit, uint8_t base_section, uint
 		LOG_WARN("no race found");
 		return false;
 	}
-	uint8_t gender = unit_get_gender(unit);
 	struct dbc *dbc = g_wow->dbc.char_sections;
 	for (uint32_t i = 0; i < dbc->file->header.record_count; ++i)
 	{
@@ -169,7 +168,8 @@ static bool get_char_section(const struct unit *unit, uint8_t base_section, uint
 static bool get_textures_names(const struct unit *unit, uint8_t base_section, uint8_t variation, uint8_t color, char *tex1, char *tex2, char *tex3)
 {
 	struct wow_dbc_row row;
-	if (!get_char_section(unit, base_section, variation, color, &row))
+	uint8_t gender = unit_get_gender(unit);
+	if (!get_char_section(unit, gender, base_section, variation, color, &row))
 		return false;
 	if (tex1)
 	{

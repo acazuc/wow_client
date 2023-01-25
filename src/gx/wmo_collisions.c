@@ -104,8 +104,8 @@ void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions)
 	gfx_create_buffer(g_wow->device, &collisions->vertexes_buffer, GFX_BUFFER_VERTEXES, collisions->init_data->vertexes, collisions->indices_nb * sizeof(*collisions->init_data->vertexes), GFX_BUFFER_IMMUTABLE);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
-		gfx_create_buffer(g_wow->device, &collisions->triangles_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_aabb_mesh_block), GFX_BUFFER_STREAM);
-		gfx_create_buffer(g_wow->device, &collisions->lines_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_aabb_mesh_block), GFX_BUFFER_STREAM);
+		gfx_create_buffer(g_wow->device, &collisions->triangles_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_wmo_collisions_mesh_block), GFX_BUFFER_STREAM);
+		gfx_create_buffer(g_wow->device, &collisions->lines_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_wmo_collisions_mesh_block), GFX_BUFFER_STREAM);
 	}
 	clear_init_data(collisions->init_data);
 	collisions->init_data = NULL;
@@ -116,14 +116,13 @@ void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions)
 	gfx_create_attributes_state(g_wow->device, &collisions->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 }
 
-void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_wmo_instance *instance, bool triangles)
+void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, const struct gx_wmo_instance **instances, size_t instances_nb, size_t group_idx, bool triangles)
 {
 	if (!collisions->attributes_state.handle.ptr)
 		return;
 	if (!collisions->indices_nb)
 		return;
-	struct shader_aabb_mesh_block mesh_block;
-	mesh_block.mvp = instance->render_frames[g_wow->draw_frame_id].mvp;
+	struct shader_wmo_collisions_mesh_block mesh_block;
 	if (triangles)
 		VEC4_SET(mesh_block.color, .2, 1, .2, .1);
 	else
@@ -133,5 +132,12 @@ void gx_wmo_collisions_render(struct gx_wmo_collisions *collisions, struct gx_wm
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
 	gfx_set_line_width(g_wow->device, 1);
-	gfx_draw(g_wow->device, collisions->indices_nb, 0);
+	for (size_t i = 0; i < instances_nb; ++i)
+	{
+		struct gx_wmo_group_instance *group_instance = jks_array_get(&instances[i]->groups, group_idx);
+		if (group_instance->render_frames[g_wow->draw_frame_id].culled)
+			continue;
+		gfx_bind_constant(g_wow->device, 1, &instances[i]->uniform_buffers[g_wow->draw_frame_id], sizeof(struct shader_wmo_model_block), 0);
+		gfx_draw(g_wow->device, collisions->indices_nb, 0);
+	}
 }

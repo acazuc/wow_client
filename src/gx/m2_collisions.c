@@ -111,8 +111,10 @@ void gx_m2_collisions_initialize(struct gx_m2_collisions *collisions)
 	collisions->init_data = NULL;
 }
 
-void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct gx_m2_instance **instances, uint32_t instances_nb, bool triangles)
+void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct gx_m2_instance **instances, size_t instances_nb, bool triangles)
 {
+	if (!instances_nb)
+		return;
 	if (!collisions->triangles_nb)
 		return;
 	gfx_bind_attributes_state(g_wow->device, &collisions->attributes_state, &g_wow->graphics->m2_collisions_input_layout);
@@ -125,7 +127,7 @@ void gx_m2_collisions_render(struct gx_m2_collisions *collisions, const struct g
 	gfx_set_buffer_data(uniform_buffer, &mesh_block, sizeof(mesh_block), 0);
 	gfx_bind_constant(g_wow->device, 0, uniform_buffer, sizeof(mesh_block), 0);
 	gfx_set_line_width(g_wow->device, 1);
-	for (uint32_t i = 0; i < instances_nb; ++i)
+	for (size_t i = 0; i < instances_nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
 		if (!instance->uniform_buffers[g_wow->draw_frame_id].handle.u64)

@@ -135,7 +135,7 @@ void gx_m2_bones_initialize(struct gx_m2_bones *bones)
 	bones->init_data = NULL;
 }
 
-void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, uint32_t nb)
+void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, size_t nb)
 {
 	if (!bones->points_indices_nb)
 		return;
@@ -143,7 +143,7 @@ void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_ins
 		return;
 	gfx_set_point_size(g_wow->device, 5);
 	gfx_bind_attributes_state(g_wow->device, &bones->points_attributes_state, &g_wow->graphics->m2_bones_points_input_layout);
-	for (uint32_t i = 0; i < nb; ++i)
+	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
 		if (!instance->uniform_buffers[g_wow->draw_frame_id].handle.u64)
@@ -153,7 +153,7 @@ void gx_m2_bones_render_points(struct gx_m2_bones *bones, const struct gx_m2_ins
 	}
 }
 
-void gx_m2_bones_render_lines(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, uint32_t nb)
+void gx_m2_bones_render_lines(struct gx_m2_bones *bones, const struct gx_m2_instance **instances, size_t nb)
 {
 	if (!bones->lines_indices_nb)
 		return;
@@ -161,7 +161,7 @@ void gx_m2_bones_render_lines(struct gx_m2_bones *bones, const struct gx_m2_inst
 		return;
 	gfx_set_line_width(g_wow->device, 1);
 	gfx_bind_attributes_state(g_wow->device, &bones->lines_attributes_state, &g_wow->graphics->m2_bones_lines_input_layout);
-	for (uint32_t i = 0; i < nb; ++i)
+	for (size_t i = 0; i < nb; ++i)
 	{
 		const struct gx_m2_instance *instance = instances[i];
 		if (!instance->uniform_buffers[g_wow->draw_frame_id].handle.u64)
