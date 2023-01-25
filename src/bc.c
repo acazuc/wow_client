@@ -8,7 +8,7 @@ static void unpack_bc1_block(uint32_t bx, uint32_t by, uint32_t width, uint32_t 
 	(void)height;
 	uint32_t idx = (by * width + bx) * 4;
 	uint32_t idx_inc = width * 4 - 16;
-	uint32_t color_bits = in[4] | (in[5] << 8) | (in[6] << 16) | (in[7] << 24);
+	uint32_t color_bits = in[4] | (in[5] << 8) | (in[6] << 16) | ((uint32_t)in[7] << 24);
 	uint16_t color1 = (in[1] << 8) | in[0];
 	uint8_t r1 = RGB5TO8(in[1] >> 3);
 	uint8_t g1 = RGB6TO8((color1 >> 5) & 0x3F);
@@ -93,7 +93,7 @@ static void unpack_bc2_block(uint32_t bx, uint32_t by, uint32_t width, uint32_t 
 	(void)height;
 	uint32_t idx = (by * width + bx) * 4;
 	uint32_t idx_inc = width * 4 - 16;
-	uint32_t color_bits = in[12] | (in[13] << 8) | (in[14] << 16) | (in[15] << 24);
+	uint32_t color_bits = in[12] | (in[13] << 8) | (in[14] << 16) | ((uint32_t)in[15] << 24);
 	uint16_t color1 = (in[9] << 8) | in[8];
 	uint8_t r1 = RGB5TO8(in[9] >> 3);
 	uint8_t g1 = RGB6TO8((color1 >> 5) & 0x3F);
@@ -166,7 +166,7 @@ static void unpack_bc3_block(uint32_t bx, uint32_t by, uint32_t width, uint32_t 
 	(void)height;
 	uint32_t idx = (by * width + bx) * 4;
 	uint32_t idx_inc = width * 4 - 16;
-	uint32_t color_bits = in[12] | (in[13] << 8) | (in[14] << 16) | (in[15] << 24);
+	uint32_t color_bits = in[12] | (in[13] << 8) | (in[14] << 16) | ((uint32_t)in[15] << 24);
 	uint16_t color1 = (in[9] << 8) | in[8];
 	uint8_t r1 = RGB5TO8(in[9] >> 3);
 	uint8_t g1 = RGB6TO8((color1 >> 5) & 0x3F);

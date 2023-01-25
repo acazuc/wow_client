@@ -346,6 +346,8 @@ static void generate_skin_texture(struct object *object)
 		n[2] = tmp;
 	}
 	PLAYER->skin_texture = blp_texture_from_data(image_data, image_width, image_height);
+	if (WORLD_OBJECT->m2)
+		gx_m2_instance_set_skin_texture(WORLD_OBJECT->m2, PLAYER->skin_texture);
 	mem_free(MEM_GENERIC, image_data);
 }
 
