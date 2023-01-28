@@ -32,7 +32,7 @@ struct lagometer *lagometer_new(void)
 	lagometer->pipeline_state = GFX_PIPELINE_STATE_INIT();
 	lagometer->vertexes_buffer = GFX_BUFFER_INIT();
 	lagometer->input_layout = GFX_INPUT_LAYOUT_INIT();
-	gfx_create_buffer(g_wow->device, &lagometer->vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_gui_input) * WIDTH * 6, GFX_BUFFER_STREAM);
+	gfx_create_buffer(g_wow->device, &lagometer->vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_gui_input) * WIDTH * 8, GFX_BUFFER_STREAM);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		lagometer->uniform_buffers[i] = GFX_BUFFER_INIT();
@@ -85,26 +85,29 @@ void lagometer_draw(struct lagometer *lagometer)
 {
 	MAT4_ORTHO(float, lagometer->mat, 0, (float)g_wow->render_width, (float)g_wow->render_height, 0, -2, 2);
 	float alpha = .5;
-	for (size_t i = 0; i < WIDTH * 6; ++i)
+	for (size_t i = 0; i < WIDTH * 8; ++i)
 		lagometer->vertexes_data[i].position.x--;
 	float divisor = 100000;
 	float y = g_wow->render_height;
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 0].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 0].position, WIDTH - 1, y);
 	y -= g_wow->last_frame_cull_duration / divisor;
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 1].position, WIDTH - 1, y);
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 2].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 1].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 2].position, WIDTH - 1, y);
 	y -= g_wow->last_frame_draw_duration / divisor;
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 3].position, WIDTH - 1, y);
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 4].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 3].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 4].position, WIDTH - 1, y);
 	y -= g_wow->last_frame_update_duration / divisor;
-	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 6 + 5].position, WIDTH - 1, y);
-	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 0].color, 1, 0, 1, alpha);
-	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 1].color, 1, 0, 1, alpha);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 5].position, WIDTH - 1, y);
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 6].position, WIDTH - 1, y);
+	y -= g_wow->last_frame_misc_duration / divisor;
+	VEC2_SET(lagometer->vertexes_data[lagometer->pos * 8 + 7].position, WIDTH - 1, y);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 0].color, 1, 0, 1, alpha);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 1].color, 1, 0, 1, alpha);
 	uint64_t duration = g_wow->last_frame_cull_duration + g_wow->last_frame_draw_duration;
 	if (duration > 16666666)
 	{
-		VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 2].color, 0, 0, 1, alpha);
-		VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 3].color, 0, 0, 1, alpha);
+		VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 2].color, 0, 0, 1, alpha);
+		VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 3].color, 0, 0, 1, alpha);
 	}
 	else
 	{
@@ -115,8 +118,8 @@ void lagometer_draw(struct lagometer *lagometer)
 				tmp = 0;
 			if (tmp > 1)
 				tmp = 1;
-			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 2].color, tmp, 1, 0, alpha);
-			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 3].color, tmp, 1, 0, alpha);
+			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 2].color, tmp, 1, 0, alpha);
+			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 3].color, tmp, 1, 0, alpha);
 		}
 		else
 		{
@@ -125,14 +128,16 @@ void lagometer_draw(struct lagometer *lagometer)
 				tmp = 0;
 			if (tmp > 1)
 				tmp = 1;
-			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 2].color, 1, 1 - tmp, 0, alpha);
-			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 3].color, 1, 1 - tmp, 0, alpha);
+			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 2].color, 1, 1 - tmp, 0, alpha);
+			VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 3].color, 1, 1 - tmp, 0, alpha);
 		}
 	}
-	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 4].color, 1, 1, 1, alpha);
-	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 6 + 5].color, 1, 1, 1, alpha);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 4].color, 1, 1, 1, alpha);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 5].color, 1, 1, 1, alpha);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 6].color, 0, 1, 1, alpha);
+	VEC4_SET(lagometer->vertexes_data[lagometer->pos * 8 + 7].color, 0, 1, 1, alpha);
 	lagometer->pos = (lagometer->pos + 1) % WIDTH;
-	gfx_set_buffer_data(&lagometer->vertexes_buffer, lagometer->vertexes_data, sizeof(*lagometer->vertexes_data) * WIDTH * 6, 0);
+	gfx_set_buffer_data(&lagometer->vertexes_buffer, lagometer->vertexes_data, sizeof(*lagometer->vertexes_data) * WIDTH * 8, 0);
 	struct shader_gui_model_block model_block;
 	model_block.mvp = lagometer->mat;
 	gfx_set_buffer_data(&lagometer->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
@@ -142,5 +147,5 @@ void lagometer_draw(struct lagometer *lagometer)
 	const gfx_texture_t *tex = &lagometer->white_pixel;
 	gfx_bind_samplers(g_wow->device, 0, 1, &tex);
 	gfx_set_line_width(g_wow->device, 1);
-	gfx_draw(g_wow->device, WIDTH * 6, 0);
+	gfx_draw(g_wow->device, WIDTH * 8, 0);
 }

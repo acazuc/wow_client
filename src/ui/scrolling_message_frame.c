@@ -188,7 +188,7 @@ static void render(struct ui_object *object)
 			message->last_font = font;
 		}
 		if (!message->indices_nb)
-			return;
+			break;
 		struct shader_ui_model_block model_block;
 		VEC4_SET(model_block.color, 1, 1, 1, 1);
 		VEC4_SET(model_block.uv_transform, 1, 0, 1, 0);

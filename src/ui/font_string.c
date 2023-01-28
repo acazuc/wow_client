@@ -35,7 +35,7 @@
 #define UI_LAYERED_REGION (&font_string->layered_region)
 #define UI_FONT_INSTANCE (&font_string->font_instance)
 
-#define OUTLINE_OFFSET .5
+#define OUTLINE_OFFSET .25
 
 MEMORY_DECL(UI);
 

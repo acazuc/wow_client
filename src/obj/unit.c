@@ -306,7 +306,7 @@ void unit_get_hair_textures_files(const struct unit *unit, struct wow_blp_file *
 	uint8_t color;
 	uint8_t style;
 	unit_get_visual_settings(unit, NULL, &color, &style, NULL, NULL);
-	get_textures_files(unit, 3, style, color, hair, lower, upper);
+	get_textures_files(unit, 3, style ? style : 1, color, hair, lower, upper); /* style 0 is for "no hair", but facial hair might need hair texture */
 }
 
 void unit_get_underwear_textures_files(const struct unit *unit, struct wow_blp_file **pelvis, struct wow_blp_file **torso)
@@ -354,7 +354,7 @@ void unit_get_hair_textures(const struct unit *unit, struct blp_texture **hair, 
 	uint8_t color;
 	uint8_t style;
 	unit_get_visual_settings(unit, NULL, &color, &style, NULL, NULL);
-	get_textures(unit, 3, style, color, hair, lower, upper);
+	get_textures(unit, 3, style ? style : 1, color, hair, lower, upper); /* style 0 is for "no hair", but facial hair might need hair texture */
 }
 
 void unit_get_underwear_textures(const struct unit *unit, struct blp_texture **pelvis, struct blp_texture **torso)
@@ -538,8 +538,8 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 {
 	uint8_t race = unit_get_race(UNIT);
 	uint8_t gender = unit_get_gender(UNIT);
-	OPTIONAL_DEF(, struct wow_dbc_row) items_rows[11] = {{0}};
-	for (size_t i = 0; i < 11; ++i)
+	OPTIONAL_DEF(, struct wow_dbc_row) items_rows[UNIT_ITEM_LAST] = {{0}};
+	for (size_t i = 0; i < UNIT_ITEM_LAST; ++i)
 	{
 		if (!UNIT->items[i].id)
 			continue;
@@ -552,15 +552,15 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 		OPTIONAL_CTR(items_rows[i], item_row);
 	}
 	uint8_t hidden_head = 0;
-	if (OPTIONAL_ISSET(items_rows[0]))
+	if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_HELM]))
 	{
-		uint32_t geoset_vis_id = wow_dbc_get_u32(&OPTIONAL_GET(items_rows[0]), unit_get_gender(UNIT) ? 56 : 52);
+		uint32_t geoset_vis_id = wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_HELM]), gender ? 56 : 52);
 		if (geoset_vis_id)
 		{
 			struct wow_dbc_row row;
 			if (dbc_get_row_indexed(g_wow->dbc.helmet_geoset_vis_data, &row, geoset_vis_id))
 			{
-				uint32_t mask = (1 << (unit_get_race(UNIT) - 1));
+				uint32_t mask = (1 << race);
 				for (uint32_t i = 0; i < 7; ++i)
 				{
 					if (wow_dbc_get_u32(&row, 4 + i * 4) & mask)
@@ -636,62 +636,62 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 
 	gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BONE + 1);
 
-	if (OPTIONAL_ISSET(items_rows[8]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[8]), 28)) /* gloves */
+	if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_GLOVES]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_GLOVES]), 28))
 	{
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_GLOVES, 100 * WOW_M2_SKIN_SECTION_GLOVES + 99);
-		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_GLOVES + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[8]), 28));
+		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_GLOVES + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_GLOVES]), 28));
 	}
-	else if (OPTIONAL_ISSET(items_rows[3]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[3]), 28)) /* chest */
+	else if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_CHEST]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CHEST]), 28))
 	{
-		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_WRISTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[3]), 28));
+		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_WRISTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CHEST]), 28));
 	}
 	if (true) /* XXX: shirt related check */
 	{
-		if (OPTIONAL_ISSET(items_rows[2]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[2]), 28)) /* shirt */
+		if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_SHIRT]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_SHIRT]), 28))
 		{
-			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_WRISTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[2]), 28));
+			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_WRISTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_SHIRT]), 28));
 		}
 	}
 	bool dress_chest = false;
 	bool dress_pants = false;
 	bool dress_tabard = false;
-	if (OPTIONAL_ISSET(items_rows[3]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[3]), 36)) /* chest */
+	if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_CHEST]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CHEST]), 36))
 	{
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BOOTS, 100 * WOW_M2_SKIN_SECTION_BOOTS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_PANTS, 100 * WOW_M2_SKIN_SECTION_PANTS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 99);
-		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[3]), 36));
+		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CHEST]), 36));
 		dress_chest = true;
 	}
-	else if (OPTIONAL_ISSET(items_rows[5]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 36)) /* pants */
+	else if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_LEGS]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 36))
 	{
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BOOTS, 100 * WOW_M2_SKIN_SECTION_BOOTS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_PANTS, 100 * WOW_M2_SKIN_SECTION_PANTS + 99);
 		gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 99);
-		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 36));
+		gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TROUSERS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 36));
 		dress_pants = true;
 	}
 	else
 	{
-		if (OPTIONAL_ISSET(items_rows[6]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[6]), 28)) /* boots */
+		if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_BOOTS]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_BOOTS]), 28))
 		{
 			gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BOOTS, 100 * WOW_M2_SKIN_SECTION_BOOTS + 99);
 			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 1);
-			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BOOTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[6]), 28));
+			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_BOOTS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_BOOTS]), 28));
 		}
-		else if (OPTIONAL_ISSET(items_rows[5]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 32)) /* pants */
+		else if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_LEGS]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 32))
 		{
-			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 32));
+			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 32));
 		}
 		else
 		{
 			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_KNEEPADS + 1);
 		}
-		if (OPTIONAL_ISSET(items_rows[9]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[9]), 28)) /* tabard */
+		if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_TABARD]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_TABARD]), 28))
 		{
-			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TABARD + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[9]), 28));
+			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_TABARD + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_TABARD]), 28));
 			dress_tabard = true;
 		}
 	}
@@ -704,21 +704,21 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 		}
 		if (!dress_tabard)
 		{
-			if (OPTIONAL_ISSET(items_rows[2]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[2]), 32)) /* shirt */
+			if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_SHIRT]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_SHIRT]), 32))
 			{
 				/* gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CHEST, 100 * WOW_M2_SKIN_SECTION_CHEST + 99); */
-				gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CHEST + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[2]), 32));
+				gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CHEST + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_SHIRT]), 32));
 			}
-			if (OPTIONAL_ISSET(items_rows[5]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 28)) /* pants */
+			if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_LEGS]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 28))
 			{
 				/* gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_PANTS, 100 * WOW_M2_SKIN_SECTION_PANTS + 99); */
-				gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_PANTS + 2 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[5]), 28));
+				gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_PANTS + 2 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_LEGS]), 28));
 			}
 		}
 	}
-	if (OPTIONAL_ISSET(items_rows[10]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[10]), 28)) /* cape */
+	if (OPTIONAL_ISSET(items_rows[UNIT_ITEM_CAPE]) && wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CAPE]), 28))
 	{
-		const char *fn = wow_dbc_get_str(&OPTIONAL_GET(items_rows[10]), 12);
+		const char *fn = wow_dbc_get_str(&OPTIONAL_GET(items_rows[UNIT_ITEM_CAPE]), 12);
 		if (fn)
 		{
 			char cape_filename[256];
@@ -731,7 +731,7 @@ void unit_update_items_batches(struct object *object, const uint8_t *hair_style,
 				texture = NULL;
 			gx_m2_instance_set_object_texture(WORLD_OBJECT->m2, texture);
 			gx_m2_instance_disable_batches(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CLOAK, 100 * WOW_M2_SKIN_SECTION_CLOAK + 99);
-			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CLOAK + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[10]), 28));
+			gx_m2_instance_enable_batch(WORLD_OBJECT->m2, 100 * WOW_M2_SKIN_SECTION_CLOAK + 1 + wow_dbc_get_u32(&OPTIONAL_GET(items_rows[UNIT_ITEM_CAPE]), 28));
 		}
 	}
 }
@@ -749,6 +749,10 @@ static bool unit_update_item_side(struct object *object, uint32_t i, const char 
 	{
 		dir = g_object_components_dirs[i];
 	}
+	/* gauntlet:
+	 * slotid 13, 21, 22 is a weapon texture
+	 * slotid 10, is a shoulder texture
+	 */
 	snprintf(model_fn, sizeof(model_fn), "Item/ObjectComponents/%s/%s", dir, model_name);
 	snprintf(texture_fn, sizeof(texture_fn), "Item/ObjectComponents/%s/%s", dir, texture_name);
 	normalize_m2_filename(model_fn, sizeof(model_fn));

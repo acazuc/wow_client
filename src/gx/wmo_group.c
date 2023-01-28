@@ -723,7 +723,9 @@ void gx_wmo_group_set_m2_ambient(struct gx_wmo_group *group, struct gx_wmo_insta
 		loc->lights_count = 0;
 		if (m2->local_lighting)
 		{
+#if 0
 			LOG_WARN("replacing m2 local lighting");
+#endif
 			gfx_delete_buffer(g_wow->device, &m2->local_lighting->uniform_buffer);
 			mem_free(MEM_GX, m2->local_lighting);
 		}

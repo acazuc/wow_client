@@ -50,26 +50,25 @@ enum tex_idx
 	TEX_FOOT,
 	TEX_SCALP_UPPER,
 	TEX_SCALP_LOWER,
+	TEX_LAST,
 };
 
-static const struct texture_section g_texture_sections[10] =
+static const struct texture_section g_texture_sections[TEX_LAST] =
 {
-	{  0,   0, 128,  64}, /* arm upper */
-	{  0,  64, 128,  64}, /* arm lower */
-	{  0, 128, 128,  32}, /* hand */
-	{128,   0, 128,  64}, /* torso upper */
-	{128,  64, 128,  32}, /* torso lower */
-	{128,  96, 128,  64}, /* leg upper */
-	{128, 160, 128,  64}, /* leg lower */
-	{128, 224, 128,  32}, /* foot */
-	{  0, 160, 128,  32}, /* scalp upper */
-	{  0, 192, 128,  64}, /* scalp lower */
+	[TEX_ARM_UPPER]   = {  0,   0, 128,  64},
+	[TEX_ARM_LOWER]   = {  0,  64, 128,  64},
+	[TEX_HAND]        = {  0, 128, 128,  32},
+	[TEX_TORSO_UPPER] = {128,   0, 128,  64},
+	[TEX_TORSO_LOWER] = {128,  64, 128,  32},
+	[TEX_LEG_UPPER]   = {128,  96, 128,  64},
+	[TEX_LEG_LOWER]   = {128, 160, 128,  64},
+	[TEX_FOOT]        = {128, 224, 128,  32},
+	[TEX_SCALP_UPPER] = {  0, 160, 128,  32},
+	[TEX_SCALP_LOWER] = {  0, 192, 128,  64},
 };
 
 static const uint32_t g_texture_indexes[] =
 {
-	EQUIPMENT_SLOT_HEAD,
-	EQUIPMENT_SLOT_SHOULDERS,
 	EQUIPMENT_SLOT_SHIRT,
 	EQUIPMENT_SLOT_LEGS,
 	EQUIPMENT_SLOT_CHEST,
@@ -78,6 +77,18 @@ static const uint32_t g_texture_indexes[] =
 	EQUIPMENT_SLOT_WRISTS,
 	EQUIPMENT_SLOT_HANDS,
 	EQUIPMENT_SLOT_TABARD,
+};
+
+static const uint32_t g_texture_masks[] =
+{
+	(1 << TEX_TORSO_UPPER) | (1 << TEX_TORSO_LOWER) | (1 << TEX_ARM_UPPER) | (1 << TEX_ARM_LOWER), /* shirt */
+	(1 << TEX_LEG_UPPER) | (1 << TEX_LEG_LOWER), /* legs */
+	(1 << TEX_TORSO_UPPER) | (1 << TEX_TORSO_LOWER) | (1 << TEX_ARM_UPPER) | (1 << TEX_ARM_LOWER), /* chest */
+	(1 << TEX_TORSO_LOWER), /* waist */
+	(1 << TEX_FOOT), /* feet */
+	(1 << TEX_ARM_LOWER), /* wrists */
+	(1 << TEX_HAND) | (1 << TEX_ARM_LOWER), /* hands */
+	(1 << TEX_TORSO_UPPER) | (1 << TEX_TORSO_LOWER), /* tabard */
 };
 
 static const uint32_t g_items_display_offsets[UNIT_ITEM_LAST] =
@@ -302,6 +313,8 @@ static void generate_skin_texture(struct object *object)
 		}
 		for (size_t j = 0; j < 8; ++j)
 		{
+			if (!(g_texture_masks[i] & (1 << j)))
+				continue;
 			const char *texture = wow_dbc_get_str(&item_display_row, 60 + j * 4);
 			if (!texture[0])
 				continue;

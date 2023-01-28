@@ -198,6 +198,7 @@ struct wow
 	uint64_t last_frame_events_duration;
 	uint64_t last_frame_draw_duration;
 	uint64_t last_frame_cull_duration;
+	uint64_t last_frame_misc_duration;
 	uint32_t render_width;
 	uint32_t render_height;
 	uint32_t anisotropy;

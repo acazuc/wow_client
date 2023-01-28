@@ -747,6 +747,7 @@ static void loop(void)
 			map_render(g_wow->map, g_wow->draw_frame);
 		gfx_bind_render_target(g_wow->device, NULL);
 		gfx_set_viewport(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
+		gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 		gfx_bind_pipeline_state(g_wow->device, &pipeline_state);
 		gfx_clear_depth_stencil(g_wow->device, NULL, 1, 0);
 		if (!g_wow->map || (g_wow->interface && g_wow->interface->is_gluescreen))
@@ -760,6 +761,8 @@ static void loop(void)
 		started = nanotime();
 		net_tick(g_wow->network);
 		gfx_window_poll_events(g_wow->window);
+		ended = nanotime();
+		g_wow->last_frame_events_duration = ended - started;
 		if (g_wow->map && !culled_async)
 		{
 			started = nanotime();
@@ -767,8 +770,6 @@ static void loop(void)
 			ended = nanotime();
 			g_wow->last_frame_cull_duration = ended - started;
 		}
-		ended = nanotime();
-		g_wow->last_frame_events_duration = ended - started;
 		started = nanotime();
 		gfx_window_swap_buffers(g_wow->window);
 		ended = nanotime();
@@ -781,10 +782,13 @@ static void loop(void)
 			ended = nanotime();
 			g_wow->last_frame_cull_duration = ended - started;
 		}
+		started = nanotime();
 		loader_tick(g_wow->loader);
 		gfx_device_tick(g_wow->device);
 		render_gc(g_wow->draw_frame);
 		g_wow->current_frame++;
+		ended = nanotime();
+		g_wow->last_frame_misc_duration = ended - started;
 	}
 	gfx_delete_depth_stencil_state(g_wow->device, &depth_stencil_state);
 	gfx_delete_rasterizer_state(g_wow->device, &rasterizer_state);
@@ -1602,13 +1606,20 @@ int64_t nanotime(void)
 void normalize_mpq_filename(char *filename, size_t size)
 {
 	(void)size;
-	for (size_t i = 0; filename[i]; ++i)
+	size_t j = 0;
+	for (size_t i = 0; filename[i]; ++i, ++j)
 	{
 		if (filename[i] == '/')
-			filename[i] = '\\';
+			filename[j] = '\\';
 		else
-			filename[i] = toupper(filename[i]);
+			filename[j] = toupper(filename[i]);
+		if (filename[j] == '\\' && j > 0 && filename[j - 1] == '\\')
+		{
+			filename[j] = '\0';
+			j--;
+		}
 	}
+	filename[j] = '\0';
 }
 
 void normalize_m2_filename(char *filename, size_t size)

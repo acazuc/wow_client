@@ -21,6 +21,7 @@
 #include <gfx/device.h>
 
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -93,7 +94,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 static void gx_m2_batch_destroy(struct gx_m2_batch *batch);
 static void gx_m2_batch_initialize(struct gx_m2_batch *batch);
 static void gx_m2_batch_load(struct gx_m2_batch *batch, struct wow_m2_file *file, struct wow_m2_batch *wow_batch);
-static void gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_render_params *params);
+static bool gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_render_params *params);
 static void gx_m2_batch_render(struct gx_m2_batch *batch, struct gx_m2_instance *instance);
 
 static bool gx_m2_profile_init(struct gx_m2_profile *profile, struct gx_m2 *parent, struct wow_m2_file *file, struct wow_m2_skin_profile *wow_profile, struct jks_array *indices);
@@ -624,10 +625,10 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 	enum world_blend_state blend_state;
 	rasterizer_state = batch->material_flags & WOW_M2_MATERIAL_FLAGS_UNCULLED ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
 	/* XXX remove this hack */
-	if (strstr(batch->parent->parent->filename, "COT_HOURGLASS"))
+	if (0 && strstr(batch->parent->parent->filename, "COT_HOURGLASS"))
 	{
 		if (batch->id == 4)
-			material->blend_mode = 2;
+			material->blend_mode = 4;
 	}
 	/* COT hourglass:
 	 * batch 0 is solid circles
@@ -832,66 +833,50 @@ static void gx_m2_batch_load(struct gx_m2_batch *batch, struct wow_m2_file *file
 		switch (-wow_batch->shader_id)
 		{
 			default:
+#if 0
 				LOG_WARN("unknown shader combiner: %d", wow_batch->shader_id);
+#endif
 				/* FALLTHROUGH */
 			case 3:
 				fragment_modes[0] = 1; /* test for real values */
 				break;
 		}
+#if 0
 		LOG_WARN("using combiner combo %u for %u", fragment_modes[0], batch->id);
+#endif
 	}
 	else
 	{
 		if (wow_batch->texture_count > 0)
 		{
-			struct wow_m2_material *material = &file->materials[wow_batch->material_index];
-			for (uint16_t i = 0; i < wow_batch->texture_count; ++i)
+			if (file->header.flags & WOW_M2_HEADER_FLAG_USE_TEXTURE_COMBINER_COMBO)
 			{
-				static const uint32_t static_fragments[] = {0, 1, 1, 1, 1, 5, 5};
-				if (file->header.flags & WOW_M2_HEADER_FLAG_USE_TEXTURE_COMBINER_COMBO)
+				for (uint16_t i = 0; i < wow_batch->texture_count; ++i)
 				{
-					if ((unsigned)wow_batch->shader_id + i >= file->texture_combiner_combos_nb)
-					{
-						LOG_WARN("invalid shader id: %u / %u, shader: %u, i: %u, file: %s", (uint32_t)(wow_batch->shader_id + i), file->texture_combiner_combos_nb, wow_batch->shader_id, i, batch->parent->parent->filename);
-						fragment_modes[i] = static_fragments[material->blend_mode];
-					}
-					else
-					{
-						fragment_modes[i] = file->texture_combiner_combos[wow_batch->shader_id + i];
-						LOG_WARN("using combiner combo %u for id %u tex %u", fragment_modes[i], batch->id, i);
-					}
+					assert((unsigned)wow_batch->shader_id + i < file->texture_combiner_combos_nb);
+					fragment_modes[i] = file->texture_combiner_combos[wow_batch->shader_id + i];
+#if 0
+					LOG_WARN("using combiner combo %u for id %u tex %u", fragment_modes[i], batch->id, i);
+#endif
 				}
-				else
+			}
+			else
+			{
+				struct wow_m2_material *material = &file->materials[wow_batch->material_index];
+				for (uint16_t i = 0; i < wow_batch->texture_count; ++i)
 				{
+					static const uint32_t static_fragments[] = {0, 1, 1, 1, 1, 5, 5};
 					fragment_modes[i] = static_fragments[material->blend_mode];
 				}
 			}
 		}
 	}
+	assert(wow_batch->texture_coord_combo_index < file->texture_unit_lookups_nb);
+	lookups[0] = file->texture_unit_lookups[wow_batch->texture_coord_combo_index];
 	if (wow_batch->texture_count > 1)
 	{
-		if (wow_batch->texture_coord_combo_index + 1u >= file->texture_unit_lookups_nb)
-		{
-			LOG_WARN("invalid coord combo index: %u >= %u", wow_batch->texture_coord_combo_index + 1, file->texture_unit_lookups_nb);
-			lookups[1] = 0;
-		}
-		else
-		{
-			lookups[1] = file->texture_unit_lookups[wow_batch->texture_coord_combo_index + 1];
-		}
-	}
-	else
-	{
-		lookups[1] = 0;
-	}
-	if (wow_batch->texture_coord_combo_index >= file->texture_unit_lookups_nb)
-	{
-		LOG_WARN("invalid coord combo index: %u >= %u", wow_batch->texture_coord_combo_index, file->texture_unit_lookups_nb);
-		lookups[0] = 0;
-	}
-	else
-	{
-		lookups[0] = file->texture_unit_lookups[wow_batch->texture_coord_combo_index];
+		assert(wow_batch->texture_coord_combo_index + 1u < file->texture_unit_lookups_nb);
+		lookups[1] = file->texture_unit_lookups[wow_batch->texture_coord_combo_index + 1];
 	}
 	if (wow_batch->texture_count > 1)
 		tex2env = lookups[1] > 2;
@@ -913,7 +898,7 @@ static void gx_m2_batch_load(struct gx_m2_batch *batch, struct wow_m2_file *file
 	batch->combiners[1] = GX_M2_FRAGMENT_DIFFUSE;
 }
 
-static void gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_render_params *params)
+static bool gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_render_params *params)
 {
 	struct gx_m2 *m2 = batch->parent->parent;
 	struct vec4f color = {1, 1, 1, 1};
@@ -936,6 +921,8 @@ static void gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_ren
 		if (m2_get_track_value_int16(m2, &m2->texture_weights[batch->texture_weight].weight, &v, NULL, g_wow->frametime / 1000000))
 			color.w *= v / (float)0x7fff;
 	}
+	if (color.w == 0)
+		return false;
 	PERFORMANCE_BEGIN(M2_RENDER_DATA);
 	struct shader_m2_mesh_block mesh_block;
 	gx_m2_texture_update_matrix(&batch->textures[0], batch, &mesh_block.tex1_matrix);
@@ -964,13 +951,14 @@ static void gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_ren
 			VEC3_CPY(mesh_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
 		}
 	}
-	mesh_block.alpha_test = batch->alpha_test;
+	mesh_block.alpha_test = batch->alpha_test * color.w;
 	gfx_set_buffer_data(&batch->uniform_buffers[g_wow->draw_frame_id], &mesh_block, sizeof(mesh_block), 0);
 	PERFORMANCE_END(M2_RENDER_DATA);
 	PERFORMANCE_BEGIN(M2_RENDER_BIND);
 	gfx_bind_constant(g_wow->device, 0, &batch->uniform_buffers[g_wow->draw_frame_id], sizeof(struct shader_m2_mesh_block), 0);
 	gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->m2_pipeline_states)[batch->pipeline_state]);
 	PERFORMANCE_END(M2_RENDER_BIND);
+	return true;
 }
 
 static void gx_m2_batch_render(struct gx_m2_batch *batch, struct gx_m2_instance *instance)
@@ -1050,7 +1038,7 @@ static bool should_render_profile(struct gx_m2_instance *instance, struct gx_m2_
 }
 
 #if 0
-#define TEST_BATCH 6
+#define TEST_BATCH 4
 #endif
 
 static void gx_m2_profile_render(struct gx_m2_profile *profile, struct jks_array *instances, bool transparent)
@@ -1078,7 +1066,8 @@ static void gx_m2_profile_render(struct gx_m2_profile *profile, struct jks_array
 				continue;
 			if (!initialized)
 			{
-				gx_m2_batch_prepare_draw(batch, NULL);
+				if (!gx_m2_batch_prepare_draw(batch, NULL))
+					break;
 				initialized = true;
 			}
 			if (instance->local_lighting && instance->local_lighting->uniform_buffer.handle.u64)
@@ -1114,7 +1103,8 @@ static void gx_m2_profile_render_instance(struct gx_m2_profile *profile, struct 
 #endif
 		if (!should_render_profile(instance, batch))
 			continue;
-		gx_m2_batch_prepare_draw(batch, params);
+		if (!gx_m2_batch_prepare_draw(batch, params))
+			continue;
 		gx_m2_batch_render(batch, instance);
 	}
 }
