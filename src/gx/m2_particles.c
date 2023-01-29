@@ -332,10 +332,30 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		}
 		float u = 1.f / emitter->emitter->texture_dimensions_columns;
 		float v = 1.f / emitter->emitter->texture_dimensions_rows;
-		VEC2_SET(vertexes[1].uv, 0, 0);
-		VEC2_SET(vertexes[2].uv, u, 0);
-		VEC2_SET(vertexes[3].uv, u, v);
-		VEC2_SET(vertexes[0].uv, 0, v);
+		switch (emitter->emitter->texture_tile_rotation)
+		{
+			case -1:
+				VEC2_SET(vertexes[3].uv, 0, 0);
+				VEC2_SET(vertexes[0].uv, u, 0);
+				VEC2_SET(vertexes[1].uv, u, v);
+				VEC2_SET(vertexes[2].uv, 0, v);
+				break;
+			default:
+				LOG_WARN("unknown particle tile rotation: %u", emitter->emitter->texture_tile_rotation);
+				/* FALLTHROUGH */
+			case 0:
+				VEC2_SET(vertexes[0].uv, 0, 0);
+				VEC2_SET(vertexes[1].uv, u, 0);
+				VEC2_SET(vertexes[2].uv, u, v);
+				VEC2_SET(vertexes[3].uv, 0, v);
+				break;
+			case 1:
+				VEC2_SET(vertexes[1].uv, 0, 0);
+				VEC2_SET(vertexes[2].uv, u, 0);
+				VEC2_SET(vertexes[3].uv, u, v);
+				VEC2_SET(vertexes[0].uv, 0, v);
+				break;
+		}
 	}
 }
 
