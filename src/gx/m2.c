@@ -2235,7 +2235,8 @@ static void resolve_sequence(struct gx_m2_instance *instance)
 		lookup = instance->parent->sequence_lookups[i];
 		if (lookup == (uint16_t)-1)
 		{
-			i = 0;
+			LOG_WARN("sequence not found: %u", seq_id);
+			lookup = 0;
 			break;
 		}
 		if (instance->parent->sequences[lookup].id == seq_id)
