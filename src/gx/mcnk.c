@@ -35,8 +35,13 @@
 #define GROUND_DOODADS_RANGE_MIN (CHUNK_WIDTH * 5)
 #define GROUND_DOODADS_RANGE_MAX (CHUNK_WIDTH * 6)
 
-//#define GROUND_DOODADS
-/* #define USE_LOW_DEF_ALPHA */
+#if 0
+# define GROUND_DOODADS
+#endif
+
+#if 0
+# define USE_LOW_DEF_ALPHA
+#endif
 
 MEMORY_DECL(GX);
 
@@ -474,7 +479,7 @@ static void init_batch_animations(struct wow_mcnk *mcnk, struct gx_mcnk_batch *m
 static void init_batch_alpha_low(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, uint32_t batch)
 {
 	uint8_t *iter = mcnk->init_data->alpha[batch];
-	if (mcnk->parent->parent->flags & WOW_MPHD_FLAG_BIG_ALPHA)
+	if (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA)
 	{
 		for (size_t z = 0; z < 64; ++z)
 		{
