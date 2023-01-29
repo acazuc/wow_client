@@ -23,16 +23,21 @@ struct gx_wmo_mliq_liquid
 	uint32_t indices_nb;
 };
 
+struct gx_wmo_mliq_frame
+{
+	struct jks_array to_render[WMO_MLIQ_LIQUIDS_COUNT]; /* gx_wmo_instance_t* */
+};
+
 struct gx_wmo_mliq
 {
 	struct gx_wmo_mliq_init_data *init_data;
 	struct gx_wmo_mliq_liquid liquids[WMO_MLIQ_LIQUIDS_COUNT];
+	struct gx_wmo_mliq_frame render_frames[RENDER_FRAMES_COUNT];
 	gfx_attributes_state_t attributes_state;
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
 	struct vec3f position;
-	struct jks_array to_render[WMO_MLIQ_LIQUIDS_COUNT]; /* gx_wmo_instance_t* */
 	bool empty;
 	bool in_render_list;
 	bool in_render_lists[WMO_MLIQ_LIQUIDS_COUNT];

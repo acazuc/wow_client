@@ -89,9 +89,15 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 		}
 	}
 	mliq->empty = true;
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+	{
+		for (size_t j = 0; j < WMO_MLIQ_LIQUIDS_COUNT; ++j)
+		{
+			jks_array_init(&mliq->render_frames[i].to_render[j], sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
+		}
+	}
 	for (size_t i = 0; i < WMO_MLIQ_LIQUIDS_COUNT; ++i)
 	{
-		jks_array_init(&mliq->to_render[i], sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
 		if ((mliq->liquids[i].indices_nb = mliq->init_data->indices[i].size))
 			mliq->empty = false; /* shouln't break to continue indices_nb */
 	}
@@ -160,13 +166,16 @@ void gx_wmo_mliq_delete(struct gx_wmo_mliq *mliq)
 		return;
 	for (size_t i = 0; i < WMO_MLIQ_LIQUIDS_COUNT; ++i)
 	{
-		jks_array_destroy(&mliq->to_render[i]);
 		struct gx_wmo_mliq_liquid *liquid = &mliq->liquids[i];
 		for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
 			gfx_delete_buffer(g_wow->device, &liquid->uniform_buffers[j]);
 	}
-	for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
-		gfx_delete_buffer(g_wow->device, &mliq->uniform_buffers[j]);
+	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+	{
+		for (size_t j = 0; j < WMO_MLIQ_LIQUIDS_COUNT; ++j)
+			jks_array_destroy(&mliq->render_frames[i].to_render[j]);
+		gfx_delete_buffer(g_wow->device, &mliq->uniform_buffers[i]);
+	}
 	gfx_delete_buffer(g_wow->device, &mliq->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &mliq->indices_buffer);
 	gfx_delete_attributes_state(g_wow->device, &mliq->attributes_state);
@@ -222,35 +231,35 @@ static void render_liquid(struct gx_wmo_mliq_liquid *liquid, uint8_t type)
 void gx_wmo_mliq_clear_update(struct gx_wmo_mliq *mliq)
 {
 	for (size_t i = 0; i < WMO_MLIQ_LIQUIDS_COUNT; ++i)
-		jks_array_resize(&mliq->to_render[i], 0);
+		jks_array_resize(&mliq->render_frames[g_wow->cull_frame_id].to_render[i], 0);
 }
 
 void gx_wmo_mliq_add_to_render(struct gx_wmo_mliq *mliq, struct gx_wmo_instance *instance)
 {
-	return;
 	if (mliq->empty)
 		return;
 	for (size_t i = 0; i < WMO_MLIQ_LIQUIDS_COUNT; ++i)
 	{
 		if (!mliq->liquids[i].indices_nb)
 			continue;
-		if (render_add_wmo_mliq(mliq, i))
+		if (!render_add_wmo_mliq(mliq, i))
+			continue;
+		if (!jks_array_push_back(&mliq->render_frames[g_wow->cull_frame_id].to_render[i], &instance))
 		{
-			if (!jks_array_push_back(&mliq->to_render[i], &instance))
-			{
-				LOG_ERROR("failed to add instance to mliq render list");
-				continue;
-			}
+			LOG_ERROR("failed to add instance to mliq render list");
+			continue;
 		}
 	}
 }
 
 void gx_wmo_mliq_render(struct gx_wmo_mliq *mliq, uint8_t type)
 {
+	if (!mliq->attributes_state.handle.ptr)
+		return;
 	gfx_bind_attributes_state(g_wow->device, &mliq->attributes_state, &g_wow->graphics->wmo_mliq_input_layout);
-	for (size_t i = 0; i < mliq->to_render[type].size; ++i)
+	for (size_t i = 0; i < mliq->render_frames[g_wow->draw_frame_id].to_render[type].size; ++i)
 	{
-		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&mliq->to_render[type], i, struct gx_wmo_instance*);
+		struct gx_wmo_instance *instance = *JKS_ARRAY_GET(&mliq->render_frames[g_wow->draw_frame_id].to_render[type], i, struct gx_wmo_instance*);
 		struct mat4f tmp;
 		MAT4_TRANSLATE(tmp, instance->m, mliq->position);
 		struct shader_mliq_model_block model_block;
@@ -259,6 +268,6 @@ void gx_wmo_mliq_render(struct gx_wmo_mliq *mliq, uint8_t type)
 		MAT4_MUL(model_block.mvp, g_wow->draw_frame->view_p, model_block.mv);
 		gfx_set_buffer_data(&mliq->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 		gfx_bind_constant(g_wow->device, 1, &mliq->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
-		render_liquid(&mliq->liquids[i], type);
+		render_liquid(&mliq->liquids[type], type);
 	}
 }
