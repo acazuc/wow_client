@@ -4,19 +4,13 @@ ifeq ($(TARGET), windows)
 
 NAME = wow.exe
 
-else
-
-NAME = wow
-
-endif
-
-ifeq ($(TARGET), windows)
-
 HOST = x86_64-w64-mingw32-
 
 else
 
 ifeq ($(TARGET), linux)
+
+NAME = wow
 
 HOST = 
 
@@ -89,51 +83,45 @@ endif
 ifeq ($(WITH_LTO), YES)
 
 CFLAGS+= -flto=4
+
 LDFLAGS+= -flto=4
+
+LTO_BUILD = _LTO
 
 endif
 
-ifeq ($(BUILD), DEBUG)
+ifeq ($(WITH_SANITIZER), YES)
 
 CFLAGS+= -fsanitize=address
 #CFLAGS+= -fsanitize=leak
 CFLAGS+= -fsanitize=undefined
 #CFLAGS+= -fno-sanitize=vptr
 #CFLAGS+= -fsanitize=thread
-CFLAGS+= -O0
 
 LDFLAGS+= -fsanitize=address
 LDFLAGS+= -fsanitize=undefined
 #LDFLAGS+= -fsanitize=thread
 
-else
+SANITIZER_BUILD = _SANITIZE
 
-ifeq ($(BUILD), DEVEL)
+endif
 
-CFLAGS += -O0
-
-else
+ifeq ($(WITH_OPTIMIZATIONS), YES)
 
 CFLAGS+= -Ofast
-
-endif
-
-endif
-
-ifeq ($(BUILD), RELEASE)
 
 CPPFLAGS+= -DNDEBUG
 CPPFLAGS+= -DDBG_NO_FILE
 
+OPTIMIZATIONS_BUILD = _OPTIMIZE
+
+else
+
+CFLAGS += -O0
+
 endif
 
-ifeq ($(WITH_LTO), YES)
-
-LTO_BUILD = _LTO
-
-endif
-
-LIB_DIR = lib/build_$(TARGET)_$(BUILD)$(LTO_BUILD)
+LIB_DIR = lib/build_$(TARGET)$(OPTIMIZATIONS_BUILD)$(SANITIZER_BUILD)$(LTO_BUILD)
 
 INCLUDES = -I src
 INCLUDES+= -I $(LIB_DIR)/include

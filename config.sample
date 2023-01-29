@@ -1,16 +1,14 @@
-# build type:
-# - DEBUG: DEVEL + sanitizer
-# - DEVEL: disable optimizations, enable debug verbose, enable asserts
-# - RELEASE: enable optimizations, disable asserts
-#BUILD = DEBUG
-#BUILD = DEVEL
-BUILD = RELEASE
+# enable / disable compiler optimizations (optimized builds implies no assert & no debug logs)
+WITH_OPTIMIZATIONS = YES
 
-# enable / disable debug rendering (aabb, collisions, light points, portals, bones)
-WITH_DEBUG_RENDERING = NO
+# enable / disable sanitizer
+WITH_SANITIZER = NO
 
 # enable / disable link time optimizations
 WITH_LTO = NO
+
+# enable / disable debug rendering (aabb, collisions, light points, portals, bones)
+WITH_DEBUG_RENDERING = NO
 
 # enable / disable performance measurements
 WITH_PERFORMANCE = NO
@@ -18,6 +16,7 @@ WITH_PERFORMANCE = NO
 # enable / disable memory measurements
 WITH_MEMORY = NO
 
+# choose target platform (will change compiler & linked system libraries)
 # linux: use gcc
 # windows: use mingw
 TARGET = linux
