@@ -27,3 +27,6 @@ Wow client targeting wow TBC 2.4.3 8606
 - `cp config.sample config`
 - `make lib`
 - `make`
+
+## thanks
+none of this would exist without the incredible work done by the [wowdev](https://wowdev.wiki) contributors
