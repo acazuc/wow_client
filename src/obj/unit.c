@@ -1069,8 +1069,10 @@ void unit_physics(struct unit *unit)
 	VEC3_MIN(params.aabb.p0, dst, src);
 	VEC3_MAX(params.aabb.p1, dst, src);
 	params.aabb.p0.x -= SPHERE_RADIUS;
+	params.aabb.p0.y -= SPHERE_RADIUS;
 	params.aabb.p0.z -= SPHERE_RADIUS;
 	params.aabb.p1.x += SPHERE_RADIUS;
+	params.aabb.p1.y += SPHERE_RADIUS;
 	params.aabb.p1.z += SPHERE_RADIUS;
 	struct vec3f delta;
 	VEC3_SUB(delta, params.aabb.p1, params.aabb.p0);
