@@ -341,7 +341,9 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 				VEC2_SET(vertexes[2].uv, 0, v);
 				break;
 			default:
+#if 0
 				LOG_WARN("unknown particle tile rotation: %u", emitter->emitter->texture_tile_rotation);
+#endif
 				/* FALLTHROUGH */
 			case 0:
 				VEC2_SET(vertexes[0].uv, 0, 0);
