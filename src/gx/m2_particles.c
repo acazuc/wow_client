@@ -225,6 +225,12 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 			VEC3_SUB(particle->position, particle->position, tmp);
 		}
 	}
+	if (!jks_array_resize(&emitter->vertexes, emitter->particles.size * 4))
+	{
+		jks_array_resize(&emitter->particles, emitter->particles.size - 1);
+		LOG_ERROR("failed to grow vertexes array");
+		return;
+	}
 	for (size_t i = 0; i < emitter->particles.size; ++i)
 	{
 		struct m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct m2_particle);
@@ -339,12 +345,6 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 	if (!particle)
 	{
 		LOG_ERROR("failed to grow particle array");
-		return;
-	}
-	if (!jks_array_resize(&emitter->vertexes, emitter->particles.size * 4))
-	{
-		jks_array_resize(&emitter->particles, emitter->particles.size - 1);
-		LOG_ERROR("failed to grow vertexes array");
 		return;
 	}
 	particle->spin_random = rand() / (float)RAND_MAX * M_PI * 2;
@@ -481,7 +481,7 @@ static void render_particles(struct gx_m2_particles *particles, struct m2_partic
 	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	blp_texture_bind(emitter->texture, 0);
-	gfx_draw_indexed(g_wow->device, emitter->vertexes.size / 4 * 6, 0);
+	gfx_draw_indexed(g_wow->device, emitter->particles.size * 6, 0);
 }
 
 static void initialize(struct gx_m2_particles *particles)
@@ -497,7 +497,7 @@ static void initialize(struct gx_m2_particles *particles)
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
 			};
-			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_input) * MAX_PARTICLES, GFX_BUFFER_STREAM);
+			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_input) * MAX_PARTICLES * 4, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_model_block), GFX_BUFFER_STREAM);
 			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), &g_wow->map->particles_indices_buffer, GFX_INDEX_UINT16);
 		}
