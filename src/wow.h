@@ -158,7 +158,7 @@ struct wow
 	struct wow_mpq_compound *mpq_compound;
 	struct map *map;
 	struct post_process post_process;
-	struct jks_array *mpq_archives; /* wow_mpq_archive_t* */
+	struct jks_array *mpq_archives; /* struct wow_mpq_archive* */
 	struct interface *interface;
 	gfx_device_t *device;
 	gfx_window_t *window;
