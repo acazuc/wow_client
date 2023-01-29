@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 
-#define MAX_PARTICLES 128
+#define MAX_PARTICLES 1024
 
 struct wow_m2_particle;
 struct gx_m2_instance;
