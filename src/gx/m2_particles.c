@@ -377,7 +377,6 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 	float vertical_range;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->vertical_range, &vertical_range))
 		vertical_range = 0;
-	vertical_range /= 2;
 	float horizontal_range;
 	if (!m2_instance_get_track_value_float(particles->parent, &emitter->emitter->horizontal_range, &horizontal_range))
 		horizontal_range = 0;
