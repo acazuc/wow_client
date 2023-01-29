@@ -23,7 +23,7 @@ struct lagometer *lagometer_new(void)
 	if (!lagometer)
 		return NULL;
 	lagometer->pos = 0;
-	lagometer->vertexes_data = mem_zalloc(MEM_GENERIC, sizeof(*lagometer->vertexes_data) * WIDTH * 6);
+	lagometer->vertexes_data = mem_zalloc(MEM_GENERIC, sizeof(*lagometer->vertexes_data) * WIDTH * 8);
 	if (!lagometer->vertexes_data)
 	{
 		LOG_ERROR("failed to alloc lagometer vertexes");
