@@ -96,7 +96,7 @@ void dbc_dump(const struct dbc *dbc)
 	}
 }
 
-void dbc_dump_def(const struct dbc *dbc, const wow_dbc_def_t *def)
+void dbc_dump_def(const struct dbc *dbc, const struct wow_dbc_def *def)
 {
 	for (size_t i = 0; def[i].type != WOW_DBC_TYPE_END; ++i)
 	{

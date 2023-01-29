@@ -124,7 +124,7 @@ bool gx_wmo_load(struct gx_wmo *wmo, struct wow_wmo_file *file)
 		{
 			struct wow_modd_data *modd = JKS_ARRAY_GET(&wmo->modd, i, struct wow_modd_data);
 			modd->position = (struct wow_vec3f){modd->position.x, modd->position.z, -modd->position.y};
-			modd->rotation = (struct wow_quaternion_float){modd->rotation.x, modd->rotation.z, -modd->rotation.y, modd->rotation.w};
+			modd->rotation = (struct wow_quatf){modd->rotation.x, modd->rotation.z, -modd->rotation.y, modd->rotation.w};
 		}
 	}
 	if (file->mods.data_nb)
