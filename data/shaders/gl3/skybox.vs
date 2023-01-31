@@ -6,26 +6,32 @@ layout(location=2) in float vs_color1;
 layout(location=3) in float vs_color2;
 layout(location=4) in float vs_color3;
 layout(location=5) in float vs_color4;
+layout(location=6) in vec2 vs_uv;
 
 out fs_block
 {
 	vec4 fs_color;
+	vec2 fs_uv;
 };
 
 layout (std140) uniform model_block
 {
 	mat4 mvp;
-	vec4 colors[6];
+	vec4 sky_colors[6];
+	vec4 clouds_color;
+	float clouds_blend;
+	float clouds_factor;
 };
 
 void main()
 {
 	gl_Position = mvp * vec4(vs_position, 1);
-	vec4 ret = colors[0];
-	ret = mix(ret, colors[1], vs_color0);
-	ret = mix(ret, colors[2], vs_color1);
-	ret = mix(ret, colors[3], vs_color2);
-	ret = mix(ret, colors[4], vs_color3);
-	ret = mix(ret, colors[5], vs_color4);
+	vec4 ret = sky_colors[0];
+	ret = mix(ret, sky_colors[1], vs_color0);
+	ret = mix(ret, sky_colors[2], vs_color1);
+	ret = mix(ret, sky_colors[3], vs_color2);
+	ret = mix(ret, sky_colors[4], vs_color3);
+	ret = mix(ret, sky_colors[5], vs_color4);
 	fs_color = ret;
+	fs_uv = vs_uv;
 }

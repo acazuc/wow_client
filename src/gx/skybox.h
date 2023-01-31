@@ -1,6 +1,8 @@
 #ifndef GX_SKYBOX_H
 #define GX_SKYBOX_H
 
+#include "simplex.h"
+
 #include <jks/array.h>
 #include <jks/vec3.h>
 
@@ -49,6 +51,8 @@ struct gx_skybox
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
+	gfx_texture_t clouds[2];
+	struct simplex_noise clouds_noise;
 	struct gx_m2_instance *skybox_m2;
 	char *current_skybox;
 	uint32_t default_skybox;

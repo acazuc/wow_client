@@ -148,6 +148,7 @@ SRCS_NAME = wow.c \
             bc.c \
             cvars.c \
             graphics.c \
+            simplex.c \
             gx/m2.c \
             gx/wmo.c \
             gx/wmo_group.c \

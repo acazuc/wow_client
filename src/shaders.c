@@ -458,6 +458,7 @@ static bool build_skybox(gfx_shader_state_t *shader_state)
 		{"vs_color2", 3},
 		{"vs_color3", 4},
 		{"vs_color4", 5},
+		{"vs_uv", 6},
 		{NULL, 0}
 	};
 	static const gfx_shader_constant_t constants[] =
@@ -467,6 +468,8 @@ static bool build_skybox(gfx_shader_state_t *shader_state)
 	};
 	static const gfx_shader_sampler_t samplers[] =
 	{
+		{"clouds1", 0},
+		{"clouds2", 1},
 		{NULL, 0}
 	};
 	return load_shader_state(shader_state, "skybox", attributes, constants, samplers);

@@ -98,7 +98,8 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 	}
 	for (size_t i = 0; i < WMO_MLIQ_LIQUIDS_COUNT; ++i)
 	{
-		if ((mliq->liquids[i].indices_nb = mliq->init_data->indices[i].size))
+		mliq->liquids[i].indices_nb = mliq->init_data->indices[i].size;
+		if (mliq->liquids[i].indices_nb)
 			mliq->empty = false; /* shouln't break to continue indices_nb */
 	}
 	if (!mliq->empty)

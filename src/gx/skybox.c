@@ -17,13 +17,27 @@
 
 #include <libwow/dbc.h>
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 MEMORY_DECL(GX);
 
 #define XZPARTS 32
-#define YPARTS 7
+#define YPARTS 10
+
+#define CLOUDS_WIDTH 256
+#define CLOUDS_HEIGHT 128
+
+#define CLOUDS_OFFSET_X 456
+#define CLOUDS_OFFSET_Y 947
+
+#define CLOUDS_SCALE_X 140
+#define CLOUDS_SCALE_Y 70
+#define CLOUDS_SCALE_Z 5
+
+#define CLOUDS_MIN (0)
+#define CLOUDS_MAX (.5)
 
 struct skybox_float_track
 {
@@ -70,11 +84,7 @@ struct skybox_entry
 
 static uint16_t get_indice(uint32_t x, uint32_t y)
 {
-	if (y == 0)
-		return 0;
-	if (y == YPARTS - 1)
-		return 1 + (YPARTS - 2) * XZPARTS;
-	return 1 + (y - 1) * XZPARTS + x;
+	return y * XZPARTS + x;
 }
 
 static void load_skybox(struct skybox_entry *entry, struct dbc *dbc_light_int_band, struct dbc *dbc_light_float_band, struct dbc *dbc_light_params, struct dbc *dbc_light_skybox, struct vec3f pos, float inner_radius, float outer_radius, uint32_t ids[5])
@@ -165,9 +175,12 @@ void entry_destroy(struct skybox_entry *entry)
 
 struct gx_skybox *gx_skybox_new(uint32_t mapid)
 {
-	static const float angles[YPARTS] = {90, 15, 4, 3.5, 0, -2.25, -90};
+	static const float angles[YPARTS] = {90, 55, 40, 25, 15, 4, 3.5, 0, -2.25, -90};
 	static const float colorsidx[YPARTS][5] =
 	{
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0},
 		{1, .5, 0, 0, 0},
 		{1, .9, .9, 0, 0},
@@ -176,8 +189,8 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		{0, 0, 0, 0, 1},
 		{0, 0, 0, 0, 1}
 	};
-	struct shader_skybox_input vertexes[XZPARTS * YPARTS - (XZPARTS - 1) * 2];
-	uint16_t indices[6 * (XZPARTS * YPARTS - 1 - (XZPARTS - 1))];
+	struct shader_skybox_input vertexes[XZPARTS * YPARTS];
+	uint16_t indices[6 * XZPARTS * (YPARTS - 1)];
 	uint32_t idx = 0;
 	struct gx_skybox *skybox = NULL;
 	struct dbc *dbc_light = NULL;
@@ -277,23 +290,28 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 	{
 		for (uint32_t x = 0; x < XZPARTS; ++x)
 		{
-			if ((y == 0 && x == 0) || (y > 0 && y < YPARTS - 1) || (y == YPARTS - 1 && x == 0))
 			{
 				uint16_t index = get_indice(x, y);
+				struct shader_skybox_input *vertex = &vertexes[index];
 				float fac = M_PI * 2 / (XZPARTS - 1);
-				float y_fac = 1 - fabs(sin(angles[y] / 180. * M_PI));
+				float y_fac = 1 - fabsf(sinf(angles[y] / 180. * M_PI));
 				for (size_t i = 0; i < 5; ++i)
-					vertexes[index].colors[i] = colorsidx[y][i];
-				vertexes[index].position.x = cos(x * fac) * y_fac * 100;
-				vertexes[index].position.y = sin(angles[y] / 180. * M_PI) * 100;
-				vertexes[index].position.z = sin(x * fac) * y_fac * 100;
+					vertex->colors[i] = colorsidx[y][i];
+				vertex->position.x = cosf(x * fac) * y_fac * 100;
+				vertex->position.y = sinf(angles[y] / 180. * M_PI) * 100;
+				vertex->position.z = sinf(x * fac) * y_fac * 100;
+				vertex->uv.x = x / (float)(XZPARTS - 1);
+				if (angles[y] >= 0)
+					vertex->uv.y = sinf(angles[y] / 180. * M_PI);//angles[y] / 90.f;
+				else
+					vertex->uv.y = 0;
 			}
 			if (y == YPARTS - 1)
 				continue;
-			uint16_t p1 = get_indice(x, y);
+			uint16_t p1 = get_indice( x               , y);
 			uint16_t p2 = get_indice((x + 1) % XZPARTS, y);
 			uint16_t p3 = get_indice((x + 1) % XZPARTS, y + 1);
-			uint16_t p4 = get_indice(x, y + 1);
+			uint16_t p4 = get_indice( x               , y + 1);
 			indices[idx++] = p2;
 			indices[idx++] = p1;
 			indices[idx++] = p4;
@@ -311,6 +329,15 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 	}
 	skybox->vertexes_buffer = GFX_BUFFER_INIT();
 	skybox->indices_buffer = GFX_BUFFER_INIT();
+	for (size_t i = 0; i < 2; ++i)
+	{
+		skybox->clouds[i] = GFX_TEXTURE_INIT();
+		gfx_create_texture(g_wow->device, &skybox->clouds[i], GFX_TEXTURE_2D, GFX_R8, 1, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0);
+		gfx_set_texture_levels(&skybox->clouds[i], 0, 0);
+		gfx_set_texture_anisotropy(&skybox->clouds[i], g_wow->anisotropy);
+		gfx_set_texture_filtering(&skybox->clouds[i], GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR);
+		gfx_set_texture_addressing(&skybox->clouds[i], GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT);
+	}
 	gfx_create_buffer(g_wow->device, &skybox->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &skybox->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
@@ -326,8 +353,10 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[2])},
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[3])},
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[4])},
+		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, uv)},
 	};
 	gfx_create_attributes_state(g_wow->device, &skybox->attributes_state, binds, sizeof(binds) / sizeof(*binds), &skybox->indices_buffer, GFX_INDEX_UINT16);
+	simplex_noise_init(&skybox->clouds_noise, 6, .5, rand());
 	return skybox;
 
 err:
@@ -359,6 +388,9 @@ void gx_skybox_delete(struct gx_skybox *skybox)
 	gfx_delete_buffer(g_wow->device, &skybox->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &skybox->indices_buffer);
 	gfx_delete_attributes_state(g_wow->device, &skybox->attributes_state);
+	gfx_delete_texture(g_wow->device, &skybox->clouds[0]);
+	gfx_delete_texture(g_wow->device, &skybox->clouds[1]);
+	simplex_noise_destroy(&skybox->clouds_noise);
 	mem_free(MEM_GX, skybox);
 }
 
@@ -650,6 +682,51 @@ void gx_skybox_update(struct gx_skybox *skybox)
 	}
 }
 
+static void generate_cloud_texture(struct gx_skybox *skybox)
+{
+	uint8_t data[CLOUDS_WIDTH * CLOUDS_HEIGHT];
+	for (size_t y = 0; y < CLOUDS_HEIGHT; ++y)
+	{
+		float yfac;
+		if (y < CLOUDS_HEIGHT / 10)
+		{
+			yfac = (float)y / (CLOUDS_HEIGHT / 10);
+		}
+		else if (y >= CLOUDS_HEIGHT - (CLOUDS_HEIGHT / 2))
+		{
+			yfac = 1 - ((y - (CLOUDS_HEIGHT - (CLOUDS_HEIGHT / 2))) / (float)((CLOUDS_HEIGHT / 4) - 1));
+			if (yfac < 0)
+				yfac = 0;
+		}
+		else
+		{
+			yfac = 1;
+		}
+		for (size_t x = 0; x < CLOUDS_WIDTH; ++x)
+		{
+			float vx = (CLOUDS_OFFSET_X + (x / (float)CLOUDS_WIDTH)) * CLOUDS_SCALE_X;
+			float vy = (CLOUDS_OFFSET_Y + (y / (float)CLOUDS_HEIGHT)) * CLOUDS_SCALE_Y;
+			float vz = (g_wow->frametime / 1000000) / 2880. * CLOUDS_SCALE_Z;
+			float v = simplex_noise_get3(&skybox->clouds_noise, vx, vy, vz);
+			if (x < CLOUDS_WIDTH / 10)
+			{
+				float vvx = (CLOUDS_OFFSET_X + ((x + CLOUDS_WIDTH) / (float)CLOUDS_WIDTH)) * CLOUDS_SCALE_X;
+				float vv = simplex_noise_get3(&skybox->clouds_noise, vvx, vy, vz);
+				float f = x / (float)(CLOUDS_WIDTH / 10);
+				v = v * f + vv * (1 - f);
+			}
+			v = (v - CLOUDS_MIN) / (CLOUDS_MAX - CLOUDS_MIN);
+			v *= yfac;
+			if (v < 0)
+				v = 0;
+			if (v > 1)
+				v = 1;
+			data[x + y * CLOUDS_WIDTH] = v * 255;
+		}
+	}
+	gfx_set_texture_data(&skybox->clouds[0], 0, 0, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0, sizeof(data), data);
+}
+
 void gx_skybox_render(struct gx_skybox *skybox)
 {
 	struct shader_skybox_model_block model_block;
@@ -660,9 +737,17 @@ void gx_skybox_render(struct gx_skybox *skybox)
 	MAT4_MUL(model_block.mvp, p, mv);
 	for (size_t i = 0; i < 6; ++i)
 	{
-		VEC3_CPY(model_block.colors[i], skybox->int_values[2 + i]);
-		model_block.colors[i].w = 1;
+		VEC3_CPY(model_block.sky_colors[i], skybox->int_values[SKYBOX_INT_SKY0 + i]);
+		model_block.sky_colors[i].w = 1;
 	}
+	VEC3_CPY(model_block.clouds_color, skybox->int_values[SKYBOX_INT_CLOUD1]);
+	model_block.clouds_color.w = 1;
+	model_block.clouds_blend = 0;
+	model_block.clouds_factor = skybox->float_values[SKYBOX_FLOAT_CLOUD];
+	/* XXX regenerate every x seconds */
+	generate_cloud_texture(skybox);
+	const gfx_texture_t *clouds[] = {&skybox->clouds[0], NULL};//&skybox->clouds[1]};
+	gfx_bind_samplers(g_wow->device, 0, 2, &clouds[0]);
 	gfx_set_buffer_data(&skybox->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &skybox->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	gfx_bind_attributes_state(g_wow->device, &skybox->attributes_state, &g_wow->graphics->skybox_input_layout);

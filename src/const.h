@@ -536,7 +536,7 @@ enum Anim
 	ANIM_CUSTOMSPELL10                 = 222,
 	ANIM_STEALTHRUN                    = 223,
 	ANIM_EMERGE                        = 224,
-	ENIM_COWER                         = 225,
+	ANIM_COWER                         = 225,
 };
 
 #endif
