@@ -18,9 +18,8 @@ layout (std140) uniform model_block
 {
 	mat4 mvp;
 	vec4 sky_colors[6];
-	vec4 clouds_color;
-	float clouds_blend;
-	float clouds_factor;
+	vec4 clouds_colors[2];
+	vec2 clouds_factors;
 };
 
 void main()

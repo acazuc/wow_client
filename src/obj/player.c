@@ -144,7 +144,7 @@ static bool ctr(struct object *object, uint64_t guid)
 #if 0 /* flight over shattrath */
 	VEC3_SET(WORLD_OBJECT->position, -1865, 142, -5427);
 #endif
-#if 1 /* shattrath entry */
+#if 0 /* shattrath entry */
 	VEC3_SET(WORLD_OBJECT->position, -1984.962280, 100.217883, -5087.445312);
 #endif
 #if 0
@@ -152,6 +152,9 @@ static bool ctr(struct object *object, uint64_t guid)
 #endif
 #if 0 /* netherstorm collectors */
 	VEC3_SET(WORLD_OBJECT->position, 2577.359863, 297.467316, -3346.378662);
+#endif
+#if 1 /* barrens */
+	VEC3_SET(WORLD_OBJECT->position, -818.711609, 198.758865, 3291.442871);
 #endif
 	return true;
 }

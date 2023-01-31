@@ -24,11 +24,6 @@ struct shader_basic_model_block
 	struct mat4f mvp;
 };
 
-struct shader_clouds_model_block
-{
-	struct mat4f mvp;
-};
-
 struct shader_wmo_portals_model_block
 {
 	struct mat4f mvp;
@@ -209,9 +204,8 @@ struct shader_skybox_model_block
 {
 	struct mat4f mvp;
 	struct vec4f sky_colors[6];
-	struct vec4f clouds_color;
-	float clouds_blend;
-	float clouds_factor;
+	struct vec4f clouds_colors[2];
+	struct vec2f clouds_factors;
 };
 
 struct shader_sobel_model_block

@@ -695,6 +695,9 @@ static void loop(void)
 	int64_t last_fps = nanotime();
 	while (!g_wow->window->close_requested)
 	{
+#if 0
+		LOG_INFO("x: %f, y: %f, z: %f", g_wow->view_camera->pos.x, g_wow->view_camera->pos.y, g_wow->view_camera->pos.z);
+#endif
 		bool culled_async = g_wow->wow_opt & WOW_OPT_ASYNC_CULL;
 		uint64_t started, ended;
 		started = nanotime();
