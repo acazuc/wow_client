@@ -12,6 +12,7 @@ layout (std140) uniform model_block
 	vec4 sky_colors[6];
 	vec4 clouds_colors[2];
 	vec2 clouds_factors;
+	float clouds_blend;
 };
 
 layout(location=0) out vec4 fragcolor;
@@ -26,7 +27,9 @@ void main()
 #else
 	fragcolor = fs_color;
 #if 1
-	float clouds_alpha = texture(clouds1, fs_uv).r;
+	float clouds_alpha1 = texture(clouds1, fs_uv).r;
+	float clouds_alpha2 = texture(clouds2, fs_uv).r;
+	float clouds_alpha = mix(clouds_alpha1, clouds_alpha2, clouds_blend);
 	fragcolor = mix(fragcolor, clouds_colors[0], clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0, 1));
 #endif
 #endif

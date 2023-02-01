@@ -6,7 +6,7 @@
 #include "shaders.h"
 #include "camera.h"
 #include "memory.h"
-#include "memory.h"
+#include "loader.h"
 #include "cache.h"
 #include "log.h"
 #include "wow.h"
@@ -27,14 +27,16 @@ MEMORY_DECL(GX);
 #define YPARTS 10
 
 #define CLOUDS_WIDTH (CLOUDS_HEIGHT / 2)
-#define CLOUDS_HEIGHT 2048
+#define CLOUDS_HEIGHT 1024
 
 #define CLOUDS_OFFSET_X 456
 #define CLOUDS_OFFSET_Y 947
 
 #define CLOUDS_SCALE_X (CLOUDS_SCALE_Y * 2)
 #define CLOUDS_SCALE_Y 70
-#define CLOUDS_SCALE_Z 5
+#define CLOUDS_SCALE_Z 1
+
+#define CLOUDS_INTERVAL 5000000000
 
 struct skybox_float_track
 {
@@ -78,6 +80,8 @@ struct skybox_entry
 	float outer_radius;
 	struct skybox_weather weathers[5];
 };
+
+static void gen_clouds_data(struct gx_skybox *skybox, uint64_t t, uint8_t *data);
 
 static uint16_t get_indice(uint32_t x, uint32_t y)
 {
@@ -226,9 +230,18 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		LOG_ERROR("failed to alloc skybox skybox");
 		goto err;
 	}
+	skybox->clouds_data = NULL;
 	skybox->skybox_m2 = NULL;
 	skybox->current_skybox = NULL;
 	skybox->has_default_skybox = false;
+	skybox->last_clouds = g_wow->frametime;
+	skybox->clouds_idx = 0;
+	if (pthread_mutex_init(&skybox->clouds_mutex, NULL))
+	{
+		LOG_ERROR("failed to create clouds mutex");
+		goto err;
+	}
+	simplex_noise_init(&skybox->clouds_noise, 6, .5, rand());
 	jks_array_init(&skybox->entries, sizeof(struct skybox_entry), (jks_array_destructor_t)entry_destroy, &jks_array_memory_fn_GX);
 	for (uint32_t i = 0; i < dbc_light->file->header.record_count; ++i)
 	{
@@ -326,7 +339,7 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 	}
 	skybox->vertexes_buffer = GFX_BUFFER_INIT();
 	skybox->indices_buffer = GFX_BUFFER_INIT();
-	for (size_t i = 0; i < 2; ++i)
+	for (size_t i = 0; i < sizeof(skybox->clouds) / sizeof(*skybox->clouds); ++i)
 	{
 		skybox->clouds[i] = GFX_TEXTURE_INIT();
 		gfx_create_texture(g_wow->device, &skybox->clouds[i], GFX_TEXTURE_2D, GFX_R8, 1, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0);
@@ -334,6 +347,9 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		gfx_set_texture_anisotropy(&skybox->clouds[i], g_wow->anisotropy);
 		gfx_set_texture_filtering(&skybox->clouds[i], GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR);
 		gfx_set_texture_addressing(&skybox->clouds[i], GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT, GFX_TEXTURE_ADDRESSING_REPEAT);
+		uint8_t data[CLOUDS_WIDTH * CLOUDS_HEIGHT];
+		gen_clouds_data(skybox, g_wow->frametime + i * CLOUDS_INTERVAL, data);
+		gfx_set_texture_data(&skybox->clouds[i], 0, 0, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0, CLOUDS_WIDTH * CLOUDS_HEIGHT, data);
 	}
 	gfx_create_buffer(g_wow->device, &skybox->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &skybox->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
@@ -353,7 +369,6 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, uv)},
 	};
 	gfx_create_attributes_state(g_wow->device, &skybox->attributes_state, binds, sizeof(binds) / sizeof(*binds), &skybox->indices_buffer, GFX_INDEX_UINT16);
-	simplex_noise_init(&skybox->clouds_noise, 6, .5, rand());
 	return skybox;
 
 err:
@@ -375,6 +390,7 @@ void gx_skybox_delete(struct gx_skybox *skybox)
 {
 	if (!skybox)
 		return;
+	mem_free(MEM_GX, skybox->clouds_data);
 	gx_m2_instance_gc(skybox->skybox_m2);
 	jks_array_destroy(&skybox->entries);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
@@ -385,9 +401,10 @@ void gx_skybox_delete(struct gx_skybox *skybox)
 	gfx_delete_buffer(g_wow->device, &skybox->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &skybox->indices_buffer);
 	gfx_delete_attributes_state(g_wow->device, &skybox->attributes_state);
-	gfx_delete_texture(g_wow->device, &skybox->clouds[0]);
-	gfx_delete_texture(g_wow->device, &skybox->clouds[1]);
+	for (size_t i = 0; i < sizeof(skybox->clouds) / sizeof(*skybox->clouds); ++i)
+		gfx_delete_texture(g_wow->device, &skybox->clouds[i]);
 	simplex_noise_destroy(&skybox->clouds_noise);
+	pthread_mutex_destroy(&skybox->clouds_mutex);
 	mem_free(MEM_GX, skybox);
 }
 
@@ -679,10 +696,9 @@ void gx_skybox_update(struct gx_skybox *skybox)
 	}
 }
 
-static void generate_cloud_texture(struct gx_skybox *skybox, size_t id)
+static void gen_clouds_data(struct gx_skybox *skybox, uint64_t t, uint8_t *data)
 {
-	uint8_t data[CLOUDS_WIDTH * CLOUDS_HEIGHT];
-	float vz = (g_wow->frametime / 1000000) / 2880. * CLOUDS_SCALE_Z;
+	float vz = (t / 1000000) / 2880. * CLOUDS_SCALE_Z;
 	for (size_t y = 0; y < CLOUDS_HEIGHT; ++y)
 	{
 		float yfac;
@@ -693,8 +709,8 @@ static void generate_cloud_texture(struct gx_skybox *skybox, size_t id)
 		else if (y >= CLOUDS_HEIGHT - (CLOUDS_HEIGHT / 2))
 		{
 			yfac = 1 - ((y - (CLOUDS_HEIGHT - (CLOUDS_HEIGHT / 2))) / (float)((CLOUDS_HEIGHT / 4) - 1));
-			if (yfac < 0)
-				yfac = 0;
+			if (yfac <= 0)
+				memset(&data[y * CLOUDS_WIDTH], 0, CLOUDS_WIDTH);
 		}
 		else
 		{
@@ -720,7 +736,21 @@ static void generate_cloud_texture(struct gx_skybox *skybox, size_t id)
 			data[x + y * CLOUDS_WIDTH] = v * 255;
 		}
 	}
-	gfx_set_texture_data(&skybox->clouds[id], 0, 0, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0, sizeof(data), data);
+}
+
+void generate_clouds_texture(struct gx_skybox *skybox)
+{
+	uint8_t *data = mem_malloc(MEM_GX, CLOUDS_WIDTH * CLOUDS_HEIGHT);
+	if (!data)
+	{
+		LOG_ERROR("failed to allocate clouds data");
+		return;
+	}
+	gen_clouds_data(skybox, skybox->clouds_time, data);
+	pthread_mutex_lock(&skybox->clouds_mutex);
+	mem_free(MEM_GX, skybox->clouds_data);
+	skybox->clouds_data = data;
+	pthread_mutex_unlock(&skybox->clouds_mutex);
 }
 
 void gx_skybox_render(struct gx_skybox *skybox)
@@ -742,15 +772,24 @@ void gx_skybox_render(struct gx_skybox *skybox)
 	model_block.clouds_colors[1].w = 1;
 	model_block.clouds_factors.x = 1 - skybox->float_values[SKYBOX_FLOAT_CLOUD];
 	model_block.clouds_factors.y = 1;
-	/* XXX regenerate every x seconds */
-	static int a = 0;
-	if (!a)
+	if (g_wow->frametime - skybox->last_clouds > CLOUDS_INTERVAL)
 	{
-		generate_cloud_texture(skybox, 0);
-		a = 1;
+		skybox->clouds_time = g_wow->frametime + CLOUDS_INTERVAL * 2;
+		loader_push(g_wow->loader, ASYNC_TASK_CLOUDS_TEXTURE, NULL);
+		skybox->last_clouds = g_wow->frametime;
+		skybox->clouds_idx = (skybox->clouds_idx + 1) % 3;
 	}
-	const gfx_texture_t *clouds[] = {&skybox->clouds[0], &skybox->clouds[1]};
-	gfx_bind_samplers(g_wow->device, 0, 2, &clouds[0]);
+	model_block.clouds_blend = ((g_wow->frametime - skybox->last_clouds) % CLOUDS_INTERVAL) / (float)CLOUDS_INTERVAL;
+	pthread_mutex_lock(&skybox->clouds_mutex);
+	if (skybox->clouds_data)
+	{
+		gfx_set_texture_data(&skybox->clouds[(skybox->clouds_idx + 2) % 3], 0, 0, CLOUDS_WIDTH, CLOUDS_HEIGHT, 0, CLOUDS_WIDTH * CLOUDS_HEIGHT, skybox->clouds_data);
+		mem_free(MEM_GX, skybox->clouds_data);
+		skybox->clouds_data = NULL;
+	}
+	pthread_mutex_unlock(&skybox->clouds_mutex);
+	const gfx_texture_t *clouds[] = {&skybox->clouds[skybox->clouds_idx], &skybox->clouds[(skybox->clouds_idx + 1) % 3]};
+	gfx_bind_samplers(g_wow->device, 0, 2, clouds);
 	gfx_set_buffer_data(&skybox->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &skybox->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	gfx_bind_attributes_state(g_wow->device, &skybox->attributes_state, &g_wow->graphics->skybox_input_layout);

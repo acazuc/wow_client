@@ -1,6 +1,7 @@
 #include "loader.h"
 
 #include "gx/wmo_group.h"
+#include "gx/skybox.h"
 #include "gx/frame.h"
 #include "gx/wmo.h"
 #include "gx/m2.h"
@@ -282,6 +283,11 @@ void execute_task(struct async_worker *worker, struct async_task *task)
 			generate_minimap_texture(g_wow->map);
 			break;
 		}
+		case ASYNC_TASK_CLOUDS_TEXTURE:
+		{
+			generate_clouds_texture(g_wow->map->gx_skybox);
+			break;
+		}
 		case ASYNC_TASK_LAST:
 			break;
 	}
@@ -326,6 +332,8 @@ bool find_task(struct loader *loader, struct async_task *task)
 					t->wmo_group->loading = true;
 					break;
 				case ASYNC_TASK_MINIMAP_TEXTURE:
+					break;
+				case ASYNC_TASK_CLOUDS_TEXTURE:
 					break;
 				case ASYNC_TASK_LAST:
 					break;

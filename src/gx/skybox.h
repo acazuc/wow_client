@@ -8,6 +8,7 @@
 
 #include <gfx/objects.h>
 
+#include <pthread.h>
 #include <stdbool.h>
 
 #define SKYBOX_INT_VALUES  18
@@ -51,10 +52,14 @@ struct gx_skybox
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
-	gfx_texture_t clouds[2];
+	gfx_texture_t clouds[3]; /* last one (time - time % interval), "current" one (last_one + inteval), next one (last_one + interval * 2) */
+	pthread_mutex_t clouds_mutex;
+	uint64_t clouds_time; /* time seed of next cloud generation */
+	uint8_t *clouds_data;
 	struct simplex_noise clouds_noise;
 	struct gx_m2_instance *skybox_m2;
 	char *current_skybox;
+	uint64_t last_clouds;
 	uint32_t default_skybox;
 	bool has_default_skybox;
 	uint32_t indices_nb;
@@ -65,11 +70,13 @@ struct gx_skybox
 	float glow;
 	float inner_radius;
 	float outer_radius;
+	uint8_t clouds_idx;
 };
 
 struct gx_skybox *gx_skybox_new(uint32_t mapid);
 void gx_skybox_delete(struct gx_skybox *skybox);
 void gx_skybox_update(struct gx_skybox *skybox);
 void gx_skybox_render(struct gx_skybox *skybox);
+void generate_clouds_texture(struct gx_skybox *skybox);
 
 #endif
