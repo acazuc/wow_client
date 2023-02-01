@@ -22,6 +22,7 @@
 #include <libwow/m2.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 MEMORY_DECL(GX);
@@ -74,9 +75,12 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 		}
 		if (!texture->type)
 		{
-			if (!cache_ref_by_key_blp(g_wow->cache, texture->filename, &emitter->texture))
+			char path[256];
+			snprintf(path, sizeof(path), "%s", texture->filename);
+			normalize_blp_filename(path, sizeof(path));
+			if (!cache_ref_by_key_blp(g_wow->cache, path, &emitter->texture))
 			{
-				LOG_ERROR("failed to get texture %s", texture->filename);
+				LOG_ERROR("failed to get texture %s", path);
 				emitter->texture = NULL;
 			}
 			blp_texture_ask_load(emitter->texture);
