@@ -268,6 +268,7 @@ void render_clear_scene(struct gx_frame *gx_frame)
 		gx_m2_clear_update(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
 	jks_array_resize(&gx_frame->m2_render_list, 0);
 	jks_array_resize(&gx_frame->wmo_instances_backref, 0);
+	jks_array_resize(&gx_frame->wmo_mliq_backref, 0);
 	jks_array_resize(&gx_frame->mcnk_render_list, 0);
 	jks_array_resize(&gx_frame->mcnk_objects_render_list, 0);
 	for (size_t type = 0; type < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++type)

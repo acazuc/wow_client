@@ -678,11 +678,10 @@ void gx_wmo_instance_calculate_distance_to_camera(struct gx_wmo_instance *instan
 
 void gx_wmo_instance_add_to_render(struct gx_wmo_instance *instance, bool bypass_frustum)
 {
-	if (render_add_wmo(instance, bypass_frustum))
-	{
-		if (!jks_array_push_back(&instance->parent->render_frames[g_wow->cull_frame_id].to_render, &instance))
-			LOG_ERROR("failed to push wmo 3d instance to render list");
-	}
+	if (!render_add_wmo(instance, bypass_frustum))
+		return;
+	if (!jks_array_push_back(&instance->parent->render_frames[g_wow->cull_frame_id].to_render, &instance))
+		LOG_ERROR("failed to push wmo 3d instance to render list");
 	for (size_t i = 0; i < instance->parent->groups.size; ++i)
 	{
 		struct gx_wmo_group *group = *JKS_ARRAY_GET(&instance->parent->groups, i, struct gx_wmo_group*);
