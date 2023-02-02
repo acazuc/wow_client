@@ -73,17 +73,12 @@
 
 MEMORY_DECL(GX);
 
-/*template <class T>
-inline T interpolateHermite(T &x, T &y, T &z, T &w, float a)
+/*
+T interpolateHermite(T &v0, T &v1, T &v2, T &v3, float x)
 {
-	float a2 = a * a;
-	float a3 = a2 * a;
-	float h00 = 2 * a3 - 3 * a2 + 1;
-	float h01 = -2 * a3 + 3 * a2;
-	float h10 = a3 - 2 * a2 + a;
-	float h11 = a3 - a2;
-	return (x * h00 + y * h01 + z * h10 + w * h11);
-}*/
+	return v1 + (v1 - v0 + (v0 * 2.f - v1 * 5.f + v2 * 4.f - v3 + (-v0 + v1 * 3.f - v2 * 3.f + v3) * x) * x) * x;
+}
+*/
 
 static void gx_m2_texture_init(struct gx_m2_texture *texture);
 static void gx_m2_texture_destroy(struct gx_m2_texture *texture);
