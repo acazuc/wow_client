@@ -6,6 +6,8 @@ NAME = wow.exe
 
 HOST = x86_64-w64-mingw32-
 
+JKL_TARGET = windows_64
+
 else
 
 ifeq ($(TARGET), linux)
@@ -14,9 +16,25 @@ NAME = wow
 
 HOST = 
 
+JKL_TARGET = linux_64
+
 else
 
-$(error Must define TARGET as either windows or linux)
+ifeq ($(TARGET), wasm)
+
+NAME = wow.js
+
+HOST = wasm-unknown-emscripten-
+
+JKL_TARGET = wasm
+
+CFLAGS += -s WASM=1 -s USE_ZLIB=1 -s USE_LIBPNG=1 -s USE_FREETYPE=1 -s USE_GLFW=1
+
+else
+
+$(error Must define TARGET as either windows or linux or wasm)
+
+endif
 
 endif
 
@@ -25,18 +43,23 @@ endif
 CC = $(HOST)gcc
 CXX = $(HOST)g++
 
-SL_LIBS = zlib
-SL_LIBS+= libpng
-SL_LIBS+= freetype
-SL_LIBS+= glfw
-SL_LIBS+= lua
-SL_LIBS+= libxml2
-SL_LIBS+= jks
-SL_LIBS+= gfx
-SL_LIBS+= libwow
-SL_LIBS+= portaudio
-SL_LIBS+= libsamplerate
-SL_LIBS+= jkssl
+ifneq ($(TARGET), wasm)
+
+JKL_LIBS+= zlib
+JKL_LIBS+= libpng
+JKL_LIBS+= freetype
+JKL_LIBS+= glfw
+
+endif
+
+JKL_LIBS+= jks
+JKL_LIBS+= gfx
+JKL_LIBS+= libwow
+JKL_LIBS+= lua
+JKL_LIBS+= libxml2
+JKL_LIBS+= portaudio
+JKL_LIBS+= libsamplerate
+JKL_LIBS+= jkssl
 
 LDFLAGS+= -fwhole-program
 
@@ -108,7 +131,7 @@ endif
 
 ifeq ($(WITH_OPTIMIZATIONS), YES)
 
-CFLAGS+= -Ofast
+CFLAGS+= -O2
 
 CPPFLAGS+= -DNDEBUG
 CPPFLAGS+= -DDBG_NO_FILE
@@ -419,6 +442,6 @@ clean:
 	@rm -f $(NAME)
 
 lib:
-	@cd lib/sl_lib && SL_LIBS="$(SL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(TARGET)_64" -m static -o "$(PWD)/$(LIB_DIR)" -j6
+	@cd lib/sl_lib && SL_LIBS="$(JKL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(JKL_TARGET)" -m static -o "$(PWD)/$(LIB_DIR)" -j6
 
 .PHONY: clean size objsize lib

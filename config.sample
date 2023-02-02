@@ -21,3 +21,4 @@ WITH_MEMORY = NO
 # windows: use mingw
 TARGET = linux
 #TARGET = windows
+#TARGET = wasm
