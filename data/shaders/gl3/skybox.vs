@@ -21,6 +21,7 @@ layout (std140) uniform model_block
 	vec4 clouds_colors[2];
 	vec2 clouds_factors;
 	float clouds_blend;
+	float clouds_drift;
 };
 
 void main()

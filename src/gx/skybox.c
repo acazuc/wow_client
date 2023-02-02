@@ -32,6 +32,9 @@ MEMORY_DECL(GX);
 #define CLOUDS_OFFSET_X 456
 #define CLOUDS_OFFSET_Y 947
 
+#define CLOUDS_DRIFT_X 0.0005
+#define CLOUDS_DRIFT_Y -0.05
+
 #define CLOUDS_SCALE_X (CLOUDS_SCALE_Y * 2)
 #define CLOUDS_SCALE_Y 70
 #define CLOUDS_SCALE_Z 1
@@ -241,7 +244,7 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		LOG_ERROR("failed to create clouds mutex");
 		goto err;
 	}
-	simplex_noise_init(&skybox->clouds_noise, 6, .5, rand());
+	simplex_noise_init(&skybox->clouds_noise, 6, 0.5, rand());
 	jks_array_init(&skybox->entries, sizeof(struct skybox_entry), (jks_array_destructor_t)entry_destroy, &jks_array_memory_fn_GX);
 	for (uint32_t i = 0; i < dbc_light->file->header.record_count; ++i)
 	{
@@ -719,7 +722,7 @@ static void gen_clouds_data(struct gx_skybox *skybox, uint64_t t, uint8_t *data)
 		for (size_t x = 0; x < CLOUDS_WIDTH; ++x)
 		{
 			float vx = (CLOUDS_OFFSET_X + (x / (float)CLOUDS_WIDTH)) * CLOUDS_SCALE_X;
-			float vy = (CLOUDS_OFFSET_Y + (y / (float)CLOUDS_HEIGHT)) * CLOUDS_SCALE_Y;
+			float vy = (CLOUDS_OFFSET_Y + (y / (float)CLOUDS_HEIGHT)) * CLOUDS_SCALE_Y + (t / 1000000000.f) * CLOUDS_DRIFT_Y;
 			float v = simplex_noise_get3(&skybox->clouds_noise, vx, vy, vz);
 			if (x < CLOUDS_WIDTH / 10)
 			{
@@ -780,6 +783,7 @@ void gx_skybox_render(struct gx_skybox *skybox)
 		skybox->clouds_idx = (skybox->clouds_idx + 1) % 3;
 	}
 	model_block.clouds_blend = ((g_wow->frametime - skybox->last_clouds) % CLOUDS_INTERVAL) / (float)CLOUDS_INTERVAL;
+	model_block.clouds_drift = g_wow->frametime / 1000000000.f * CLOUDS_DRIFT_X;
 	pthread_mutex_lock(&skybox->clouds_mutex);
 	if (skybox->clouds_data)
 	{
