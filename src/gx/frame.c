@@ -25,24 +25,24 @@ static const struct vec4f light_direction = {-1, -1, 1, 0};
 
 void init_gx_frame(struct gx_frame *gx_frame)
 {
-	jks_array_init(&gx_frame->m2_gc_list, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->wmo_gc_list, sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->text_gc_list, sizeof(struct gx_text*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->m2_render_list, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->m2_opaque_render_list, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->mcnk_render_list, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->mcnk_objects_render_list, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->m2_particles_render_list, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->m2_transparent_render_list, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->m2_instances_backref, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->wmo_instances_backref, sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->wmo_render_list, sizeof(struct gx_wmo*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->text_render_list, sizeof(struct gx_text*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->wmo_mliq_backref, sizeof(struct gx_wmo_mliq*), NULL, &jks_array_memory_fn_GX);
-	for (size_t i = 0; i < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++i)
-		jks_array_init(&gx_frame->mclq_render_list[i], sizeof(struct gx_mclq*), NULL, &jks_array_memory_fn_GX);
-	for (size_t i = 0; i < sizeof(gx_frame->wmo_mliq_render_list) / sizeof(*gx_frame->wmo_mliq_render_list); ++i)
-		jks_array_init(&gx_frame->wmo_mliq_render_list[i], sizeof(struct gx_wmo_mliq*), NULL, &jks_array_memory_fn_GX);
+	for (size_t i = 0; i < sizeof(gx_frame->render_lists.mclq) / sizeof(*gx_frame->render_lists.mclq); ++i)
+		jks_array_init(&gx_frame->render_lists.mclq[i], sizeof(struct gx_mclq*), NULL, &jks_array_memory_fn_GX);
+	for (size_t i = 0; i < sizeof(gx_frame->render_lists.wmo_mliq) / sizeof(*gx_frame->render_lists.wmo_mliq); ++i)
+		jks_array_init(&gx_frame->render_lists.wmo_mliq[i], sizeof(struct gx_wmo_mliq*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2_opaque, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.mcnk, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.mcnk_objects, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2_particles, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2_transparent, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.wmo, sizeof(struct gx_wmo*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.text, sizeof(struct gx_text*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->backrefs.m2, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->backrefs.wmo, sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->backrefs.wmo_mliq, sizeof(struct gx_wmo_mliq*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->gc_lists.text, sizeof(struct gx_text*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->gc_lists.wmo, sizeof(struct gx_wmo_instance*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->gc_lists.m2, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
@@ -82,24 +82,24 @@ void destroy_gx_frame(struct gx_frame *gx_frame)
 	gfx_delete_buffer(g_wow->device, &gx_frame->mliq_uniform_buffer);
 	gfx_delete_buffer(g_wow->device, &gx_frame->wmo_uniform_buffer);
 	gfx_delete_buffer(g_wow->device, &gx_frame->m2_uniform_buffer);
-	jks_array_destroy(&gx_frame->m2_gc_list);
-	jks_array_destroy(&gx_frame->wmo_gc_list);
-	jks_array_destroy(&gx_frame->text_gc_list);
-	jks_array_destroy(&gx_frame->m2_render_list);
-	jks_array_destroy(&gx_frame->m2_opaque_render_list);
-	jks_array_destroy(&gx_frame->mcnk_render_list);
-	jks_array_destroy(&gx_frame->mcnk_objects_render_list);
-	jks_array_destroy(&gx_frame->m2_particles_render_list);
-	jks_array_destroy(&gx_frame->m2_transparent_render_list);
-	jks_array_destroy(&gx_frame->m2_instances_backref);
-	jks_array_destroy(&gx_frame->wmo_instances_backref);
-	jks_array_destroy(&gx_frame->wmo_render_list);
-	jks_array_destroy(&gx_frame->text_render_list);
-	jks_array_destroy(&gx_frame->wmo_mliq_backref);
-	for (size_t i = 0; i < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++i)
-		jks_array_destroy(&gx_frame->mclq_render_list[i]);
-	for (size_t i = 0; i < sizeof(gx_frame->wmo_mliq_render_list) / sizeof(*gx_frame->wmo_mliq_render_list); ++i)
-		jks_array_destroy(&gx_frame->wmo_mliq_render_list[i]);
+	jks_array_destroy(&gx_frame->render_lists.m2);
+	jks_array_destroy(&gx_frame->render_lists.m2_opaque);
+	jks_array_destroy(&gx_frame->render_lists.mcnk);
+	jks_array_destroy(&gx_frame->render_lists.mcnk_objects);
+	jks_array_destroy(&gx_frame->render_lists.m2_particles);
+	jks_array_destroy(&gx_frame->render_lists.m2_transparent);
+	jks_array_destroy(&gx_frame->render_lists.wmo);
+	jks_array_destroy(&gx_frame->render_lists.text);
+	for (size_t i = 0; i < sizeof(gx_frame->render_lists.mclq) / sizeof(*gx_frame->render_lists.mclq); ++i)
+		jks_array_destroy(&gx_frame->render_lists.mclq[i]);
+	for (size_t i = 0; i < sizeof(gx_frame->render_lists.wmo_mliq) / sizeof(*gx_frame->render_lists.wmo_mliq); ++i)
+		jks_array_destroy(&gx_frame->render_lists.wmo_mliq[i]);
+	jks_array_destroy(&gx_frame->backrefs.m2);
+	jks_array_destroy(&gx_frame->backrefs.wmo);
+	jks_array_destroy(&gx_frame->backrefs.wmo_mliq);
+	jks_array_destroy(&gx_frame->gc_lists.m2);
+	jks_array_destroy(&gx_frame->gc_lists.wmo);
+	jks_array_destroy(&gx_frame->gc_lists.text);
 	pthread_mutex_destroy(&gx_frame->gc_mutex);
 }
 
@@ -260,85 +260,85 @@ void render_copy_cameras(struct gx_frame *gx_frame, struct camera *cull_camera, 
 
 void render_clear_scene(struct gx_frame *gx_frame)
 {
-	jks_array_resize(&gx_frame->m2_instances_backref, 0);
-	jks_array_resize(&gx_frame->m2_particles_render_list, 0);
-	jks_array_resize(&gx_frame->m2_transparent_render_list, 0);
-	jks_array_resize(&gx_frame->m2_opaque_render_list, 0);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_clear_update(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
-	jks_array_resize(&gx_frame->m2_render_list, 0);
-	jks_array_resize(&gx_frame->wmo_instances_backref, 0);
-	jks_array_resize(&gx_frame->wmo_mliq_backref, 0);
-	jks_array_resize(&gx_frame->mcnk_render_list, 0);
-	jks_array_resize(&gx_frame->mcnk_objects_render_list, 0);
-	for (size_t type = 0; type < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++type)
-		jks_array_resize(&gx_frame->mclq_render_list[type], 0);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_clear_update(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
-	jks_array_resize(&gx_frame->wmo_render_list, 0);
-	jks_array_resize(&gx_frame->text_render_list, 0);
-	for (size_t type = 0; type < sizeof(gx_frame->wmo_mliq_render_list) / sizeof(*gx_frame->wmo_mliq_render_list); ++type)
+	jks_array_resize(&gx_frame->render_lists.m2_particles, 0);
+	jks_array_resize(&gx_frame->render_lists.m2_transparent, 0);
+	jks_array_resize(&gx_frame->render_lists.m2_opaque, 0);
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_clear_update(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*));
+	jks_array_resize(&gx_frame->render_lists.m2, 0);
+	jks_array_resize(&gx_frame->render_lists.mcnk, 0);
+	jks_array_resize(&gx_frame->render_lists.mcnk_objects, 0);
+	for (size_t type = 0; type < sizeof(gx_frame->render_lists.mclq) / sizeof(*gx_frame->render_lists.mclq); ++type)
+		jks_array_resize(&gx_frame->render_lists.mclq[type], 0);
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_clear_update(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
+	jks_array_resize(&gx_frame->render_lists.wmo, 0);
+	jks_array_resize(&gx_frame->render_lists.text, 0);
+	for (size_t type = 0; type < sizeof(gx_frame->render_lists.wmo_mliq) / sizeof(*gx_frame->render_lists.wmo_mliq); ++type)
 	{
-		for (size_t i = 0; i < gx_frame->wmo_mliq_render_list[type].size; ++i)
-			gx_wmo_mliq_clear_update(*JKS_ARRAY_GET(&gx_frame->wmo_mliq_render_list[type], i, struct gx_wmo_mliq*));
-		jks_array_resize(&gx_frame->wmo_mliq_render_list[type], 0);
+		for (size_t i = 0; i < gx_frame->render_lists.wmo_mliq[type].size; ++i)
+			gx_wmo_mliq_clear_update(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo_mliq[type], i, struct gx_wmo_mliq*));
+		jks_array_resize(&gx_frame->render_lists.wmo_mliq[type], 0);
 	}
+	jks_array_resize(&gx_frame->backrefs.m2, 0);
+	jks_array_resize(&gx_frame->backrefs.wmo, 0);
+	jks_array_resize(&gx_frame->backrefs.wmo_mliq, 0);
 }
 
 void render_release_obj(struct gx_frame *gx_frame)
 {
-	for (size_t i = 0; i < gx_frame->m2_instances_backref.size; ++i)
+	for (size_t i = 0; i < gx_frame->backrefs.m2.size; ++i)
 	{
-		struct gx_m2_instance *instance = *JKS_ARRAY_GET(&gx_frame->m2_instances_backref, i, struct gx_m2_instance*);
+		struct gx_m2_instance *instance = *JKS_ARRAY_GET(&gx_frame->backrefs.m2, i, struct gx_m2_instance*);
 		instance->update_calculated = false;
 		instance->in_render_list = false;
 		instance->bones_calculated = false;
 	}
-	for (size_t i = 0; i < gx_frame->wmo_mliq_backref.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->wmo_mliq_backref, i, struct gx_wmo_mliq*))->in_render_list = false;
-	for (size_t type = 0; type < sizeof(gx_frame->wmo_mliq_render_list) / sizeof(*gx_frame->wmo_mliq_render_list); ++type)
+	for (size_t i = 0; i < gx_frame->backrefs.wmo_mliq.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->backrefs.wmo_mliq, i, struct gx_wmo_mliq*))->in_render_list = false;
+	for (size_t i = 0; i < gx_frame->backrefs.wmo.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->backrefs.wmo, i, struct gx_wmo_instance*))->in_render_list = false;
+	for (size_t type = 0; type < sizeof(gx_frame->render_lists.wmo_mliq) / sizeof(*gx_frame->render_lists.wmo_mliq); ++type)
 	{
-		for (size_t i = 0; i < gx_frame->wmo_mliq_render_list[type].size; ++i)
-			(*JKS_ARRAY_GET(&gx_frame->wmo_mliq_render_list[type], i, struct gx_wmo_mliq*))->in_render_lists[type] = false;
+		for (size_t i = 0; i < gx_frame->render_lists.wmo_mliq[type].size; ++i)
+			(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo_mliq[type], i, struct gx_wmo_mliq*))->in_render_lists[type] = false;
 	}
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*))->in_render_list = false;
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*))->in_render_list = false;
-	for (size_t i = 0; i < gx_frame->wmo_instances_backref.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->wmo_instances_backref, i, struct gx_wmo_instance*))->in_render_list = false;
-	for (size_t i = 0; i < gx_frame->mcnk_render_list.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->mcnk_render_list, i, struct gx_mcnk*))->in_render_list = false;
-	for (size_t i = 0; i < gx_frame->mcnk_objects_render_list.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->mcnk_objects_render_list, i, struct gx_mcnk*))->in_objects_render_list = false;
-	for (size_t type = 0; type < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++type)
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*))->in_render_list = false;
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*))->in_render_list = false;
+	for (size_t i = 0; i < gx_frame->render_lists.mcnk.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->render_lists.mcnk, i, struct gx_mcnk*))->in_render_list = false;
+	for (size_t i = 0; i < gx_frame->render_lists.mcnk_objects.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->render_lists.mcnk_objects, i, struct gx_mcnk*))->in_objects_render_list = false;
+	for (size_t type = 0; type < sizeof(gx_frame->render_lists.mclq) / sizeof(*gx_frame->render_lists.mclq); ++type)
 	{
-		for (size_t i = 0; i < gx_frame->mclq_render_list[type].size; ++i)
-			(*JKS_ARRAY_GET(&gx_frame->mclq_render_list[type], i, struct gx_mclq*))->liquids[type].in_render_list = false;
+		for (size_t i = 0; i < gx_frame->render_lists.mclq[type].size; ++i)
+			(*JKS_ARRAY_GET(&gx_frame->render_lists.mclq[type], i, struct gx_mclq*))->liquids[type].in_render_list = false;
 	}
-	for (size_t i = 0; i < gx_frame->text_render_list.size; ++i)
-		(*JKS_ARRAY_GET(&gx_frame->text_render_list, i, struct gx_text*))->in_render_list = false;
+	for (size_t i = 0; i < gx_frame->render_lists.text.size; ++i)
+		(*JKS_ARRAY_GET(&gx_frame->render_lists.text, i, struct gx_text*))->in_render_list = false;
 }
 
 void render_gc(struct gx_frame *gx_frame)
 {
 	pthread_mutex_lock(&gx_frame->gc_mutex);
-	for (size_t i = 0; i < gx_frame->m2_gc_list.size; ++i)
-		gx_m2_instance_delete(*JKS_ARRAY_GET(&gx_frame->m2_gc_list, i, struct gx_m2_instance*));
-	jks_array_resize(&gx_frame->m2_gc_list, 0);
-	for (size_t i = 0; i < gx_frame->wmo_gc_list.size; ++i)
-		gx_wmo_instance_delete(*JKS_ARRAY_GET(&gx_frame->wmo_gc_list, i, struct gx_wmo_instance*));
-	jks_array_resize(&gx_frame->wmo_gc_list, 0);
-	for (size_t i = 0; i < gx_frame->text_gc_list.size; ++i)
-		gx_text_delete(*JKS_ARRAY_GET(&gx_frame->text_gc_list, i, struct gx_text*));
-	jks_array_resize(&gx_frame->text_gc_list, 0);
+	for (size_t i = 0; i < gx_frame->gc_lists.m2.size; ++i)
+		gx_m2_instance_delete(*JKS_ARRAY_GET(&gx_frame->gc_lists.m2, i, struct gx_m2_instance*));
+	jks_array_resize(&gx_frame->gc_lists.m2, 0);
+	for (size_t i = 0; i < gx_frame->gc_lists.wmo.size; ++i)
+		gx_wmo_instance_delete(*JKS_ARRAY_GET(&gx_frame->gc_lists.wmo, i, struct gx_wmo_instance*));
+	jks_array_resize(&gx_frame->gc_lists.wmo, 0);
+	for (size_t i = 0; i < gx_frame->gc_lists.text.size; ++i)
+		gx_text_delete(*JKS_ARRAY_GET(&gx_frame->gc_lists.text, i, struct gx_text*));
+	jks_array_resize(&gx_frame->gc_lists.text, 0);
 	pthread_mutex_unlock(&gx_frame->gc_mutex);
 }
 
 bool render_gc_m2(struct gx_m2_instance *m2)
 {
 	pthread_mutex_lock(&g_wow->gc_frame->gc_mutex);
-	if (!jks_array_push_back(&g_wow->gc_frame->m2_gc_list, &m2))
+	if (!jks_array_push_back(&g_wow->gc_frame->gc_lists.m2, &m2))
 	{
 		pthread_mutex_unlock(&g_wow->gc_frame->gc_mutex);
 		LOG_ERROR("failed to add m2 to gc list");
@@ -351,7 +351,7 @@ bool render_gc_m2(struct gx_m2_instance *m2)
 bool render_gc_wmo(struct gx_wmo_instance *wmo)
 {
 	pthread_mutex_lock(&g_wow->gc_frame->gc_mutex);
-	if (!jks_array_push_back(&g_wow->gc_frame->wmo_gc_list, &wmo))
+	if (!jks_array_push_back(&g_wow->gc_frame->gc_lists.wmo, &wmo))
 	{
 		pthread_mutex_unlock(&g_wow->gc_frame->gc_mutex);
 		LOG_ERROR("failed to add wmo to gc list");
@@ -364,7 +364,7 @@ bool render_gc_wmo(struct gx_wmo_instance *wmo)
 bool render_gc_text(struct gx_text *text)
 {
 	pthread_mutex_lock(&g_wow->gc_frame->gc_mutex);
-	if (!jks_array_push_back(&g_wow->gc_frame->text_gc_list, &text))
+	if (!jks_array_push_back(&g_wow->gc_frame->gc_lists.text, &text))
 	{
 		pthread_mutex_unlock(&g_wow->gc_frame->gc_mutex);
 		LOG_ERROR("failed to add text to gc list");
@@ -378,7 +378,7 @@ bool render_add_mcnk_objects(struct gx_mcnk *mcnk)
 {
 	if (mcnk->in_objects_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->mcnk_objects_render_list, &mcnk))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.mcnk_objects, &mcnk))
 	{
 		LOG_ERROR("failed to add mcnk to objects render list");
 		return false;
@@ -391,7 +391,7 @@ bool render_add_mcnk(struct gx_mcnk *mcnk)
 {
 	if (mcnk->in_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->mcnk_render_list, &mcnk))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.mcnk, &mcnk))
 	{
 		LOG_ERROR("failed to add mcnk to render list");
 		return false;
@@ -404,7 +404,7 @@ bool render_add_mclq(uint8_t type, struct gx_mclq *mclq)
 {
 	if (mclq->liquids[type].in_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->mclq_render_list[type], &mclq))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.mclq[type], &mclq))
 	{
 		LOG_ERROR("failed to add mclq to render list");
 		return false;
@@ -417,7 +417,7 @@ bool render_add_wmo(struct gx_wmo_instance *instance, bool bypass_frustum)
 {
 	if (instance->in_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->wmo_instances_backref, &instance))
+	if (!jks_array_push_back(&g_wow->cull_frame->backrefs.wmo, &instance))
 	{
 		LOG_ERROR("failed to add wmo to backref list");
 		return false;
@@ -429,7 +429,7 @@ bool render_add_wmo(struct gx_wmo_instance *instance, bool bypass_frustum)
 		return false;
 	if (!instance->parent->in_render_list)
 	{
-		if (!jks_array_push_back(&g_wow->cull_frame->wmo_render_list, &instance->parent))
+		if (!jks_array_push_back(&g_wow->cull_frame->render_lists.wmo, &instance->parent))
 		{
 			LOG_ERROR("failed to add wmo to render list");
 			return false;
@@ -443,7 +443,7 @@ bool render_add_wmo_mliq(struct gx_wmo_mliq *mliq, uint8_t liquid)
 {
 	if (!mliq->in_render_list)
 	{
-		if (!jks_array_push_back(&g_wow->cull_frame->wmo_mliq_backref, &mliq))
+		if (!jks_array_push_back(&g_wow->cull_frame->backrefs.wmo_mliq, &mliq))
 		{
 			LOG_ERROR("failed to add wmo mliq to backref list");
 			return false;
@@ -452,7 +452,7 @@ bool render_add_wmo_mliq(struct gx_wmo_mliq *mliq, uint8_t liquid)
 	}
 	if (!mliq->in_render_lists[liquid])
 	{
-		if (!jks_array_push_back(&g_wow->cull_frame->wmo_mliq_render_list[liquid], &mliq))
+		if (!jks_array_push_back(&g_wow->cull_frame->render_lists.wmo_mliq[liquid], &mliq))
 		{
 			LOG_ERROR("failed to add wmo mliq to render list");
 			return false;
@@ -464,7 +464,7 @@ bool render_add_wmo_mliq(struct gx_wmo_mliq *mliq, uint8_t liquid)
 
 bool render_add_m2_particles(struct gx_m2_instance *m2)
 {
-	if (!jks_array_push_back(&g_wow->cull_frame->m2_particles_render_list, &m2))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2_particles, &m2))
 	{
 		LOG_ERROR("failed to add m2 to particles render list");
 		return false;
@@ -474,7 +474,7 @@ bool render_add_m2_particles(struct gx_m2_instance *m2)
 
 bool render_add_m2_transparent(struct gx_m2_instance *m2)
 {
-	if (!jks_array_push_back(&g_wow->cull_frame->m2_transparent_render_list, &m2))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2_transparent, &m2))
 	{
 		LOG_ERROR("failed to add m2 to transparent render list");
 		return false;
@@ -484,7 +484,7 @@ bool render_add_m2_transparent(struct gx_m2_instance *m2)
 
 bool render_add_m2_opaque(struct gx_m2 *m2)
 {
-	if (!jks_array_push_back(&g_wow->cull_frame->m2_opaque_render_list, &m2))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2_opaque, &m2))
 	{
 		LOG_ERROR("failed to add m2 to opaque render list");
 		return false;
@@ -496,7 +496,7 @@ bool render_add_m2_instance(struct gx_m2_instance *instance, bool bypass_frustum
 {
 	if (instance->in_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->m2_instances_backref, &instance))
+	if (!jks_array_push_back(&g_wow->cull_frame->backrefs.m2, &instance))
 	{
 		LOG_ERROR("failed to add m2 to backref list");
 		return false;
@@ -509,7 +509,7 @@ bool render_add_m2_instance(struct gx_m2_instance *instance, bool bypass_frustum
 	gx_m2_instance_calculate_distance_to_camera(instance);
 	if (!instance->parent->in_render_list)
 	{
-		if (!jks_array_push_back(&g_wow->cull_frame->m2_render_list, &instance->parent))
+		if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2, &instance->parent))
 		{
 			LOG_ERROR("failed to add m2 to render list");
 			return false;
@@ -523,7 +523,7 @@ bool render_add_text(struct gx_text *text)
 {
 	if (text->in_render_list)
 		return false;
-	if (!jks_array_push_back(&g_wow->cull_frame->text_render_list, &text))
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.text, &text))
 	{
 		LOG_ERROR("failed to add text to render list");
 		return false;

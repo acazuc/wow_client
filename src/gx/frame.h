@@ -24,24 +24,39 @@ struct gx_text;
 struct camera;
 struct gx_m2;
 
+struct gx_frame_backrefs
+{
+	struct jks_array wmo_mliq; /* struct gx_wmo_mliq */
+	struct jks_array wmo; /* struct gx_wmo_instance* */
+	struct jks_array m2; /* struct gx_m2_instance* */
+};
+
+struct gx_frame_render_lists
+{
+	struct jks_array wmo_mliq[9]; /* struct gx_wmo_mliq* */
+	struct jks_array mclq[4]; /* struct gx_mclq* */
+	struct jks_array wmo; /* struct gx_wmo* */
+	struct jks_array m2_particles; /* struct gx_m2_instance* */
+	struct jks_array m2_transparent; /* struct gx_m2_instance* */
+	struct jks_array m2_opaque; /* struct gx_m2* */
+	struct jks_array m2; /* struct gx_m2* */
+	struct jks_array mcnk_objects; /* struct gx_mcnk* */
+	struct jks_array mcnk; /* struct gx_mcnk* */
+	struct jks_array text; /* struct gx_text* */
+};
+
+struct gx_frame_gc_lists
+{
+	struct jks_array text; /* struct gx_text* */
+	struct jks_array wmo; /* struct gx_wmo_list* */
+	struct jks_array m2; /* struct gx_m2_instance* */
+};
+
 struct gx_frame
 {
-	struct jks_array wmo_mliq_render_list[9]; /* struct gx_wmo_mliq* */
-	struct jks_array wmo_mliq_backref; /* struct gx_wmo_mliq */
-	struct jks_array mclq_render_list[4]; /* struct gx_mclq* */
-	struct jks_array wmo_instances_backref; /* struct gx_wmo_instance* */
-	struct jks_array m2_instances_backref; /* struct gx_m2_instance* */
-	struct jks_array wmo_render_list; /* struct gx_wmo* */
-	struct jks_array m2_particles_render_list; /* struct gx_m2_instance* */
-	struct jks_array m2_transparent_render_list; /* struct gx_m2_instance* */
-	struct jks_array m2_opaque_render_list; /* struct gx_m2* */
-	struct jks_array m2_render_list; /* struct gx_m2* */
-	struct jks_array mcnk_objects_render_list; /* struct gx_mcnk* */
-	struct jks_array mcnk_render_list; /* struct gx_mcnk* */
-	struct jks_array text_render_list; /* struct gx_text* */
-	struct jks_array text_gc_list; /* struct gx_text* */
-	struct jks_array wmo_gc_list; /* struct gx_wmo_list* */
-	struct jks_array m2_gc_list; /* struct gx_m2_instance* */
+	struct gx_frame_render_lists render_lists;
+	struct gx_frame_backrefs backrefs;
+	struct gx_frame_gc_lists gc_lists;
 #ifdef WITH_DEBUG_RENDERING
 	struct gx_collisions gx_collisions;
 #endif

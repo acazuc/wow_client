@@ -902,89 +902,89 @@ static void render_wdl(struct map *map)
 
 static void render_mcnk(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_MCNK) || !gx_frame->mcnk_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_MCNK) || !gx_frame->render_lists.mcnk.size)
 		return;
 	PERFORMANCE_BEGIN(MCNK_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->mcnk_pipeline_state);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->mcnk_uniform_buffer, sizeof(struct shader_mcnk_scene_block), 0);
-	for (uint32_t i = 0; i < gx_frame->mcnk_render_list.size; ++i)
-		gx_mcnk_render(*JKS_ARRAY_GET(&gx_frame->mcnk_render_list, i, struct gx_mcnk*));
+	for (uint32_t i = 0; i < gx_frame->render_lists.mcnk.size; ++i)
+		gx_mcnk_render(*JKS_ARRAY_GET(&gx_frame->render_lists.mcnk, i, struct gx_mcnk*));
 	PERFORMANCE_END(MCNK_RENDER);
 }
 
 static void render_wmo(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->wmo_uniform_buffer, sizeof(struct shader_wmo_scene_block), 0);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
 	PERFORMANCE_END(WMO_RENDER);
 }
 
 static void render_opaque_m2(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2) || !gx_frame->m2_opaque_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2) || !gx_frame->render_lists.m2_opaque.size)
 		return;
 	PERFORMANCE_BEGIN(M2_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->m2_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
-	for (size_t i = 0; i < gx_frame->m2_opaque_render_list.size; ++i)
-		gx_m2_render(*JKS_ARRAY_GET(&gx_frame->m2_opaque_render_list, i, struct gx_m2*), false);
+	for (size_t i = 0; i < gx_frame->render_lists.m2_opaque.size; ++i)
+		gx_m2_render(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_opaque, i, struct gx_m2*), false);
 	PERFORMANCE_END(M2_RENDER);
 }
 
 static void render_transparent_m2(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2) || !gx_frame->m2_transparent_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2) || !gx_frame->render_lists.m2_transparent.size)
 		return;
 	PERFORMANCE_BEGIN(M2_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->m2_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
-	for (size_t i = 0; i < gx_frame->m2_transparent_render_list.size; ++i)
-		gx_m2_instance_render(*JKS_ARRAY_GET(&gx_frame->m2_transparent_render_list, i, struct gx_m2_instance*), true, NULL);
+	for (size_t i = 0; i < gx_frame->render_lists.m2_transparent.size; ++i)
+		gx_m2_instance_render(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_transparent, i, struct gx_m2_instance*), true, NULL);
 	PERFORMANCE_END(M2_RENDER);
 }
 
 static void render_m2_particles(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2_PARTICLES) || !gx_frame->m2_particles_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2_PARTICLES) || !gx_frame->render_lists.m2_particles.size)
 		return;
 	PERFORMANCE_BEGIN(M2_PARTICLES_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->particle_uniform_buffer, sizeof(struct shader_particle_scene_block), 0);
-	for (size_t i = 0; i < gx_frame->m2_particles_render_list.size; ++i)
-		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&gx_frame->m2_particles_render_list, i, struct gx_m2_instance*));
+	for (size_t i = 0; i < gx_frame->render_lists.m2_particles.size; ++i)
+		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_particles, i, struct gx_m2_instance*));
 	PERFORMANCE_END(M2_PARTICLES_RENDER);
 }
 
 static void render_texts(struct gx_frame *gx_frame)
 {
-	if (!gx_frame->text_render_list.size)
+	if (!gx_frame->render_lists.text.size)
 		return;
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->text_pipeline_state);
-	for (size_t i = 0; i < gx_frame->text_render_list.size; ++i)
-		gx_text_render(*JKS_ARRAY_GET(&gx_frame->text_render_list, i, struct gx_text*));
+	for (size_t i = 0; i < gx_frame->render_lists.text.size; ++i)
+		gx_text_render(*JKS_ARRAY_GET(&gx_frame->render_lists.text, i, struct gx_text*));
 }
 
 #ifdef WITH_DEBUG_RENDERING
 static void render_wmo_aabb(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_AABB) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO_AABB) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_AABB_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render_aabb(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render_aabb(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
 	PERFORMANCE_END(WMO_AABB_RENDER);
 }
 
 static void render_m2_aabb(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2_AABB) || !gx_frame->m2_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2_AABB) || !gx_frame->render_lists.m2.size)
 		return;
 	PERFORMANCE_BEGIN(M2_AABB_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_aabb(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_aabb(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*));
 	PERFORMANCE_END(M2_AABB_RENDER);
 }
 
@@ -998,25 +998,14 @@ static void render_wdl_aabb(struct map *map)
 	PERFORMANCE_END(WDL_AABB_RENDER);
 }
 
-static void render_adt_aabb(void)
-{
-	if (!(g_wow->render_opt & RENDER_OPT_ADT_AABB))
-		return;
-	PERFORMANCE_BEGIN(ADT_AABB_RENDER);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	/* for (ADTRenderer *adt : world->adtRenderList)
-		adt->renderAABB(); */
-	PERFORMANCE_END(ADT_AABB_RENDER);
-}
-
 static void render_mcnk_aabb(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_MCNK_AABB) || !gx_frame->mcnk_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_MCNK_AABB) || !gx_frame->render_lists.mcnk.size)
 		return;
 	PERFORMANCE_BEGIN(MCNK_AABB_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	for (size_t i = 0; i < gx_frame->mcnk_render_list.size; ++i)
-		gx_mcnk_render_aabb(*JKS_ARRAY_GET(&gx_frame->mcnk_render_list, i, struct gx_mcnk*));
+	for (size_t i = 0; i < gx_frame->render_lists.mcnk.size; ++i)
+		gx_mcnk_render_aabb(*JKS_ARRAY_GET(&gx_frame->render_lists.mcnk, i, struct gx_mcnk*));
 	PERFORMANCE_END(MCNK_AABB_RENDER);
 }
 
@@ -1026,9 +1015,9 @@ static void render_mclq_aabb(struct gx_frame *gx_frame)
 		return;
 	PERFORMANCE_BEGIN(MCLQ_AABB_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->aabb_pipeline_state);
-	for (size_t i = 0; i < sizeof(gx_frame->mclq_render_list) / sizeof(*gx_frame->mclq_render_list); ++i)
+	for (size_t i = 0; i < sizeof(gx_frame->render_lists.mclq) / sizeof(*gx_frame->render_lists.mclq); ++i)
 	{
-		struct jks_array *render_list = &gx_frame->mclq_render_list[i];
+		struct jks_array *render_list = &gx_frame->render_lists.mclq[i];
 		for (size_t j = 0; j < render_list->size; ++j)
 			gx_mclq_render_aabb(*JKS_ARRAY_GET(render_list, j, struct gx_mclq*));
 	}
@@ -1037,76 +1026,76 @@ static void render_mclq_aabb(struct gx_frame *gx_frame)
 
 static void render_wmo_portals(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_PORTALS) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO_PORTALS) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_PORTALS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_portals_pipeline_state);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render_portals(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render_portals(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
 	PERFORMANCE_END(WMO_PORTALS_RENDER);
 }
 
 static void render_wmo_lights(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIGHTS) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIGHTS) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_LIGHTS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_lights_pipeline_state);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render_lights(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render_lights(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
 	PERFORMANCE_END(WMO_LIGHTS_RENDER);
 }
 
 static void render_m2_lights(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2_LIGHTS) || !gx_frame->m2_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2_LIGHTS) || !gx_frame->render_lists.m2.size)
 		return;
 	PERFORMANCE_BEGIN(M2_LIGHTS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_lights_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_lights(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_lights(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*));
 	PERFORMANCE_END(M2_LIGHTS_RENDER);
 }
 
 static void render_m2_bones(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2_BONES) || !gx_frame->m2_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2_BONES) || !gx_frame->render_lists.m2.size)
 		return;
 	PERFORMANCE_BEGIN(M2_BONES_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_bones_lines_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_bones_lines(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_bones_lines(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*));
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_bones_points_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_bones_points(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*));
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_bones_points(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*));
 	PERFORMANCE_END(M2_BONES_RENDER);
 }
 
 static void render_m2_collisions(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_M2_COLLISIONS) || !gx_frame->m2_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_M2_COLLISIONS) || !gx_frame->render_lists.m2.size)
 		return;
 	PERFORMANCE_BEGIN(M2_COLLISIONS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_collisions_lines_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_collisions(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*), false);
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_collisions(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*), false);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->m2_collisions_triangles_pipeline_state);
-	for (size_t i = 0; i < gx_frame->m2_render_list.size; ++i)
-		gx_m2_render_collisions(*JKS_ARRAY_GET(&gx_frame->m2_render_list, i, struct gx_m2*), true);
+	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
+		gx_m2_render_collisions(*JKS_ARRAY_GET(&gx_frame->render_lists.m2, i, struct gx_m2*), true);
 	PERFORMANCE_END(M2_COLLISIONS_RENDER);
 }
 
 static void render_wmo_collisions(struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_COLLISIONS) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO_COLLISIONS) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_COLLISIONS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_collisions_lines_pipeline_state);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render_collisions(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*), false);
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render_collisions(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*), false);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_collisions_triangles_pipeline_state);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_render_collisions(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*), true);
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_render_collisions(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*), true);
 	PERFORMANCE_END(WMO_COLLISIONS_RENDER);
 }
 
@@ -1135,7 +1124,7 @@ static void render_taxi(struct map *map)
 
 static void render_wmo_mliq(struct map *map, struct gx_frame *gx_frame)
 {
-	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIQUIDS) || !gx_frame->wmo_render_list.size)
+	if (!(g_wow->render_opt & RENDER_OPT_WMO_LIQUIDS) || !gx_frame->render_lists.wmo.size)
 		return;
 	PERFORMANCE_BEGIN(WMO_LIQUIDS_RENDER);
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->wmo_mliq_pipeline_state);
@@ -1143,6 +1132,8 @@ static void render_wmo_mliq(struct map *map, struct gx_frame *gx_frame)
 	uint8_t idx = (g_wow->frametime / 30000000) % 30;
 	for (size_t type = 0; type < 9; ++type)
 	{
+		if (!gx_frame->render_lists.wmo_mliq[type].size)
+			continue;
 		switch (type)
 		{
 			case 0:
@@ -1180,8 +1171,8 @@ static void render_wmo_mliq(struct map *map, struct gx_frame *gx_frame)
 			default:
 				continue;
 		}
-		for (size_t i = 0; i < gx_frame->wmo_mliq_render_list[type].size; ++i)
-			gx_wmo_mliq_render(*JKS_ARRAY_GET(&gx_frame->wmo_mliq_render_list[type], i, struct gx_wmo_mliq*), type);
+		for (size_t i = 0; i < gx_frame->render_lists.wmo_mliq[type].size; ++i)
+			gx_wmo_mliq_render(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo_mliq[type], i, struct gx_wmo_mliq*), type);
 	}
 	PERFORMANCE_END(WMO_LIQUIDS_RENDER);
 }
@@ -1201,9 +1192,11 @@ static void render_mclq(struct map *map, struct gx_frame *gx_frame)
 		};
 		gfx_bind_samplers(g_wow->device, 1, 3, textures);
 	}
+	uint8_t idx = (g_wow->frametime / 30000000) % 30;
 	for (size_t type = 0; type < 4; ++type)
 	{
-		uint8_t idx = (g_wow->frametime / 30000000) % 30;
+		if (!gx_frame->render_lists.mclq[type].size)
+			continue;
 		switch (type)
 		{
 			case 0:
@@ -1238,8 +1231,8 @@ static void render_mclq(struct map *map, struct gx_frame *gx_frame)
 				blp_texture_bind(map->slime_textures[idx], 0);
 				break;
 		}
-		for (uint32_t i = 0; i < gx_frame->mclq_render_list[type].size; ++i)
-			gx_mclq_render(*JKS_ARRAY_GET(&gx_frame->mclq_render_list[type], i, struct gx_mclq*), type);
+		for (uint32_t i = 0; i < gx_frame->render_lists.mclq[type].size; ++i)
+			gx_mclq_render(*JKS_ARRAY_GET(&gx_frame->render_lists.mclq[type], i, struct gx_mclq*), type);
 	}
 	PERFORMANCE_END(MCLQ_RENDER);
 }
@@ -1249,8 +1242,8 @@ static void cull_wmo_portal(struct gx_frame *gx_frame)
 	if (!(g_wow->render_opt & (RENDER_OPT_M2 | RENDER_OPT_M2_AABB | RENDER_OPT_WMO | RENDER_OPT_WMO_AABB)))
 		return;
 	PERFORMANCE_BEGIN(WMO_PORTALS_CULL);
-	for (size_t i = 0; i < gx_frame->wmo_render_list.size; ++i)
-		gx_wmo_cull_portal(*JKS_ARRAY_GET(&gx_frame->wmo_render_list, i, struct gx_wmo*));
+	for (size_t i = 0; i < gx_frame->render_lists.wmo.size; ++i)
+		gx_wmo_cull_portal(*JKS_ARRAY_GET(&gx_frame->render_lists.wmo, i, struct gx_wmo*));
 	PERFORMANCE_END(WMO_PORTALS_CULL);
 }
 
@@ -1280,8 +1273,8 @@ static void cull_adt_objects(struct gx_frame *gx_frame)
 	if (!(g_wow->render_opt & (RENDER_OPT_WMO | RENDER_OPT_M2)))
 		return;
 	PERFORMANCE_BEGIN(ADT_OBJECTS_CULL);
-	for (uint32_t i = 0; i < gx_frame->mcnk_objects_render_list.size; ++i)
-		gx_mcnk_add_objects_to_render(*JKS_ARRAY_GET(&gx_frame->mcnk_objects_render_list, i, struct gx_mcnk*));
+	for (uint32_t i = 0; i < gx_frame->render_lists.mcnk_objects.size; ++i)
+		gx_mcnk_add_objects_to_render(*JKS_ARRAY_GET(&gx_frame->render_lists.mcnk_objects, i, struct gx_mcnk*));
 	PERFORMANCE_END(ADT_OBJECTS_CULL);
 }
 
@@ -1304,8 +1297,8 @@ void map_cull(struct map *map, struct gx_frame *gx_frame)
 	cull_adt_objects(gx_frame);
 	cull_wmo_portal(gx_frame);
 	render_release_obj(gx_frame);
-	if (gx_frame->m2_transparent_render_list.size)
-		qsort(gx_frame->m2_transparent_render_list.data, gx_frame->m2_transparent_render_list.size, sizeof(struct gx_m2_instance*), m2_instance_compare);
+	if (gx_frame->render_lists.m2_transparent.size)
+		qsort(gx_frame->render_lists.m2_transparent.data, gx_frame->render_lists.m2_transparent.size, sizeof(struct gx_m2_instance*), m2_instance_compare);
 }
 
 static void update_minimap_texture(struct map *map)
@@ -1432,7 +1425,6 @@ void map_render(struct map *map, struct gx_frame *gx_frame)
 	render_wdl_aabb(map);
 	render_wmo_aabb(gx_frame);
 	render_m2_aabb(gx_frame);
-	render_adt_aabb();
 	render_mcnk_aabb(gx_frame);
 	render_mclq_aabb(gx_frame);
 	render_collisions(gx_frame);
