@@ -76,6 +76,7 @@ struct map
 	struct blp_texture *ocean_textures[30];
 	struct blp_texture *magma_textures[30];
 	struct blp_texture *slime_textures[30];
+	struct blp_texture *fasta_textures[30];
 	struct map_tile *tile_array[64 * 64];
 	uint16_t tiles[64 * 64]; /* List of loaded adts */
 	uint32_t tiles_nb;

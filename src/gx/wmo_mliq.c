@@ -49,15 +49,15 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 		return NULL;
 	struct wow_mliq *wow_mliq = &file->mliq;
 	VEC3_SET(mliq->position, wow_mliq->header.coords.x, 0, -wow_mliq->header.coords.y);
+#if 0
+	LOG_INFO("vert: %ux%u, tiles: %ux%u", wow_mliq->header.xverts, wow_mliq->header.yverts, wow_mliq->header.xtiles, wow_mliq->header.ytiles);
+#endif
 	for (size_t x = 0; x < wow_mliq->header.xtiles; ++x)
 	{
 		for (size_t z = 0; z < wow_mliq->header.ytiles; ++z)
 		{
-			size_t p1 = x + z * wow_mliq->header.xverts;
-			size_t p2 = p1 + 1;
-			size_t p3 = p1 + wow_mliq->header.xverts + 1;
-			size_t p4 = p1 + wow_mliq->header.xverts;
 			uint8_t liquid_id = wow_mliq->tiles[x + z * wow_mliq->header.xtiles] & WOW_MLIQ_TILE_LIQUID_TYPE;
+			liquid_id = 2;
 			if (liquid_id == 0xf) /* no liquid flag */
 				continue;
 			if (liquid_id >= WMO_MLIQ_LIQUIDS_COUNT)
@@ -80,6 +80,10 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 			uint16_t *data = jks_array_grow(&mliq->init_data->indices[liquid_id], 6);
 			if (!data)
 				goto err2;
+			size_t p1 = x + z * wow_mliq->header.xverts;
+			size_t p2 = p1 + 1;
+			size_t p3 = p1 + wow_mliq->header.xverts + 1;
+			size_t p4 = p1 + wow_mliq->header.xverts;
 			data[0] = p1;
 			data[1] = p2;
 			data[2] = p3;
@@ -122,13 +126,17 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 					tilen--;
 				switch (wow_mliq->tiles[tilen] & WOW_MLIQ_TILE_LIQUID_TYPE)
 				{
+					case 0x2: /* ironforge circle magma TODO: should lower brightness */
+					case 0x3:
 					case 0x6: /* this lava flow (ironforge center) */
 					case 0x7:
-					case 0x2: /* ironforge circle magma TODO: should lower brightness */
 					{
-						float dividor = 510 / 2;
+						float dividor = 533.3333 / 2;
 						vertex[n].uv.x = wow_mliq->vertexes[n].magma.s / dividor;
 						vertex[n].uv.y = wow_mliq->vertexes[n].magma.t / dividor;
+#if 0
+						LOG_INFO("tile %ux%u: %f/%f", x, z, vertex[n].uv.x, vertex[n].uv.y);
+#endif
 						break;
 					}
 					case 0x1:

@@ -100,6 +100,15 @@ struct map *map_new(void)
 		else
 			LOG_ERROR("failed to ref %s", filename);
 	}
+	for (uint32_t i = 0; i < sizeof(map->fasta_textures) / sizeof(*map->fasta_textures); ++i)
+	{
+		char filename[256];
+		snprintf(filename, sizeof(filename), "XTEXTURES\\RIVER\\FAST_A.%u.BLP", i + 1);
+		if (cache_ref_by_key_blp(g_wow->cache, filename, &map->fasta_textures[i]))
+			blp_texture_ask_load(map->fasta_textures[i]);
+		else
+			LOG_ERROR("failed to ref %s", filename);
+	}
 	return map;
 }
 
@@ -122,6 +131,8 @@ void map_delete(struct map *map)
 		cache_unref_by_ref_blp(g_wow->cache, map->magma_textures[i]);
 	for (uint32_t i = 0; i < sizeof(map->slime_textures) / sizeof(*map->slime_textures); ++i)
 		cache_unref_by_ref_blp(g_wow->cache, map->slime_textures[i]);
+	for (uint32_t i = 0; i < sizeof(map->fasta_textures) / sizeof(*map->fasta_textures); ++i)
+		cache_unref_by_ref_blp(g_wow->cache, map->fasta_textures[i]);
 	gx_wmo_instance_gc(map->wmo);
 	mem_free(MEM_GX, map->name);
 	gx_skybox_delete(map->gx_skybox);
@@ -1164,7 +1175,7 @@ static void render_wmo_mliq(struct map *map, struct gx_frame *gx_frame)
 				blp_texture_bind(map->slime_textures[idx], 0);
 				break;
 			case 8:
-				blp_texture_bind(map->river_textures[idx], 0); /* XXX: fast_a ? */
+				blp_texture_bind(map->fasta_textures[idx], 0);
 				break;
 			default:
 				continue;
