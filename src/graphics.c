@@ -93,8 +93,8 @@ static const gfx_input_layout_bind_t g_particles_binds[] =
 
 static const gfx_input_layout_bind_t g_wmo_mliq_binds[] =
 {
-	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, position)},
-	{GFX_ATTR_R32G32_FLOAT   , sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},
+	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, position)},
+	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},
 };
 
 static const gfx_input_layout_bind_t g_skybox_binds[] =
