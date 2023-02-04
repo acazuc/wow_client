@@ -283,7 +283,7 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 		if (!(emitter->emitter->flags & WOW_M2_PARTICLE_FLAG_UNLIT))
 		{
 			VEC3_CPY(tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_AMBIENT]);
-			//VEC3_ADD(tmp1, tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_DIFFUSE]);
+			VEC3_ADD(tmp1, tmp1, g_wow->map->gx_skybox->int_values[SKYBOX_INT_DIFFUSE]);
 			float t;
 			t = tmp1.x;
 			tmp1.x = tmp1.z;
