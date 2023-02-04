@@ -33,7 +33,8 @@ void init_gx_frame(struct gx_frame *gx_frame)
 	jks_array_init(&gx_frame->render_lists.m2_opaque, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
 	jks_array_init(&gx_frame->render_lists.mcnk, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
 	jks_array_init(&gx_frame->render_lists.mcnk_objects, sizeof(struct gx_mcnk*), NULL, &jks_array_memory_fn_GX);
-	jks_array_init(&gx_frame->render_lists.m2_particles, sizeof(struct gx_m2*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2_particles, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
+	jks_array_init(&gx_frame->render_lists.m2_ribbons, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
 	jks_array_init(&gx_frame->render_lists.m2_transparent, sizeof(struct gx_m2_instance*), NULL, &jks_array_memory_fn_GX);
 	jks_array_init(&gx_frame->render_lists.wmo, sizeof(struct gx_wmo*), NULL, &jks_array_memory_fn_GX);
 	jks_array_init(&gx_frame->render_lists.text, sizeof(struct gx_text*), NULL, &jks_array_memory_fn_GX);
@@ -87,6 +88,7 @@ void destroy_gx_frame(struct gx_frame *gx_frame)
 	jks_array_destroy(&gx_frame->render_lists.mcnk);
 	jks_array_destroy(&gx_frame->render_lists.mcnk_objects);
 	jks_array_destroy(&gx_frame->render_lists.m2_particles);
+	jks_array_destroy(&gx_frame->render_lists.m2_ribbons);
 	jks_array_destroy(&gx_frame->render_lists.m2_transparent);
 	jks_array_destroy(&gx_frame->render_lists.wmo);
 	jks_array_destroy(&gx_frame->render_lists.text);
@@ -261,6 +263,7 @@ void render_copy_cameras(struct gx_frame *gx_frame, struct camera *cull_camera, 
 void render_clear_scene(struct gx_frame *gx_frame)
 {
 	jks_array_resize(&gx_frame->render_lists.m2_particles, 0);
+	jks_array_resize(&gx_frame->render_lists.m2_ribbons, 0);
 	jks_array_resize(&gx_frame->render_lists.m2_transparent, 0);
 	jks_array_resize(&gx_frame->render_lists.m2_opaque, 0);
 	for (size_t i = 0; i < gx_frame->render_lists.m2.size; ++i)
@@ -467,6 +470,16 @@ bool render_add_m2_particles(struct gx_m2_instance *m2)
 	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2_particles, &m2))
 	{
 		LOG_ERROR("failed to add m2 to particles render list");
+		return false;
+	}
+	return true;
+}
+
+bool render_add_m2_ribbons(struct gx_m2_instance *m2)
+{
+	if (!jks_array_push_back(&g_wow->cull_frame->render_lists.m2_ribbons, &m2))
+	{
+		LOG_ERROR("failed to add m2 to ribbons render list");
 		return false;
 	}
 	return true;

@@ -37,6 +37,7 @@ struct gx_frame_render_lists
 	struct jks_array mclq[4]; /* struct gx_mclq* */
 	struct jks_array wmo; /* struct gx_wmo* */
 	struct jks_array m2_particles; /* struct gx_m2_instance* */
+	struct jks_array m2_ribbons; /* struct gx_m2_instance* */
 	struct jks_array m2_transparent; /* struct gx_m2_instance* */
 	struct jks_array m2_opaque; /* struct gx_m2* */
 	struct jks_array m2; /* struct gx_m2* */
@@ -107,6 +108,7 @@ bool render_add_mclq(uint8_t type, struct gx_mclq *mclq);
 bool render_add_wmo(struct gx_wmo_instance *instance, bool bypass_frustum);
 bool render_add_wmo_mliq(struct gx_wmo_mliq *mliq, uint8_t liquid);
 bool render_add_m2_particles(struct gx_m2_instance *m2);
+bool render_add_m2_ribbons(struct gx_m2_instance *m2);
 bool render_add_m2_transparent(struct gx_m2_instance *m2);
 bool render_add_m2_opaque(struct gx_m2 *m2);
 bool render_add_m2_instance(struct gx_m2_instance *m2, bool bypass_frustum);

@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 struct gx_m2_particles;
+struct gx_m2_ribbons;
 struct blp_texture;
 
 struct gx_m2_render_params
@@ -98,6 +99,8 @@ struct gx_m2
 	uint32_t sequences_nb;
 	struct wow_m2_particle *particles;
 	uint32_t particles_nb;
+	struct wow_m2_ribbon *ribbons;
+	uint32_t ribbons_nb;
 	struct wow_vec3f *collision_vertexes;
 	uint32_t collision_vertexes_nb;
 	struct wow_vec3f *collision_normals;
@@ -204,6 +207,7 @@ struct gx_m2_instance
 	struct gx_m2_instance_frame render_frames[RENDER_FRAMES_COUNT];
 	struct m2_local_lighting *local_lighting;
 	struct gx_m2_particles *gx_particles;
+	struct gx_m2_ribbons *gx_ribbons;
 	struct jks_array lights; /* gx_m2_light_t */
 	struct jks_array enabled_batches; /* uint16_t */
 	struct jks_array bone_calc; /* bitmask as uint8_t */
@@ -252,6 +256,7 @@ void gx_m2_instance_force_update(struct gx_m2_instance *instance, struct gx_m2_r
 void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum);
 void gx_m2_instance_render(struct gx_m2_instance *instance, bool transparent, struct gx_m2_render_params *params);
 void gx_m2_instance_render_particles(struct gx_m2_instance *instance);
+void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance);
 void gx_m2_instance_calculate_distance_to_camera(struct gx_m2_instance *instance);
 void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_frustum);
 void gx_m2_instance_update_aabb(struct gx_m2_instance *instance);

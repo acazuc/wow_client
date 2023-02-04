@@ -77,6 +77,7 @@ struct graphics
 	gfx_pipeline_state_t mclq_magma_pipeline_state;
 	gfx_pipeline_state_t particles_pipeline_states[WORLD_BLEND_LAST];
 	gfx_pipeline_state_t wmo_mliq_pipeline_state;
+	gfx_pipeline_state_t ribbons_pipeline_states[WORLD_RASTERIZER_LAST][WORLD_DEPTH_STENCIL_LAST][WORLD_BLEND_LAST];
 	gfx_pipeline_state_t skybox_pipeline_state;
 	gfx_pipeline_state_t mcnk_pipeline_state;
 	gfx_pipeline_state_t text_pipeline_state;
@@ -88,6 +89,7 @@ struct graphics
 	gfx_input_layout_t mclq_magma_input_layout;
 	gfx_input_layout_t particles_input_layout;
 	gfx_input_layout_t wmo_mliq_input_layout;
+	gfx_input_layout_t ribbons_input_layout;
 	gfx_input_layout_t skybox_input_layout;
 	gfx_input_layout_t mcnk_input_layout;
 	gfx_input_layout_t text_input_layout;

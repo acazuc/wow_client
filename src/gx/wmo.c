@@ -571,7 +571,7 @@ void gx_wmo_instance_load_doodad_set(struct gx_wmo_instance *instance)
 {
 	if (instance->doodad_set >= instance->parent->mods.size)
 	{
-		LOG_WARN("invalid doodad set: %u / %u", instance->doodad_set, instance->parent->mods.size);
+		LOG_WARN("invalid doodad set: %u / %u (%s)", instance->doodad_set, instance->parent->mods.size, instance->parent->filename);
 		return;
 	}
 	struct wow_mods_data *mods = jks_array_get(&instance->parent->mods, instance->doodad_set);

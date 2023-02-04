@@ -15,7 +15,7 @@ struct wow_m2_particle;
 struct gx_m2_instance;
 struct blp_texture;
 
-struct m2_particle
+struct gx_m2_particle
 {
 	uint64_t created;
 	uint64_t lifespan;
@@ -24,14 +24,14 @@ struct m2_particle
 	struct vec4f velocity;
 };
 
-struct m2_particles_emitter
+struct gx_m2_particles_emitter
 {
 	struct wow_m2_particle *emitter;
 	struct blp_texture *texture;
 	gfx_attributes_state_t attributes_states[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
-	struct jks_array particles; /* struct m2_particle */
+	struct jks_array particles; /* struct gx_m2_particle */
 	struct jks_array vertexes; /* struct shader_particle_input */
 	uint32_t pipeline_state;
 	float alpha_test;
@@ -44,7 +44,7 @@ struct m2_particles_emitter
 struct gx_m2_particles
 {
 	struct gx_m2_instance *parent;
-	struct jks_array emitters; /* struct m2_particles_emitter */
+	struct jks_array emitters; /* struct gx_m2_particles_emitter */
 	bool initialized;
 };
 

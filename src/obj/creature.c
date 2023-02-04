@@ -159,23 +159,22 @@ static void update_displayid(struct object *object)
 	CREATURE->skin_extra_texture = skin_extra_texture;
 	for (int i = 0; i < 3; ++i)
 	{
-		if (monster_textures[i][0])
-		{
-			char texture_filename[1024];
-			char *pos = strrchr(filename, '\\');
-			if (!pos)
-				continue;
-			snprintf(texture_filename, sizeof(texture_filename), "%.*s%s.blp", (int)(pos - filename + 1), filename, monster_textures[i]);
-			normalize_blp_filename(texture_filename, sizeof(texture_filename));
-			if (cache_ref_by_key_blp(g_wow->cache, texture_filename, &texture))
-				blp_texture_ask_load(texture);
-			else
-				texture = NULL;
-			gx_m2_instance_set_monster_texture(WORLD_OBJECT->m2, i, texture);
-			if (CREATURE->monster_textures[i])
-				cache_unref_by_ref_blp(g_wow->cache, CREATURE->monster_textures[i]);
-			CREATURE->monster_textures[i] = texture;
-		}
+		if (!monster_textures[i][0])
+			continue;
+		char texture_filename[1024];
+		char *pos = strrchr(filename, '\\');
+		if (!pos)
+			continue;
+		snprintf(texture_filename, sizeof(texture_filename), "%.*s%s.blp", (int)(pos - filename + 1), filename, monster_textures[i]);
+		normalize_blp_filename(texture_filename, sizeof(texture_filename));
+		if (cache_ref_by_key_blp(g_wow->cache, texture_filename, &texture))
+			blp_texture_ask_load(texture);
+		else
+			texture = NULL;
+		gx_m2_instance_set_monster_texture(WORLD_OBJECT->m2, i, texture);
+		if (CREATURE->monster_textures[i])
+			cache_unref_by_ref_blp(g_wow->cache, CREATURE->monster_textures[i]);
+		CREATURE->monster_textures[i] = texture;
 	}
 	if (WORLD_OBJECT->m2->parent->loaded)
 	{

@@ -475,6 +475,29 @@ static bool build_skybox(gfx_shader_state_t *shader_state)
 	return load_shader_state(shader_state, "skybox", attributes, constants, samplers);
 }
 
+static bool build_ribbon(gfx_shader_state_t *shader_state)
+{
+	static const gfx_shader_attribute_t attributes[] =
+	{
+		{"vs_position", 0},
+		{"vs_color", 1},
+		{"vs_uv", 2},
+		{NULL, 0}
+	};
+	static const gfx_shader_constant_t constants[] =
+	{
+		{"scene_block", 2},
+		{"model_block", 1},
+		{NULL, 0}
+	};
+	static const gfx_shader_sampler_t samplers[] =
+	{
+		{"tex", 0},
+		{NULL, 0}
+	};
+	return load_shader_state(shader_state, "ribbon", attributes, constants, samplers);
+}
+
 static bool build_basic(gfx_shader_state_t *shader_state)
 {
 	static const gfx_shader_attribute_t attributes[] =
@@ -891,6 +914,7 @@ bool shaders_build(struct shaders *shaders)
 	BUILD_SHADER(particle);
 	BUILD_SHADER(sharpen);
 	BUILD_SHADER(skybox);
+	BUILD_SHADER(ribbon);
 	BUILD_SHADER(basic);
 	BUILD_SHADER(sobel);
 	BUILD_SHADER(bloom);
@@ -936,6 +960,7 @@ void shaders_clean(struct shaders *shaders)
 	CLEAN_SHADER(particle);
 	CLEAN_SHADER(sharpen);
 	CLEAN_SHADER(skybox);
+	CLEAN_SHADER(ribbon);
 	CLEAN_SHADER(basic);
 	CLEAN_SHADER(sobel);
 	CLEAN_SHADER(bloom);

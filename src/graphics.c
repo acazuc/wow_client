@@ -97,6 +97,13 @@ static const gfx_input_layout_bind_t g_wmo_mliq_binds[] =
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},
 };
 
+static const gfx_input_layout_bind_t g_ribbons_binds[] =
+{
+	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, position)},
+	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, color)},
+	{GFX_ATTR_R32G32_FLOAT      , sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, uv)},
+};
+
 static const gfx_input_layout_bind_t g_skybox_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, position)},
@@ -337,6 +344,7 @@ bool graphics_init(struct graphics *graphics)
 	graphics->mclq_magma_input_layout = GFX_INPUT_LAYOUT_INIT();
 	graphics->particles_input_layout = GFX_INPUT_LAYOUT_INIT();
 	graphics->wmo_mliq_input_layout = GFX_INPUT_LAYOUT_INIT();
+	graphics->ribbons_input_layout = GFX_INPUT_LAYOUT_INIT();
 	graphics->skybox_input_layout = GFX_INPUT_LAYOUT_INIT();
 	graphics->mcnk_input_layout = GFX_INPUT_LAYOUT_INIT();
 	graphics->text_input_layout = GFX_INPUT_LAYOUT_INIT();
@@ -348,6 +356,7 @@ bool graphics_init(struct graphics *graphics)
 	gfx_create_input_layout(g_wow->device, &graphics->mclq_magma_input_layout, g_mclq_magma_binds, sizeof(g_mclq_magma_binds) / sizeof(*g_mclq_magma_binds), &g_wow->shaders->mclq_magma);
 	gfx_create_input_layout(g_wow->device, &graphics->particles_input_layout, g_particles_binds, sizeof(g_particles_binds) / sizeof(*g_particles_binds), &g_wow->shaders->particle);
 	gfx_create_input_layout(g_wow->device, &graphics->wmo_mliq_input_layout, g_wmo_mliq_binds, sizeof(g_wmo_mliq_binds) / sizeof(*g_wmo_mliq_binds), &g_wow->shaders->mliq);
+	gfx_create_input_layout(g_wow->device, &graphics->ribbons_input_layout, g_ribbons_binds, sizeof(g_ribbons_binds) / sizeof(*g_ribbons_binds), &g_wow->shaders->ribbon);
 	gfx_create_input_layout(g_wow->device, &graphics->skybox_input_layout, g_skybox_binds, sizeof(g_skybox_binds) / sizeof(*g_skybox_binds), &g_wow->shaders->skybox);
 	gfx_create_input_layout(g_wow->device, &graphics->mcnk_input_layout, g_mcnk_binds, sizeof(g_mcnk_binds) / sizeof(*g_mcnk_binds), &g_wow->shaders->mcnk);
 	gfx_create_input_layout(g_wow->device, &graphics->text_input_layout, g_text_binds, sizeof(g_text_binds) / sizeof(*g_text_binds), &g_wow->shaders->text);
@@ -474,6 +483,15 @@ bool graphics_init(struct graphics *graphics)
 					&graphics->world_blend_states[blend],
 					&graphics->m2_input_layout,
 					GFX_PRIMITIVE_TRIANGLES);
+				graphics->ribbons_pipeline_states[rasterizer][depth_stencil][blend] = GFX_PIPELINE_STATE_INIT();
+				gfx_create_pipeline_state(g_wow->device,
+					&graphics->ribbons_pipeline_states[rasterizer][depth_stencil][blend],
+					&g_wow->shaders->ribbon,
+					&graphics->world_rasterizer_states[rasterizer],
+					&graphics->world_depth_stencil_states[depth_stencil],
+					&graphics->world_blend_states[blend],
+					&graphics->ribbons_input_layout,
+					GFX_PRIMITIVE_TRIANGLES);
 			}
 		}
 	}
@@ -518,6 +536,7 @@ void graphics_clear(struct graphics *graphics)
 	gfx_delete_input_layout(g_wow->device, &graphics->mclq_magma_input_layout);
 	gfx_delete_input_layout(g_wow->device, &graphics->particles_input_layout);
 	gfx_delete_input_layout(g_wow->device, &graphics->wmo_mliq_input_layout);
+	gfx_delete_input_layout(g_wow->device, &graphics->ribbons_input_layout);
 	gfx_delete_input_layout(g_wow->device, &graphics->skybox_input_layout);
 	gfx_delete_input_layout(g_wow->device, &graphics->mcnk_input_layout);
 	gfx_delete_input_layout(g_wow->device, &graphics->wdl_input_layout);
@@ -554,6 +573,7 @@ void graphics_clear(struct graphics *graphics)
 			for (enum world_blend_state blend = 0; blend < WORLD_BLEND_LAST; ++blend)
 			{
 				gfx_delete_pipeline_state(g_wow->device, &graphics->m2_pipeline_states[rasterizer][depth_stencil][blend]);
+				gfx_delete_pipeline_state(g_wow->device, &graphics->ribbons_pipeline_states[rasterizer][depth_stencil][blend]);
 			}
 		}
 	}

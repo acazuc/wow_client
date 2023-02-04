@@ -29,7 +29,7 @@ MEMORY_DECL(GX);
 
 static void destroy_emitter(void *ptr)
 {
-	struct m2_particles_emitter *emitter = ptr;
+	struct gx_m2_particles_emitter *emitter = ptr;
 	if (emitter->texture)
 		cache_unref_by_ref_blp(g_wow->cache, emitter->texture);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
@@ -51,7 +51,7 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 		return NULL;
 	}
 	particles->parent = parent;
-	jks_array_init(&particles->emitters, sizeof(struct m2_particles_emitter), destroy_emitter, &jks_array_memory_fn_GX);
+	jks_array_init(&particles->emitters, sizeof(struct gx_m2_particles_emitter), destroy_emitter, &jks_array_memory_fn_GX);
 	if (!jks_array_reserve(&particles->emitters, parent->parent->particles_nb))
 	{
 		LOG_ERROR("failed to reserve particle emitters");
@@ -59,7 +59,7 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 	}
 	for (size_t i = 0; i < parent->parent->particles_nb; ++i)
 	{
-		struct m2_particles_emitter *emitter = jks_array_grow(&particles->emitters, 1);
+		struct gx_m2_particles_emitter *emitter = jks_array_grow(&particles->emitters, 1);
 		if (!emitter)
 		{
 			LOG_ERROR("failed to grow emitter array");
@@ -92,7 +92,7 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 		}
 		emitter->emitter = &parent->parent->particles[i];
 		emitter->last_spawned = g_wow->frametime;
-		jks_array_init(&emitter->particles, sizeof(struct m2_particle), NULL, &jks_array_memory_fn_GX);
+		jks_array_init(&emitter->particles, sizeof(struct gx_m2_particle), NULL, &jks_array_memory_fn_GX);
 		jks_array_init(&emitter->vertexes, sizeof(struct shader_particle_input), NULL, &jks_array_memory_fn_GX);
 		uint8_t blending_type;
 		if (parent->parent->version >= 262)
@@ -178,7 +178,7 @@ static struct vec3f get_gravity(struct gx_m2_particles *particles, struct wow_m2
 	return gravity;
 }
 
-static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct m2_particle *particle)
+static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct gx_m2_particle *particle)
 {
 	struct vec3f tmp;
 	struct vec3f gravity = get_gravity(particles, emitter);
@@ -195,12 +195,12 @@ static void update_position(struct gx_m2_particles *particles, struct wow_m2_par
 	particle->position.w = 1;
 }
 
-static void update_particles(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
+static void update_particles(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
 {
 	float dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
 	for (size_t i = 0; i < emitter->particles.size; ++i)
 	{
-		struct m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct m2_particle);
+		struct gx_m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct gx_m2_particle);
 		if (g_wow->frametime - particle->created > particle->lifespan)
 		{
 			jks_array_erase(&emitter->particles, i);
@@ -237,7 +237,7 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 	}
 	for (size_t i = 0; i < emitter->particles.size; ++i)
 	{
-		struct m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct m2_particle);
+		struct gx_m2_particle *particle = JKS_ARRAY_GET(&emitter->particles, i, struct gx_m2_particle);
 		struct shader_particle_input *vertexes = JKS_ARRAY_GET(&emitter->vertexes, i * 4, struct shader_particle_input);
 		float lifetime = (g_wow->frametime - particle->created) / (float)particle->lifespan;
 		struct vec4f color1 = {1, 1, 1, 1};
@@ -365,9 +365,9 @@ static void update_particles(struct gx_m2_particles *particles, struct m2_partic
 	}
 }
 
-static void create_particle(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
+static void create_particle(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
 {
-	struct m2_particle *particle = jks_array_grow(&emitter->particles, 1);
+	struct gx_m2_particle *particle = jks_array_grow(&emitter->particles, 1);
 	if (!particle)
 	{
 		LOG_ERROR("failed to grow particle array");
@@ -460,7 +460,7 @@ static void create_particle(struct gx_m2_particles *particles, struct m2_particl
 	particle->lifespan = lifespan * 1000000000;
 }
 
-static struct mat4f get_matrix(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
+static struct mat4f get_matrix(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
 {
 	struct mat4f tmp;
 #if 0
@@ -487,7 +487,7 @@ static struct mat4f get_matrix(struct gx_m2_particles *particles, struct m2_part
 	return tmp;
 }
 
-static void render_particles(struct gx_m2_particles *particles, struct m2_particles_emitter *emitter)
+static void render_particles(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
 {
 	if (!emitter->particles.size)
 		return;
@@ -513,7 +513,7 @@ static void initialize(struct gx_m2_particles *particles)
 {
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
-		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
+		struct gx_m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter);
 		for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
 		{
 			gfx_attribute_bind_t binds[] =
@@ -534,7 +534,7 @@ void gx_m2_particles_update(struct gx_m2_particles *particles)
 {
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
-		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
+		struct gx_m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter);
 		if (emitter->emitter_type == 3)
 			continue;
 		float rate;
@@ -567,7 +567,7 @@ void gx_m2_particles_render(struct gx_m2_particles *particles)
 		initialize(particles);
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
-		struct m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct m2_particles_emitter);
+		struct gx_m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter);
 		render_particles(particles, emitter);
 	}
 }

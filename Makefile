@@ -183,6 +183,7 @@ SRCS_NAME = wow.c \
             gx/m2_particles.c \
             gx/frame.c \
             gx/text.c \
+            gx/m2_ribbons.c \
             ppe/render_pass.c \
             ppe/ssao_render_pass.c \
             ppe/filter_render_pass.c \

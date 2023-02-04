@@ -473,24 +473,23 @@ static void update_mount_displayid(struct object *object)
 	gx_m2_ask_load(UNIT->mount_m2->parent);
 	for (int i = 0; i < 3; ++i)
 	{
-		if (mount_textures[i][0])
-		{
-			char texture_filename[1024];
-			char *pos = strrchr(filename, '\\');
-			if (!pos)
-				continue;
-			snprintf(texture_filename, sizeof(texture_filename), "%.*s%s.blp", (int)(pos - filename + 1), filename, mount_textures[i]);
-			normalize_blp_filename(texture_filename, sizeof(texture_filename));
-			struct blp_texture *texture;
-			if (cache_ref_by_key_blp(g_wow->cache, texture_filename, &texture))
-				blp_texture_ask_load(texture);
-			else
-				texture = NULL;
-			gx_m2_instance_set_monster_texture(UNIT->mount_m2, i, texture);
-			if (UNIT->mount_textures[i])
-				cache_unref_by_ref_blp(g_wow->cache, UNIT->mount_textures[i]);
-			UNIT->mount_textures[i] = texture;
-		}
+		if (!mount_textures[i][0])
+			continue;
+		char texture_filename[1024];
+		char *pos = strrchr(filename, '\\');
+		if (!pos)
+			continue;
+		snprintf(texture_filename, sizeof(texture_filename), "%.*s%s.blp", (int)(pos - filename + 1), filename, mount_textures[i]);
+		normalize_blp_filename(texture_filename, sizeof(texture_filename));
+		struct blp_texture *texture;
+		if (cache_ref_by_key_blp(g_wow->cache, texture_filename, &texture))
+			blp_texture_ask_load(texture);
+		else
+			texture = NULL;
+		gx_m2_instance_set_monster_texture(UNIT->mount_m2, i, texture);
+		if (UNIT->mount_textures[i])
+			cache_unref_by_ref_blp(g_wow->cache, UNIT->mount_textures[i]);
+		UNIT->mount_textures[i] = texture;
 	}
 }
 

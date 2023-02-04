@@ -1164,7 +1164,12 @@ static int wow_main(int ac, char **av)
 	object_fields_set_u32(&((struct object*)g_wow->player)->fields, PLAYER_FIELD_VISIBLE_ITEM_1_0 + 16 * EQUIPMENT_SLOT_LEGS,      30978);
 	object_fields_set_u32(&((struct object*)g_wow->player)->fields, PLAYER_FIELD_VISIBLE_ITEM_1_0 + 16 * EQUIPMENT_SLOT_FEET,      32345);
 	object_fields_set_u32(&((struct object*)g_wow->player)->fields, PLAYER_FIELD_VISIBLE_ITEM_1_0 + 16 * EQUIPMENT_SLOT_HANDS,     30969);
+#if 1
 	object_fields_set_u32(&((struct object*)g_wow->player)->fields, UNIT_FIELD_MOUNTDISPLAYID, 17890);
+#endif
+#if 0
+	object_fields_set_u32(&((struct object*)g_wow->player)->fields, UNIT_FIELD_MOUNTDISPLAYID, 20932);
+#endif
 	g_wow->cameras[0] = camera_new();
 	if (!g_wow->cameras[0])
 	{

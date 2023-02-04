@@ -346,6 +346,13 @@ struct shader_skybox_input
 	struct vec2f uv;
 };
 
+struct shader_ribbon_input
+{
+	struct vec4f position;
+	struct vec4f color;
+	struct vec2f uv;
+};
+
 struct shader_basic_input
 {
 	struct vec3f position;
@@ -412,6 +419,7 @@ struct shaders
 	gfx_shader_state_t particle;
 	gfx_shader_state_t sharpen;
 	gfx_shader_state_t skybox;
+	gfx_shader_state_t ribbon;
 	gfx_shader_state_t basic;
 	gfx_shader_state_t sobel;
 	gfx_shader_state_t bloom;

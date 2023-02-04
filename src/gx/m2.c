@@ -1,4 +1,5 @@
 #include "gx/m2_particles.h"
+#include "gx/m2_ribbons.h"
 #include "gx/skybox.h"
 #include "gx/m2.h"
 
@@ -1185,6 +1186,7 @@ struct gx_m2 *gx_m2_new(const char *filename)
 	m2->textures = NULL;
 	m2->vertexes = NULL;
 	m2->cameras = NULL;
+	m2->ribbons = NULL;
 	m2->colors = NULL;
 	m2->lights = NULL;
 	m2->bones = NULL;
@@ -1223,6 +1225,7 @@ void gx_m2_delete(struct gx_m2 *m2)
 	wow_m2_sequences_delete(m2->sequences, m2->sequences_nb);
 	wow_m2_particles_delete(m2->particles, m2->particles_nb);
 	wow_m2_textures_delete(m2->textures, m2->textures_nb);
+	wow_m2_ribbons_delete(m2->ribbons, m2->ribbons_nb);
 	mem_free(MEM_GX, m2->vertexes);
 	wow_m2_cameras_delete(m2->cameras, m2->cameras_nb);
 	wow_m2_colors_delete(m2->colors, m2->colors_nb);
@@ -1342,6 +1345,13 @@ int gx_m2_load(struct gx_m2 *m2, struct wow_m2_file *file)
 		LOG_ERROR("failed to allocate m2 particles");
 		return 0;
 	}
+	m2->ribbons_nb = file->ribbons_nb;
+	m2->ribbons = wow_m2_ribbons_dup(file->ribbons, file->ribbons_nb);
+	if (m2->ribbons_nb && !m2->ribbons)
+	{
+		LOG_ERROR("failed to allocate m2 ribbons");
+		return 0;
+	}
 	m2->key_bone_lookups_nb = file->key_bone_lookups_nb;
 	m2->key_bone_lookups = mem_malloc(MEM_GX, sizeof(*m2->key_bone_lookups) * m2->key_bone_lookups_nb);
 	if (m2->key_bone_lookups_nb && !m2->key_bone_lookups)
@@ -1422,6 +1432,11 @@ int gx_m2_load(struct gx_m2 *m2, struct wow_m2_file *file)
 		struct wow_m2_particle *particle = &m2->particles[i];
 		particle->position = (struct wow_vec3f){particle->position.x, particle->position.z, -particle->position.y};
 		particle->wind_vector = (struct wow_vec3f){particle->wind_vector.x, particle->wind_vector.z, -particle->wind_vector.y};
+	}
+	for (uint32_t i = 0; i < m2->ribbons_nb; ++i)
+	{
+		struct wow_m2_ribbon *ribbon = &m2->ribbons[i];
+		ribbon->position = (struct wow_vec3f){ribbon->position.x, ribbon->position.z, -ribbon->position.y};
 	}
 	for (uint32_t i = 0; i < m2->attachments_nb; ++i)
 	{
@@ -1765,6 +1780,7 @@ found:
 	}
 unref:
 	gx_m2_particles_delete(instance->gx_particles);
+	gx_m2_ribbons_delete(instance->gx_ribbons);
 	cache_unref_by_ref_m2(g_wow->cache, instance->parent);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 		gfx_delete_buffer(g_wow->device, &instance->uniform_buffers[i]);
@@ -2199,6 +2215,13 @@ void gx_m2_instance_render_particles(struct gx_m2_instance *instance)
 	gx_m2_particles_render(instance->gx_particles);
 }
 
+void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance)
+{
+	if (instance->render_frames[g_wow->draw_frame_id].culled) /* XXX: still create ribbons ? */
+		return;
+	gx_m2_ribbons_render(instance->gx_ribbons);
+}
+
 void gx_m2_instance_calculate_distance_to_camera(struct gx_m2_instance *instance)
 {
 	struct vec3f tmp;
@@ -2222,6 +2245,11 @@ void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_f
 	{
 		gx_m2_particles_update(instance->gx_particles);
 		render_add_m2_particles(instance);
+	}
+	if (instance->gx_ribbons)
+	{
+		gx_m2_ribbons_update(instance->gx_ribbons);
+		render_add_m2_ribbons(instance);
 	}
 }
 
@@ -2290,11 +2318,17 @@ void gx_m2_instance_on_parent_loaded(struct gx_m2_instance *instance)
 		LOG_ERROR("failed to alloc bones calc array");
 		return;
 	}
-	if (instance->parent->particles_nb != 0)
+	if (instance->parent->particles_nb)
 	{
 		instance->gx_particles = gx_m2_particles_new(instance);
 		if (!instance->gx_particles)
 			LOG_ERROR("failed to load particles renderer");
+	}
+	if (instance->parent->ribbons_nb)
+	{
+		instance->gx_ribbons = gx_m2_ribbons_new(instance);
+		if (!instance->gx_ribbons)
+			LOG_ERROR("failed to load ribbons renderer");
 	}
 	resolve_sequence(instance);
 }
