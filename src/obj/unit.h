@@ -49,6 +49,7 @@ struct unit
 	const struct unit_vtable *unit_vtable;
 	struct unit_item items[UNIT_ITEM_LAST];
 	struct gx_m2_instance *mount_m2;
+	struct blp_texture *mount_textures[3];
 	struct gx_text *text;
 	float scale;
 };

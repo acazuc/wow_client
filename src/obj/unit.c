@@ -96,6 +96,8 @@ static bool ctr(struct object *object, uint64_t guid)
 		UNIT->items[i].tex_left = NULL;
 		UNIT->items[i].tex_right = NULL;
 	}
+	for (size_t i = 0; i < 3; ++i)
+		UNIT->mount_textures[i] = NULL;
 	UNIT->scale = 1;
 	UNIT->mount_m2 = NULL;
 	return true;
@@ -132,6 +134,11 @@ static void dtr(struct object *object)
 		clear_item(&UNIT->items[i]);
 	if (UNIT->mount_m2)
 		gx_m2_instance_gc(UNIT->mount_m2);
+	for (size_t i = 0; i < 3; ++i)
+	{
+		if (UNIT->mount_textures[i])
+			cache_unref_by_ref_blp(g_wow->cache, UNIT->mount_textures[i]);
+	}
 	worldobj_object_vtable.dtr(object);
 }
 
@@ -442,6 +449,10 @@ static void update_mount_displayid(struct object *object)
 		return;
 	}
 	uint32_t model = wow_dbc_get_u32(&row, 4);
+	char mount_textures[3][512];
+	snprintf(mount_textures[0], sizeof(mount_textures[0]), "%s", wow_dbc_get_str(&row, 24));
+	snprintf(mount_textures[1], sizeof(mount_textures[1]), "%s", wow_dbc_get_str(&row, 28));
+	snprintf(mount_textures[2], sizeof(mount_textures[2]), "%s", wow_dbc_get_str(&row, 32));
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_model_data, &row, model))
 	{
 		LOG_WARN("unknown model data for mount display id %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID));
@@ -449,7 +460,6 @@ static void update_mount_displayid(struct object *object)
 	}
 	char filename[512];
 	snprintf(filename, sizeof(filename), "%s", wow_dbc_get_str(&row, 8));
-	LOG_INFO("filename: %s", filename);
 	normalize_m2_filename(filename, sizeof(filename));
 	if (UNIT->mount_m2)
 		gx_m2_instance_gc(UNIT->mount_m2);
@@ -461,6 +471,27 @@ static void update_mount_displayid(struct object *object)
 	}
 	gx_m2_instance_set_sequence(UNIT->mount_m2, ANIM_STAND);
 	gx_m2_ask_load(UNIT->mount_m2->parent);
+	for (int i = 0; i < 3; ++i)
+	{
+		if (mount_textures[i][0])
+		{
+			char texture_filename[1024];
+			char *pos = strrchr(filename, '\\');
+			if (!pos)
+				continue;
+			snprintf(texture_filename, sizeof(texture_filename), "%.*s%s.blp", (int)(pos - filename + 1), filename, mount_textures[i]);
+			normalize_blp_filename(texture_filename, sizeof(texture_filename));
+			struct blp_texture *texture;
+			if (cache_ref_by_key_blp(g_wow->cache, texture_filename, &texture))
+				blp_texture_ask_load(texture);
+			else
+				texture = NULL;
+			gx_m2_instance_set_monster_texture(UNIT->mount_m2, i, texture);
+			if (UNIT->mount_textures[i])
+				cache_unref_by_ref_blp(g_wow->cache, UNIT->mount_textures[i]);
+			UNIT->mount_textures[i] = texture;
+		}
+	}
 }
 
 static void add_to_render(struct object *object)
