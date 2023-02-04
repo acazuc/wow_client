@@ -162,10 +162,12 @@ bool m2_get_track_value_vec4f(struct gx_m2 *m2, struct wow_m2_track *track, stru
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			*val = *v1;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 			VEC4_SUB(*val, *v2, *v1);
 			VEC4_MULV(*val, *val, a);
@@ -184,10 +186,12 @@ bool m2_get_track_value_vec3f(struct gx_m2 *m2, struct wow_m2_track *track, stru
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			*val = *v1;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 			VEC3_SUB(*val, *v2, *v1);
 			VEC3_MULV(*val, *val, a);
@@ -206,10 +210,12 @@ bool m2_get_track_value_float(struct gx_m2 *m2, struct wow_m2_track *track, floa
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			*val = *v1;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 			*val = *v1 + (*v2 - *v1) * a;
 			break;
@@ -226,10 +232,12 @@ bool m2_get_track_value_uint8(struct gx_m2 *m2, struct wow_m2_track *track, uint
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			*val = *v1;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 			*val = *v1 + (*v2 - *v1) * a;
 			break;
@@ -246,10 +254,12 @@ bool m2_get_track_value_int16(struct gx_m2 *m2, struct wow_m2_track *track, int1
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			*val = *v1;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 			*val = *v1 + (*v2 - *v1) * a;
 			break;
@@ -266,13 +276,15 @@ bool m2_get_track_value_quat16(struct gx_m2 *m2, struct wow_m2_track *track, str
 		return false;
 	switch (track->interpolation_type)
 	{
-		default:
 		case 0:
 			val->x = (v1->x < 0 ? v1->x + 32768 : v1->x - 32767) / 32767.f;
 			val->y = (v1->y < 0 ? v1->y + 32768 : v1->y - 32767) / 32767.f;
 			val->z = (v1->z < 0 ? v1->z + 32768 : v1->z - 32767) / 32767.f;
 			val->w = (v1->w < 0 ? v1->w + 32768 : v1->w - 32767) / 32767.f;
 			break;
+		default:
+			LOG_DEBUG("unknown interpolation type: %d", track->interpolation_type);
+			/* FALLTHROUGH */
 		case 1:
 		{
 			struct vec4f tmp1;

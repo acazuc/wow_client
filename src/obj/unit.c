@@ -97,6 +97,7 @@ static bool ctr(struct object *object, uint64_t guid)
 		UNIT->items[i].tex_right = NULL;
 	}
 	UNIT->scale = 1;
+	UNIT->mount_m2 = NULL;
 	return true;
 }
 
@@ -129,6 +130,8 @@ static void dtr(struct object *object)
 	render_gc_text(UNIT->text);
 	for (size_t i = 0; i < sizeof(UNIT->items) / sizeof(*UNIT->items); ++i)
 		clear_item(&UNIT->items[i]);
+	if (UNIT->mount_m2)
+		gx_m2_instance_gc(UNIT->mount_m2);
 	worldobj_object_vtable.dtr(object);
 }
 
@@ -366,29 +369,42 @@ void unit_get_underwear_textures(const struct unit *unit, struct blp_texture **p
 	get_textures(unit, 4, 0, color, pelvis, torso, NULL);
 }
 
-static void add_m2_item(struct object *object, struct gx_m2_instance *m2, uint32_t attachment_id)
+static struct mat4f *get_attachment_matrix(struct gx_m2_instance *m2, uint32_t attachment_id, struct wow_m2_attachment **attachment)
 {
-	if (WORLD_OBJECT->m2->parent->attachment_lookups_nb < attachment_id)
+	if (!m2->parent->loaded)
+		return NULL;
+	if (m2->parent->attachment_lookups_nb < attachment_id)
 	{
 		LOG_ERROR("no attachment lookup id %" PRIu32, attachment_id);
-		return;
+		return NULL;
 	}
-	attachment_id = WORLD_OBJECT->m2->parent->attachment_lookups[attachment_id];
-	if (WORLD_OBJECT->m2->parent->attachments_nb < attachment_id)
+	attachment_id = m2->parent->attachment_lookups[attachment_id];
+	if (m2->parent->attachments_nb < attachment_id)
 	{
 		LOG_ERROR("no attachment id %" PRIu32, attachment_id);
-		return;
+		return NULL;
 	}
-	struct wow_m2_attachment *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
-	uint16_t bone_id = attachment->bone;
+	*attachment = &m2->parent->attachments[attachment_id];
+	uint16_t bone_id = (*attachment)->bone;
 	if (bone_id == UINT16_MAX)
-		return;
-	if (WORLD_OBJECT->m2->render_frames[g_wow->cull_frame_id].bone_mats.size <= bone_id)
+		return NULL;
+	if (m2->render_frames[g_wow->cull_frame_id].bone_mats.size <= bone_id)
 	{
 		LOG_ERROR("invalid key bone id: %" PRIu16, bone_id);
-		return;
+		return NULL;
 	}
-	struct mat4f *bone_mat = JKS_ARRAY_GET(&WORLD_OBJECT->m2->render_frames[g_wow->cull_frame_id].bone_mats, bone_id, struct mat4f);
+	/* XXX be smarter */
+	m2->bones_calculated = false;
+	gx_m2_instance_calc_bones(m2);
+	return JKS_ARRAY_GET(&m2->render_frames[g_wow->cull_frame_id].bone_mats, bone_id, struct mat4f);
+}
+
+static void add_m2_item(struct object *object, struct gx_m2_instance *m2, uint32_t attachment_id)
+{
+	struct wow_m2_attachment *attachment;
+	struct mat4f *bone_mat = get_attachment_matrix(WORLD_OBJECT->m2, attachment_id, &attachment);
+	if (!bone_mat)
+		return;
 	struct mat4f tmp1;
 	struct mat4f tmp2;
 	MAT4_MUL(tmp1, WORLD_OBJECT->m2->m, *bone_mat);
@@ -400,31 +416,10 @@ static void add_m2_item(struct object *object, struct gx_m2_instance *m2, uint32
 
 static void add_text_to_render(struct object *object)
 {
-	if (WORLD_OBJECT->m2->parent->attachment_lookups_nb < 18)
-	{
-		LOG_ERROR("no attachment lookup id %" PRIu32, 18);
+	struct wow_m2_attachment *attachment;
+	struct mat4f *bone_mat = get_attachment_matrix(WORLD_OBJECT->m2, 18, &attachment);
+	if (!bone_mat)
 		return;
-	}
-	uint16_t attachment_id = WORLD_OBJECT->m2->parent->attachment_lookups[18];
-	if (attachment_id == UINT16_MAX)
-		return;
-	if (WORLD_OBJECT->m2->parent->attachments_nb < attachment_id)
-	{
-		LOG_ERROR("no attachment id %" PRIu32, attachment_id);
-		return;
-	}
-	struct wow_m2_attachment *attachment = &WORLD_OBJECT->m2->parent->attachments[attachment_id];
-	uint16_t bone_id = attachment->bone;
-	if (bone_id == UINT16_MAX)
-		return;
-	if (WORLD_OBJECT->m2->render_frames[g_wow->cull_frame_id].bone_mats.size <= bone_id)
-	{
-		LOG_ERROR("invalid key bone id: %" PRIu16, bone_id);
-		return;
-	}
-	WORLD_OBJECT->m2->bones_calculated = false;
-	gx_m2_instance_calc_bones(WORLD_OBJECT->m2);
-	struct mat4f *bone_mat = JKS_ARRAY_GET(&WORLD_OBJECT->m2->render_frames[g_wow->cull_frame_id].bone_mats, bone_id, struct mat4f);
 	struct mat4f tmp1;
 	struct mat4f tmp2;
 	MAT4_MUL(tmp1, WORLD_OBJECT->m2->m, *bone_mat);
@@ -438,19 +433,67 @@ static void add_text_to_render(struct object *object)
 	gx_text_add_to_render(UNIT->text);
 }
 
+static void update_mount_displayid(struct object *object)
+{
+	struct wow_dbc_row row;
+	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &row, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID)))
+	{
+		LOG_WARN("unknown mount displayid %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID));
+		return;
+	}
+	uint32_t model = wow_dbc_get_u32(&row, 4);
+	if (!dbc_get_row_indexed(g_wow->dbc.creature_model_data, &row, model))
+	{
+		LOG_WARN("unknown model data for mount display id %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID));
+		return;
+	}
+	char filename[512];
+	snprintf(filename, sizeof(filename), "%s", wow_dbc_get_str(&row, 8));
+	LOG_INFO("filename: %s", filename);
+	normalize_m2_filename(filename, sizeof(filename));
+	if (UNIT->mount_m2)
+		gx_m2_instance_gc(UNIT->mount_m2);
+	UNIT->mount_m2 = gx_m2_instance_new_filename(filename);
+	if (!UNIT->mount_m2)
+	{
+		LOG_ERROR("failed to create unit mount m2");
+		return;
+	}
+	gx_m2_instance_set_sequence(UNIT->mount_m2, ANIM_STAND);
+	gx_m2_ask_load(UNIT->mount_m2->parent);
+}
+
 static void add_to_render(struct object *object)
 {
 	if (!WORLD_OBJECT->m2)
 		return;
 	VEC3_CPY(WORLD_OBJECT->m2->pos, WORLD_OBJECT->position);
-	struct mat4f tmp;
 	struct mat4f mat;
+	if (!UNIT->mount_m2 || object_fields_get_bit(&object->fields, UNIT_FIELD_MOUNTDISPLAYID))
+	{
+		update_mount_displayid(object);
+		object_fields_disable_bit(&object->fields, UNIT_FIELD_MOUNTDISPLAYID);
+	}
+	struct mat4f tmp;
 	MAT4_IDENTITY(tmp);
 	MAT4_TRANSLATE(mat, tmp, WORLD_OBJECT->position);
 	MAT4_ROTATEY(float, tmp, mat, WORLD_OBJECT->orientation);
 	MAT4_ROTATEX(float, mat, tmp, WORLD_OBJECT->slope);
 	MAT4_ROTATEY(float, tmp, mat, M_PI / 2);
 	MAT4_SCALEV(mat, tmp, UNIT->scale * object_fields_get_flt(&object->fields, OBJECT_FIELD_SCALE));
+	if (UNIT->mount_m2)
+	{
+		VEC3_CPY(UNIT->mount_m2->pos, WORLD_OBJECT->position);
+		gx_m2_instance_set_mat(UNIT->mount_m2, &mat);
+		gx_m2_instance_add_to_render(UNIT->mount_m2, true);
+		struct wow_m2_attachment *attachment;
+		struct mat4f *bone_mat = get_attachment_matrix(UNIT->mount_m2, 0, &attachment);
+		if (!bone_mat)
+			return;
+		struct mat4f tmp1;
+		MAT4_MUL(tmp1, UNIT->mount_m2->m, *bone_mat);
+		MAT4_TRANSLATE(mat, tmp1, attachment->position);
+	}
 	gx_m2_instance_set_mat(WORLD_OBJECT->m2, &mat);
 	worldobj_vtable.add_to_render(object);
 	if (WORLD_OBJECT->m2->render_frames[g_wow->cull_frame_id].culled)
@@ -1040,7 +1083,15 @@ static void update_animation(struct unit *unit)
 		sequence_id = ANIM_JUMPEND;
 	else
 		sequence_id = get_standing_animation(unit);
-	gx_m2_instance_set_sequence(unit->worldobj.m2, sequence_id);
+	if (unit->mount_m2)
+	{
+		gx_m2_instance_set_sequence(unit->worldobj.m2, ANIM_MOUNT);
+		gx_m2_instance_set_sequence(unit->mount_m2, sequence_id);
+	}
+	else
+	{
+		gx_m2_instance_set_sequence(unit->worldobj.m2, sequence_id);
+	}
 }
 
 void unit_physics(struct unit *unit)

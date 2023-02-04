@@ -59,7 +59,7 @@ void worldobj_set_m2(struct worldobj *worldobj, const char *file)
 		LOG_ERROR("failed to create worldobj m2");
 		return;
 	}
-	gx_m2_instance_set_sequence(worldobj->m2, 69);
+	gx_m2_instance_set_sequence(worldobj->m2, ANIM_STAND);
 	gx_m2_ask_load(worldobj->m2->parent);
 }
 
