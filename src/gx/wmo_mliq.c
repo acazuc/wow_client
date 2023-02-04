@@ -49,15 +49,11 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 		return NULL;
 	struct wow_mliq *wow_mliq = &file->mliq;
 	VEC3_SET(mliq->position, wow_mliq->header.coords.x, 0, -wow_mliq->header.coords.y);
-#if 0
-	LOG_INFO("vert: %ux%u, tiles: %ux%u", wow_mliq->header.xverts, wow_mliq->header.yverts, wow_mliq->header.xtiles, wow_mliq->header.ytiles);
-#endif
 	for (size_t x = 0; x < wow_mliq->header.xtiles; ++x)
 	{
 		for (size_t z = 0; z < wow_mliq->header.ytiles; ++z)
 		{
 			uint8_t liquid_id = wow_mliq->tiles[x + z * wow_mliq->header.xtiles] & WOW_MLIQ_TILE_LIQUID_TYPE;
-			liquid_id = 2;
 			if (liquid_id == 0xf) /* no liquid flag */
 				continue;
 			if (liquid_id >= WMO_MLIQ_LIQUIDS_COUNT)
@@ -115,37 +111,16 @@ struct gx_wmo_mliq *gx_wmo_mliq_new(struct wow_wmo_group_file *file)
 		{
 			for (uint32_t x = 0; x < wow_mliq->header.xverts; ++x)
 			{
+				static const float xz_factor = CHUNK_WIDTH / 8.;
+				static const float uv_factor = 2 / 533.3333;
 				size_t n = z * wow_mliq->header.xverts + x;
-				vertex[n].position.x = x / 8. * CHUNK_WIDTH;
+				vertex[n].position.x = x * xz_factor;
 				vertex[n].position.y = wow_mliq->vertexes[n].magma.height;
-				vertex[n].position.z = -(ssize_t)z / 8. * CHUNK_WIDTH;
-				size_t tilen = z * wow_mliq->header.xtiles + x;
-				if (z == wow_mliq->header.yverts - 1)
-					tilen -= wow_mliq->header.xtiles;
-				if (x == wow_mliq->header.xverts - 1)
-					tilen--;
-				switch (wow_mliq->tiles[tilen] & WOW_MLIQ_TILE_LIQUID_TYPE)
-				{
-					case 0x2: /* ironforge circle magma TODO: should lower brightness */
-					case 0x3:
-					case 0x6: /* this lava flow (ironforge center) */
-					case 0x7:
-					{
-						float dividor = 533.3333 / 2;
-						vertex[n].uv.x = wow_mliq->vertexes[n].magma.s / dividor;
-						vertex[n].uv.y = wow_mliq->vertexes[n].magma.t / dividor;
-#if 0
-						LOG_INFO("tile %ux%u: %f/%f", x, z, vertex[n].uv.x, vertex[n].uv.y);
-#endif
-						break;
-					}
-					case 0x1:
-					case 0x4:
-					default:
-						vertex[n].uv.x = x;
-						vertex[n].uv.y = z;
-						break;
-				}
+				vertex[n].position.z = -(ssize_t)z * xz_factor;
+				vertex[n].uv.x = wow_mliq->vertexes[n].magma.s * uv_factor;
+				vertex[n].uv.y = wow_mliq->vertexes[n].magma.t * uv_factor;
+				vertex[n].uv.z = x;
+				vertex[n].uv.w = z;
 			}
 		}
 	}

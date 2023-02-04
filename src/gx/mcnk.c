@@ -456,7 +456,8 @@ static void init_batch_animations(struct wow_mcnk *mcnk, struct gx_mcnk_batch *m
 		struct wow_mcly_data *mcly = &mcnk->mcly.data[l];
 		if (mcly->flags.animation_enabled)
 		{
-			mcnk_batch->layers_animations[l].x = sqrt(2) * (1 + mcly->flags.animation_speed) / 4.;
+			static const float speeds[] = {1, 2, 4, 8, 16, 32, 48, 64};
+			mcnk_batch->layers_animations[l].x = speeds[mcly->flags.animation_speed] * 0.176776695; /* sqrt(2) / 8 */
 			mcnk_batch->layers_animations[l].y = mcnk_batch->layers_animations[l].x;
 			struct mat3f mat;
 			struct mat3f tmp;

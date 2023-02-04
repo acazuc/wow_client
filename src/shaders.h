@@ -373,7 +373,7 @@ struct shader_text_input
 struct shader_mliq_input
 {
 	struct vec3f position;
-	struct vec2f uv;
+	struct vec4f uv;
 };
 
 struct shader_gui_input

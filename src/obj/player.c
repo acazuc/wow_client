@@ -153,8 +153,11 @@ static bool ctr(struct object *object, uint64_t guid)
 #if 0 /* netherstorm collectors */
 	VEC3_SET(WORLD_OBJECT->position, 2577.359863, 297.467316, -3346.378662);
 #endif
-#if 1 /* barrens */
+#if 0 /* barrens */
 	VEC3_SET(WORLD_OBJECT->position, -818.711609, 198.758865, 3291.442871);
+#endif
+#if 1 /* shadowmoon valley wmo liquid */
+	VEC3_SET(WORLD_OBJECT->position, -3363.459961, 28.631590, -2155.195312);
 #endif
 	return true;
 }

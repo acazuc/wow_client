@@ -1,7 +1,7 @@
 #version 330
 
 layout(location=0) in vec3 vs_position;
-layout(location=1) in vec2 vs_uv;
+layout(location=1) in vec4 vs_uv;
 
 out fs_block
 {
@@ -42,12 +42,16 @@ void main()
 	gl_Position = mvp * position_fixed;
 	fs_position = (mv * position_fixed).xyz;
 	fs_normal = normalize((mv * vec4(0, 1, 0, 0)).xyz);
-	fs_uv = vs_uv;
 	if (type <= 1 || type == 4 || type == 8)
 	{
 		fs_light_dir = normalize((v * -light_direction).xyz);
 		//fs_diffuse = mix(base_color, final_color, min(1, vs_depth * 5));
 		//fs_diffuse = base_color + final_color;
 		fs_diffuse = vec3(.2, .2, .2);//vec3(clamp(dot(fs_normal, fs_light_dir), 0, 1));
+		fs_uv = vs_uv.zw;
+	}
+	else
+	{
+		fs_uv = vs_uv.xy;
 	}
 }
