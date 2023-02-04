@@ -20,6 +20,7 @@
 
 #include <gfx/device.h>
 
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -599,6 +600,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 	gx_m2_batch_load(batch, file, wow_batch);
 	batch->indices_offset = indices->size;
 	batch->indices_nb = section->index_count;
+	batch->priority_plane = wow_batch->priority_plane;
 	uint16_t *data = jks_array_grow(indices, section->index_count);
 	if (!data)
 	{
@@ -818,7 +820,7 @@ static bool get_combiners(uint16_t tex_nb, uint32_t *fragment_modes, bool tex1en
 
 static void gx_m2_batch_load(struct gx_m2_batch *batch, struct wow_m2_file *file, struct wow_m2_batch *wow_batch)
 {
-	uint32_t fragment_modes[2];
+	uint32_t fragment_modes[2] = {0};
 	uint32_t lookups[2];
 	bool tex2env;
 	bool tex1env;
@@ -970,6 +972,21 @@ static void gx_m2_batch_render(struct gx_m2_batch *batch, struct gx_m2_instance 
 	PERFORMANCE_END(M2_RENDER_DRAW);
 }
 
+static int batch_cmp(const void *v1, const void *v2)
+{
+	const struct gx_m2_batch *b1 = v1;
+	const struct gx_m2_batch *b2 = v2;
+	if (b1->priority_plane > b2->priority_plane)
+		return 1;
+	if (b2->priority_plane > b1->priority_plane)
+		return -1;
+	if (b1->id > b2->id)
+		return 1;
+	if (b2->id > b1->id)
+		return -1;
+	return 0;
+}
+
 static bool gx_m2_profile_init(struct gx_m2_profile *profile, struct gx_m2 *parent, struct wow_m2_file *file, struct wow_m2_skin_profile *wow_profile, struct jks_array *indices)
 {
 	profile->parent = parent;
@@ -988,15 +1005,19 @@ static bool gx_m2_profile_init(struct gx_m2_profile *profile, struct gx_m2 *pare
 		batch_profile->id = i;
 		if (!gx_m2_batch_init(batch_profile, profile, file, wow_profile, batch, indices))
 			return false;
-		uint8_t pos = i;
+	}
+	qsort(profile->batches.data, profile->batches.size, sizeof(struct gx_m2_batch), batch_cmp);
+	for (uint8_t i = 0; i < wow_profile->batches_nb; ++i)
+	{
+		struct gx_m2_batch *batch_profile = jks_array_get(&profile->batches, i);
 		if (batch_profile->blending)
 		{
-			if (!jks_array_push_back(&profile->transparent_batches, &pos))
+			if (!jks_array_push_back(&profile->transparent_batches, &i))
 				return false;
 		}
 		else
 		{
-			if (!jks_array_push_back(&profile->opaque_batches, &pos))
+			if (!jks_array_push_back(&profile->opaque_batches, &i))
 				return false;
 		}
 	}

@@ -144,7 +144,7 @@ static bool ctr(struct object *object, uint64_t guid)
 #if 0 /* flight over shattrath */
 	VEC3_SET(WORLD_OBJECT->position, -1865, 142, -5427);
 #endif
-#if 0 /* shattrath entry */
+#if 1 /* shattrath entry */
 	VEC3_SET(WORLD_OBJECT->position, -1984.962280, 100.217883, -5087.445312);
 #endif
 #if 0
@@ -156,7 +156,7 @@ static bool ctr(struct object *object, uint64_t guid)
 #if 0 /* barrens */
 	VEC3_SET(WORLD_OBJECT->position, -818.711609, 198.758865, 3291.442871);
 #endif
-#if 1 /* shadowmoon valley wmo liquid */
+#if 0 /* shadowmoon valley wmo liquid */
 	VEC3_SET(WORLD_OBJECT->position, -3363.459961, 28.631590, -2155.195312);
 #endif
 	return true;

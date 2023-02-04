@@ -57,6 +57,7 @@ struct gx_m2_batch
 	uint16_t texture_weight;
 	uint32_t indices_offset;
 	uint32_t indices_nb;
+	uint8_t priority_plane;
 	uint8_t flags;
 	uint8_t id;
 	float alpha_test;
