@@ -167,24 +167,37 @@ void mem_free(enum memory_type type, void *ptr)
 #endif
 }
 
+#ifdef WITH_MEMORY
+static void build_size_str(char *s, size_t n, size_t v)
+{
+	if (v > 1000000000)
+		snprintf(s, n, "%.2f GB", v / 1000000000.f);
+	else if (v > 1000000)
+		snprintf(s, n, "%.2f MB", v / 1000000.f);
+	else if (v > 1000)
+		snprintf(s, n, "%.2f KB", v / 1000.f);
+	else
+		snprintf(s, n, "%u  B", (unsigned)v);
+}
+#endif
+
 void mem_dump(void)
 {
 #ifdef WITH_MEMORY
+	char str[256];
+	size_t sum_bytes = 0;
+	size_t sum_count = 0;
 	LOG_INFO("%20s | %10s | %10s | %7s", "category", "memory", "bytes", "count");
 	LOG_INFO("---------------------+------------+------------+--------");
 	for (size_t i = 0; i < sizeof(g_memory) / sizeof(*g_memory); ++i)
 	{
-		char str[256];
-		if (g_memory[i].size > 1000000000)
-			snprintf(str, sizeof(str), "%.2f GB", g_memory[i].size / 1000000000.f);
-		else if (g_memory[i].size > 1000000)
-			snprintf(str, sizeof(str), "%.2f MB", g_memory[i].size / 1000000.f);
-		else if (g_memory[i].size > 1000)
-			snprintf(str, sizeof(str), "%.2f KB", g_memory[i].size / 1000.f);
-		else
-			snprintf(str, sizeof(str), "%u  B", (unsigned)g_memory[i].size);
+		build_size_str(str, sizeof(str), g_memory[i].size);
 		LOG_INFO("%20s | %10s | %10zu | %7zu", g_memory_str[i], str, g_memory[i].size, g_memory[i].count);
+		sum_bytes += g_memory[i].size;
+		sum_count += g_memory[i].count;
 	}
+	build_size_str(str, sizeof(str), sum_bytes);
+	LOG_INFO("%20s | %10s | %10zu | %7zu", "SUM", str, sum_bytes, sum_count);
 #endif
 }
 

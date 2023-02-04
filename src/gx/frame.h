@@ -62,6 +62,7 @@ struct gx_frame
 	struct gx_collisions gx_collisions;
 #endif
 	gfx_buffer_t particle_uniform_buffer;
+	gfx_buffer_t ribbon_uniform_buffer;
 	gfx_buffer_t river_uniform_buffer;
 	gfx_buffer_t ocean_uniform_buffer;
 	gfx_buffer_t magma_uniform_buffer;

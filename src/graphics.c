@@ -491,7 +491,7 @@ bool graphics_init(struct graphics *graphics)
 					&graphics->world_depth_stencil_states[depth_stencil],
 					&graphics->world_blend_states[blend],
 					&graphics->ribbons_input_layout,
-					GFX_PRIMITIVE_TRIANGLES);
+					GFX_PRIMITIVE_LINE_STRIP);
 			}
 		}
 	}

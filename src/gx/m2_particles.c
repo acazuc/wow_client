@@ -15,7 +15,7 @@
 #include "wow.h"
 
 #include <jks/mat4.h>
-#include <jks/mat3.h>
+#include <jks/vec3.h>
 
 #include <gfx/device.h>
 
@@ -65,14 +65,14 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 			LOG_ERROR("failed to grow emitter array");
 			goto err;
 		}
-		struct wow_m2_particle *particle = &parent->parent->particles[i];
-		struct wow_m2_texture *texture = &parent->parent->textures[particle->texture];
 		for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
 		{
 			emitter->attributes_states[j] = GFX_ATTRIBUTES_STATE_INIT();
 			emitter->vertexes_buffers[j] = GFX_BUFFER_INIT();
 			emitter->uniform_buffers[j] = GFX_BUFFER_INIT();
 		}
+		struct wow_m2_particle *particle = &parent->parent->particles[i];
+		struct wow_m2_texture *texture = &parent->parent->textures[particle->texture];
 		if (!texture->type)
 		{
 			char path[256];
@@ -90,7 +90,7 @@ struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent)
 			LOG_ERROR("unsupported texture type for particle: %d", (int)texture->type);
 			emitter->texture = NULL;
 		}
-		emitter->emitter = &parent->parent->particles[i];
+		emitter->emitter = particle;
 		emitter->last_spawned = g_wow->frametime;
 		jks_array_init(&emitter->particles, sizeof(struct gx_m2_particle), NULL, &jks_array_memory_fn_GX);
 		jks_array_init(&emitter->vertexes, sizeof(struct shader_particle_input), NULL, &jks_array_memory_fn_GX);
@@ -460,55 +460,6 @@ static void create_particle(struct gx_m2_particles *particles, struct gx_m2_part
 	particle->lifespan = lifespan * 1000000000;
 }
 
-static struct mat4f get_matrix(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
-{
-	struct mat4f tmp;
-#if 0
-	struct mat4f t;
-	MAT4_IDENTITY(t);
-	VEC3_CPY(t.x, particles->parent->m_inv.x);
-	VEC3_CPY(t.y, particles->parent->m_inv.y);
-	VEC3_CPY(t.z, particles->parent->m_inv.z);
-	MAT4_ROTATEZ(float, tmp, t, -g_wow->cull_frame->cull_rot.z);
-	MAT4_ROTATEY(float, t, tmp, -g_wow->cull_frame->cull_rot.y);
-	MAT4_ROTATEX(float, tmp, t, -g_wow->cull_frame->cull_rot.x);
-	MAT4_ROTATEY(float, t, tmp, -M_PI / 2);
-	tmp = t;
-	float n;
-	n = particles->parent->scale;// * VEC3_NORM(mat->x);
-	VEC3_MULV(tmp.x, tmp.x, n);
-	n = particles->parent->scale;// * VEC3_NORM(mat->y);
-	VEC3_MULV(tmp.y, tmp.y, n);
-	n = particles->parent->scale;// * VEC3_NORM(mat->z);
-	VEC3_MULV(tmp.z, tmp.z, n);
-#else
-	MAT4_IDENTITY(tmp);
-#endif
-	return tmp;
-}
-
-static void render_particles(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
-{
-	if (!emitter->particles.size)
-		return;
-	gfx_set_buffer_data(&emitter->vertexes_buffers[g_wow->draw_frame_id], emitter->vertexes.data, sizeof(struct shader_particle_input) * emitter->vertexes.size, 0);
-	gfx_bind_attributes_state(g_wow->device, &emitter->attributes_states[g_wow->draw_frame_id], &g_wow->graphics->particles_input_layout);
-	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->particles_pipeline_states[emitter->pipeline_state]);
-	struct shader_particle_model_block model_block;
-	model_block.alpha_test = emitter->alpha_test;
-	struct mat4f model = get_matrix(particles, emitter);
-	MAT4_MUL(model_block.mvp, g_wow->draw_frame->view_vp, model);
-	MAT4_MUL(model_block.mv, g_wow->draw_frame->view_v, model);
-	if (emitter->fog_override)
-		VEC3_CPY(model_block.fog_color, emitter->fog_color);
-	else
-		VEC3_CPY(model_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
-	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
-	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
-	blp_texture_bind(emitter->texture, 0);
-	gfx_draw_indexed(g_wow->device, emitter->particles.size * 6, 0);
-}
-
 static void initialize(struct gx_m2_particles *particles)
 {
 	for (size_t i = 0; i < particles->emitters.size; ++i)
@@ -561,13 +512,31 @@ void gx_m2_particles_update(struct gx_m2_particles *particles)
 	}
 }
 
+static void render_emitter(struct gx_m2_particles_emitter *emitter)
+{
+	if (!emitter->particles.size)
+		return;
+	gfx_set_buffer_data(&emitter->vertexes_buffers[g_wow->draw_frame_id], emitter->vertexes.data, sizeof(struct shader_particle_input) * emitter->vertexes.size, 0);
+	gfx_bind_attributes_state(g_wow->device, &emitter->attributes_states[g_wow->draw_frame_id], &g_wow->graphics->particles_input_layout);
+	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->particles_pipeline_states[emitter->pipeline_state]);
+	struct shader_particle_model_block model_block;
+	model_block.alpha_test = emitter->alpha_test;
+	model_block.mvp = g_wow->draw_frame->view_vp;
+	model_block.mv = g_wow->draw_frame->view_v;
+	if (emitter->fog_override)
+		VEC3_CPY(model_block.fog_color, emitter->fog_color);
+	else
+		VEC3_CPY(model_block.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
+	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
+	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
+	blp_texture_bind(emitter->texture, 0);
+	gfx_draw_indexed(g_wow->device, emitter->particles.size * 6, 0);
+}
+
 void gx_m2_particles_render(struct gx_m2_particles *particles)
 {
 	if (!particles->initialized)
 		initialize(particles);
 	for (size_t i = 0; i < particles->emitters.size; ++i)
-	{
-		struct gx_m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter);
-		render_particles(particles, emitter);
-	}
+		render_emitter(JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter));
 }

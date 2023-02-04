@@ -35,6 +35,7 @@ static const char *strings[PERFORMANCE_LAST] =
 	"M2_AABB_RENDER",
 	"M2_BONES_RENDER",
 	"M2_LIGHTS_RENDER",
+	"M2_RIBBONS_RENDER",
 	"M2_PARTICLES_RENDER",
 	"M2_COLLISIONS_RENDER",
 	"WMO_CULL",
@@ -71,8 +72,8 @@ void performance_reset(void)
 void performance_dump(void)
 {
 #ifdef WITH_PERFORMANCE
-	LOG_INFO("%20s | %7s | %6s | %6s | %8s | %7s", "category", "samples", "min", "max", "average", "total");
-	LOG_INFO("---------------------+---------+--------+--------+----------+--------");
+	LOG_INFO("%21s | %7s | %6s | %6s | %8s | %7s", "category", "samples", "min", "max", "average", "total");
+	LOG_INFO("----------------------+---------+--------+--------+----------+--------");
 	for (size_t i = 0; i < sizeof(g_performances) / sizeof(*g_performances); ++i)
 	{
 		uint64_t samples = g_performances[i].samples;
@@ -81,7 +82,7 @@ void performance_dump(void)
 		float avg = samples ? g_performances[i].samples : 1;
 		avg = g_performances[i].sum / avg / 1000;
 		uint64_t sum = samples ? g_performances[i].sum / 1000 : 0;
-		LOG_INFO("%20s | %7" PRIu64 " | %6" PRIu64 " | %6" PRIu64 " | %8.2lf | %7" PRIu64, strings[i], samples, min, max, avg, sum);
+		LOG_INFO("%21s | %7" PRIu64 " | %6" PRIu64 " | %6" PRIu64 " | %8.2lf | %7" PRIu64, strings[i], samples, min, max, avg, sum);
 	}
 	LOG_INFO(" ");
 #endif

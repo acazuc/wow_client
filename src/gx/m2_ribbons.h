@@ -2,17 +2,25 @@
 #define GX_M2_RIBBONS_H
 
 #include <jks/array.h>
+#include <jks/vec3.h>
 
 #include <gfx/objects.h>
 
 #define MAX_RIBBONS 512
 
+struct gx_m2_instance;
+struct wow_m2_ribbon;
+struct blp_texture;
+
 struct gx_m2_ribbon_point
 {
+	struct vec3f position;
 };
 
 struct gx_m2_ribbons_emitter
 {
+	struct wow_m2_ribbon *emitter;
+	struct blp_texture *texture;
 	gfx_attributes_state_t attributes_states[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
@@ -20,6 +28,9 @@ struct gx_m2_ribbons_emitter
 	struct jks_array points; /* struct gx_m2_ribbon_point */
 	uint32_t pipeline_state;
 	uint64_t last_spawned;
+	float alpha_test;
+	struct vec3f fog_color;
+	bool fog_override;
 };
 
 struct gx_m2_ribbons

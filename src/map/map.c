@@ -2,6 +2,7 @@
 #include "ppe/render_pass.h"
 
 #include "gx/m2_particles.h"
+#include "gx/m2_ribbons.h"
 #include "gx/wmo_mliq.h"
 #include "gx/skybox.h"
 #include "gx/frame.h"
@@ -412,6 +413,7 @@ static bool init_mcnk_data(struct map *map)
 	} *vertexes;
 	uint32_t indices_pos = 0;
 	uint16_t *particles_indices;
+	uint16_t *ribbons_indices;
 	indices = mem_malloc(MEM_GX, sizeof(*indices) * (16 * 16 * ((8 * 8 * 4 * 3) + (8 * 8 * 2 * 3) + (48 * 3))));
 	if (!indices)
 		goto err1;
@@ -517,15 +519,33 @@ static bool init_mcnk_data(struct map *map)
 		tmp[4] = n + 2;
 		tmp[5] = n + 3;
 	}
+	ribbons_indices = mem_malloc(MEM_GX, sizeof(*ribbons_indices) * MAX_PARTICLES * 6);
+	if (!ribbons_indices)
+		goto err4;
+	for (size_t i = 0; i < MAX_PARTICLES; ++i)
+	{
+		uint16_t *tmp = &ribbons_indices[i * 6];
+		size_t n = i * 4;
+		tmp[0] = n + 0;
+		tmp[1] = n + 1;
+		tmp[2] = n + 2;
+		tmp[3] = n + 0;
+		tmp[4] = n + 2;
+		tmp[5] = n + 3;
+	}
 	map->particles_indices_buffer = GFX_BUFFER_INIT();
-	gfx_create_buffer(g_wow->device, &map->particles_indices_buffer, GFX_BUFFER_INDICES, particles_indices, 6 * MAX_PARTICLES * sizeof(*particles_indices), GFX_BUFFER_IMMUTABLE);
+	map->ribbons_indices_buffer = GFX_BUFFER_INIT();
 	map->mcnk_vertexes_buffer = GFX_BUFFER_INIT();
 	map->mcnk_indices_nb = indices_pos;
 	map->mcnk_indices_buffer = GFX_BUFFER_INIT();
+	gfx_create_buffer(g_wow->device, &map->particles_indices_buffer, GFX_BUFFER_INDICES, particles_indices, 6 * MAX_PARTICLES * sizeof(*particles_indices), GFX_BUFFER_IMMUTABLE);
+	gfx_create_buffer(g_wow->device, &map->ribbons_indices_buffer, GFX_BUFFER_INDICES, ribbons_indices, 6 * MAX_RIBBONS * sizeof(*ribbons_indices), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &map->mcnk_vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, points_nb * sizeof(*vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &map->mcnk_indices_buffer, GFX_BUFFER_INDICES, indices, indices_pos * sizeof(*indices), GFX_BUFFER_IMMUTABLE);
 	ret = true;
 
+	mem_free(MEM_GX, ribbons_indices);
+err4:
 	mem_free(MEM_GX, particles_indices);
 err3:
 	mem_free(MEM_GX, vertexes);
@@ -954,6 +974,17 @@ static void render_m2_particles(struct gx_frame *gx_frame)
 	for (size_t i = 0; i < gx_frame->render_lists.m2_particles.size; ++i)
 		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_particles, i, struct gx_m2_instance*));
 	PERFORMANCE_END(M2_PARTICLES_RENDER);
+}
+
+static void render_m2_ribbons(struct gx_frame *gx_frame)
+{
+	if (!(g_wow->render_opt & RENDER_OPT_M2_RIBBONS) || !gx_frame->render_lists.m2_ribbons.size)
+		return;
+	PERFORMANCE_BEGIN(M2_RIBBONS_RENDER);
+	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->ribbon_uniform_buffer, sizeof(struct shader_ribbon_scene_block), 0);
+	for (size_t i = 0; i < gx_frame->render_lists.m2_ribbons.size; ++i)
+		gx_m2_instance_render_ribbons(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_ribbons, i, struct gx_m2_instance*));
+	PERFORMANCE_END(M2_RIBBONS_RENDER);
 }
 
 static void render_texts(struct gx_frame *gx_frame)
@@ -1442,6 +1473,7 @@ void map_render(struct map *map, struct gx_frame *gx_frame)
 		post_process = false;
 	}
 	render_m2_particles(gx_frame);
+	render_m2_ribbons(gx_frame);
 	render_wmo_mliq(map, gx_frame);
 	render_mclq(map, gx_frame);
 	render_transparent_m2(gx_frame);

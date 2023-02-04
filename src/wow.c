@@ -1767,8 +1767,9 @@ int main(int ac, char **av)
 	g_wow->render_opt |= RENDER_OPT_FOG;
 	g_wow->render_opt |= RENDER_OPT_WMO_LIQUIDS;
 	g_wow->render_opt |= RENDER_OPT_SKYBOX;
-#if 1
 	g_wow->render_opt |= RENDER_OPT_M2_PARTICLES;
+#if 1
+	g_wow->render_opt |= RENDER_OPT_M2_RIBBONS;
 #endif
 #if 0
 	g_wow->render_opt |= RENDER_OPT_SSR;

@@ -50,6 +50,7 @@ void init_gx_frame(struct gx_frame *gx_frame)
 	pthread_mutex_init(&gx_frame->gc_mutex, &attr);
 	pthread_mutexattr_destroy(&attr);
 	gx_frame->particle_uniform_buffer = GFX_BUFFER_INIT();
+	gx_frame->ribbon_uniform_buffer = GFX_BUFFER_INIT();
 	gx_frame->river_uniform_buffer = GFX_BUFFER_INIT();
 	gx_frame->ocean_uniform_buffer = GFX_BUFFER_INIT();
 	gx_frame->magma_uniform_buffer = GFX_BUFFER_INIT();
@@ -58,6 +59,7 @@ void init_gx_frame(struct gx_frame *gx_frame)
 	gx_frame->wmo_uniform_buffer = GFX_BUFFER_INIT();
 	gx_frame->m2_uniform_buffer = GFX_BUFFER_INIT();
 	gfx_create_buffer(g_wow->device, &gx_frame->particle_uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_scene_block), GFX_BUFFER_STREAM);
+	gfx_create_buffer(g_wow->device, &gx_frame->ribbon_uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ribbon_scene_block), GFX_BUFFER_STREAM);
 	gfx_create_buffer(g_wow->device, &gx_frame->river_uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_mclq_water_scene_block), GFX_BUFFER_STREAM);
 	gfx_create_buffer(g_wow->device, &gx_frame->ocean_uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_mclq_water_scene_block), GFX_BUFFER_STREAM);
 	gfx_create_buffer(g_wow->device, &gx_frame->magma_uniform_buffer, GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_mclq_magma_scene_block), GFX_BUFFER_STREAM);
@@ -76,6 +78,7 @@ void destroy_gx_frame(struct gx_frame *gx_frame)
 	gx_collisions_destroy(&gx_frame->gx_collisions);
 #endif
 	gfx_delete_buffer(g_wow->device, &gx_frame->particle_uniform_buffer);
+	gfx_delete_buffer(g_wow->device, &gx_frame->ribbon_uniform_buffer);
 	gfx_delete_buffer(g_wow->device, &gx_frame->river_uniform_buffer);
 	gfx_delete_buffer(g_wow->device, &gx_frame->ocean_uniform_buffer);
 	gfx_delete_buffer(g_wow->device, &gx_frame->magma_uniform_buffer);
@@ -118,6 +121,14 @@ static void build_particle_uniform_buffer(struct gx_frame *gx_frame)
 	scene_block.fog_range.y = g_wow->draw_frame->view_distance * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_END] / 36 / g_wow->map->fog_divisor;
 	scene_block.fog_range.x = scene_block.fog_range.y * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_START];
 	gfx_set_buffer_data(&gx_frame->particle_uniform_buffer, &scene_block, sizeof(scene_block), 0);
+}
+
+static void build_ribbon_uniform_buffer(struct gx_frame *gx_frame)
+{
+	struct shader_ribbon_scene_block scene_block;
+	scene_block.fog_range.y = g_wow->draw_frame->view_distance * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_END] / 36 / g_wow->map->fog_divisor;
+	scene_block.fog_range.x = scene_block.fog_range.y * g_wow->map->gx_skybox->float_values[SKYBOX_FLOAT_FOG_START];
+	gfx_set_buffer_data(&gx_frame->ribbon_uniform_buffer, &scene_block, sizeof(scene_block), 0);
 }
 
 static void build_ocean_uniform_buffer(struct gx_frame *gx_frame)
@@ -219,6 +230,7 @@ static void build_m2_uniform_buffer(struct gx_frame *gx_frame)
 void gx_frame_build_uniform_buffers(struct gx_frame *gx_frame)
 {
 	build_particle_uniform_buffer(gx_frame);
+	build_ribbon_uniform_buffer(gx_frame);
 	build_ocean_uniform_buffer(gx_frame);
 	build_river_uniform_buffer(gx_frame);
 	build_magma_uniform_buffer(gx_frame);

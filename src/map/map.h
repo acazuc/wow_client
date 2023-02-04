@@ -91,6 +91,7 @@ struct map
 	float fog_divisor;
 	uint64_t adt_exists[64];
 	gfx_buffer_t particles_indices_buffer; /* XXX move somewhere else */
+	gfx_buffer_t ribbons_indices_buffer; /* XXX move somewhere else */
 	gfx_buffer_t mcnk_vertexes_buffer; /* XXX move somewhere else */
 	gfx_buffer_t mcnk_indices_buffer;
 	struct gx_wmo_instance *wmo;
