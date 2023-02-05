@@ -178,11 +178,10 @@ static struct vec3f get_gravity(struct gx_m2_particles *particles, struct wow_m2
 	return gravity;
 }
 
-static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct gx_m2_particle *particle)
+static void update_position(struct gx_m2_particles *particles, struct wow_m2_particle *emitter, struct gx_m2_particle *particle, float dt)
 {
 	struct vec3f tmp;
 	struct vec3f gravity = get_gravity(particles, emitter);
-	float dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
 	VEC3_MULV(tmp, gravity, .5);
 	VEC3_MULV(tmp, tmp, dt);
 	VEC3_ADD(tmp, tmp, particle->velocity);
@@ -207,7 +206,7 @@ static void update_particles(struct gx_m2_particles *particles, struct gx_m2_par
 			i--;
 			continue;
 		}
-		update_position(particles, emitter->emitter, particle);
+		update_position(particles, emitter->emitter, particle, dt);
 		if ((g_wow->frametime - particle->created) / 1000000000.f < emitter->emitter->wind_time)
 		{
 			struct vec4f wind;

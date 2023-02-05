@@ -54,7 +54,7 @@ struct gx_m2_batch
 	struct vec3f fog_color;
 	uint16_t skin_section_id;
 	uint16_t color_transform;
-	uint16_t material_flags;
+	uint16_t material;
 	uint16_t texture_weight;
 	uint32_t indices_offset;
 	uint32_t indices_nb;
@@ -117,6 +117,8 @@ struct gx_m2
 	uint32_t global_sequences_nb;
 	uint16_t *bone_lookups;
 	uint32_t bone_lookups_nb;
+	struct wow_m2_material *materials;
+	uint32_t materials_nb;
 	struct wow_m2_texture *textures;
 	uint32_t textures_nb;
 	struct wow_m2_vertex *vertexes;

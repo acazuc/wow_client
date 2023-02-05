@@ -519,17 +519,17 @@ static bool init_mcnk_data(struct map *map)
 		tmp[4] = n + 2;
 		tmp[5] = n + 3;
 	}
-	ribbons_indices = mem_malloc(MEM_GX, sizeof(*ribbons_indices) * MAX_PARTICLES * 6);
+	ribbons_indices = mem_malloc(MEM_GX, sizeof(*ribbons_indices) * MAX_RIBBONS * 6);
 	if (!ribbons_indices)
 		goto err4;
-	for (size_t i = 0; i < MAX_PARTICLES; ++i)
+	for (size_t i = 0; i < MAX_RIBBONS; ++i)
 	{
 		uint16_t *tmp = &ribbons_indices[i * 6];
-		size_t n = i * 4;
+		size_t n = i * 2;
 		tmp[0] = n + 0;
 		tmp[1] = n + 1;
 		tmp[2] = n + 2;
-		tmp[3] = n + 0;
+		tmp[3] = n + 1;
 		tmp[4] = n + 2;
 		tmp[5] = n + 3;
 	}

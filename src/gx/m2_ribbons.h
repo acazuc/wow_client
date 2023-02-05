@@ -2,7 +2,9 @@
 #define GX_M2_RIBBONS_H
 
 #include <jks/array.h>
+#include <jks/vec4.h>
 #include <jks/vec3.h>
+#include <jks/vec2.h>
 
 #include <gfx/objects.h>
 
@@ -14,7 +16,10 @@ struct blp_texture;
 
 struct gx_m2_ribbon_point
 {
-	struct vec3f position;
+	struct vec4f position;
+	struct vec4f color;
+	struct vec2f size;
+	uint64_t created;
 };
 
 struct gx_m2_ribbons_emitter

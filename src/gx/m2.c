@@ -614,6 +614,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 	batch->indices_offset = indices->size;
 	batch->indices_nb = section->index_count;
 	batch->priority_plane = wow_batch->priority_plane;
+	batch->material = wow_batch->material_index;
 	uint16_t *data = jks_array_grow(indices, section->index_count);
 	if (!data)
 	{
@@ -628,12 +629,11 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 		if (wow_batch->texture_count >= 2)
 			gx_m2_texture_load(&batch->textures[1], file, wow_batch, 1);
 	}
-	struct wow_m2_material *material = &file->materials[wow_batch->material_index];
-	batch->material_flags = material->flags;
+	struct wow_m2_material *material = &file->materials[batch->material];
 	enum world_rasterizer_state rasterizer_state;
 	enum world_depth_stencil_state depth_stencil_state;
 	enum world_blend_state blend_state;
-	rasterizer_state = batch->material_flags & WOW_M2_MATERIAL_FLAGS_UNCULLED ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
+	rasterizer_state = (material->flags & WOW_M2_MATERIAL_FLAGS_UNCULLED) ? WORLD_RASTERIZER_UNCULLED : WORLD_RASTERIZER_CULLED;
 	/* XXX remove this hack */
 	if (0 && strstr(batch->parent->parent->filename, "COT_HOURGLASS"))
 	{
@@ -709,7 +709,7 @@ static bool gx_m2_batch_init(struct gx_m2_batch *batch, struct gx_m2_profile *pa
 			LOG_WARN("unsupported blend mode: %u", material->blend_mode);
 			break;
 	}
-	switch ((!(batch->material_flags & WOW_M2_MATERIAL_FLAGS_DEPTH_WRITE)) * 2 + (!(batch->material_flags & WOW_M2_MATERIAL_FLAGS_DEPTH_TEST)) * 1)
+	switch ((!(material->flags & WOW_M2_MATERIAL_FLAGS_DEPTH_WRITE)) * 2 + (!(material->flags & WOW_M2_MATERIAL_FLAGS_DEPTH_TEST)) * 1)
 	{
 		case 0:
 			if (batch->parent->parent->skybox)
@@ -937,8 +937,9 @@ static bool gx_m2_batch_prepare_draw(struct gx_m2_batch *batch, struct gx_m2_ren
 	struct shader_m2_mesh_block mesh_block;
 	gx_m2_texture_update_matrix(&batch->textures[0], batch, &mesh_block.tex1_matrix);
 	gx_m2_texture_update_matrix(&batch->textures[1], batch, &mesh_block.tex2_matrix);
-	mesh_block.settings.x = (batch->material_flags & WOW_M2_MATERIAL_FLAGS_UNFOGGED) ? 1 : 0;
-	mesh_block.settings.y = (batch->material_flags & WOW_M2_MATERIAL_FLAGS_UNLIT) ? 1 : 0;
+	struct wow_m2_material *material = &m2->materials[batch->material];
+	mesh_block.settings.x = (material->flags & WOW_M2_MATERIAL_FLAGS_UNFOGGED) ? 1 : 0;
+	mesh_block.settings.y = (material->flags & WOW_M2_MATERIAL_FLAGS_UNLIT) ? 1 : 0;
 	mesh_block.settings.z = m2->bones_nb;
 	mesh_block.settings.w = 0;
 	mesh_block.combiners.x = batch->combiners[0];
@@ -1183,6 +1184,7 @@ struct gx_m2 *gx_m2_new(const char *filename)
 	m2->attachments = NULL;
 	m2->sequences = NULL;
 	m2->particles = NULL;
+	m2->materials = NULL;
 	m2->textures = NULL;
 	m2->vertexes = NULL;
 	m2->cameras = NULL;
@@ -1224,6 +1226,7 @@ void gx_m2_delete(struct gx_m2 *m2)
 	wow_m2_attachments_delete(m2->attachments, m2->attachments_nb);
 	wow_m2_sequences_delete(m2->sequences, m2->sequences_nb);
 	wow_m2_particles_delete(m2->particles, m2->particles_nb);
+	mem_free(MEM_GX, m2->materials);
 	wow_m2_textures_delete(m2->textures, m2->textures_nb);
 	wow_m2_ribbons_delete(m2->ribbons, m2->ribbons_nb);
 	mem_free(MEM_GX, m2->vertexes);
@@ -1384,6 +1387,14 @@ int gx_m2_load(struct gx_m2 *m2, struct wow_m2_file *file)
 		return 0;
 	}
 	memcpy(m2->bone_lookups, file->bone_lookups, sizeof(*m2->bone_lookups) * m2->bone_lookups_nb);
+	m2->materials_nb = file->materials_nb;
+	m2->materials = mem_malloc(MEM_GX, sizeof(*m2->materials) * m2->materials_nb);
+	if (m2->materials_nb && !m2->materials)
+	{
+		LOG_ERROR("failed to allocate m2 materials");
+		return 0;
+	}
+	memcpy(m2->materials, file->materials, sizeof(*m2->materials) * m2->materials_nb);
 	m2->textures_nb = file->textures_nb;
 	m2->textures = wow_m2_textures_dup(file->textures, file->textures_nb);
 	if (m2->textures_nb && !m2->textures)

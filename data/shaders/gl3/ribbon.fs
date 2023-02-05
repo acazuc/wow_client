@@ -26,12 +26,12 @@ layout(location=0) out vec4 fragcolor;
 
 void main()
 {
-#if 1
-	fragcolor = vec4(1, 1, 1, .2);
+#if 0
+	fragcolor = fs_color;
 	return;
 #endif
 	vec4 tex_color = texture(tex, fs_uv);
-	vec4 color = fs_color.bgra * tex_color;
+	vec4 color = fs_color * tex_color;
 	if (color.a < alpha_test)
 		discard;
 	float fog_factor = clamp((length(fs_position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
