@@ -413,7 +413,6 @@ static bool init_mcnk_data(struct map *map)
 	} *vertexes;
 	uint32_t indices_pos = 0;
 	uint16_t *particles_indices;
-	uint16_t *ribbons_indices;
 	indices = mem_malloc(MEM_GX, sizeof(*indices) * (16 * 16 * ((8 * 8 * 4 * 3) + (8 * 8 * 2 * 3) + (48 * 3))));
 	if (!indices)
 		goto err1;
@@ -519,33 +518,15 @@ static bool init_mcnk_data(struct map *map)
 		tmp[4] = n + 2;
 		tmp[5] = n + 3;
 	}
-	ribbons_indices = mem_malloc(MEM_GX, sizeof(*ribbons_indices) * MAX_RIBBONS * 6);
-	if (!ribbons_indices)
-		goto err4;
-	for (size_t i = 0; i < MAX_RIBBONS; ++i)
-	{
-		uint16_t *tmp = &ribbons_indices[i * 6];
-		size_t n = i * 2;
-		tmp[0] = n + 0;
-		tmp[1] = n + 1;
-		tmp[2] = n + 2;
-		tmp[3] = n + 1;
-		tmp[4] = n + 2;
-		tmp[5] = n + 3;
-	}
 	map->particles_indices_buffer = GFX_BUFFER_INIT();
-	map->ribbons_indices_buffer = GFX_BUFFER_INIT();
 	map->mcnk_vertexes_buffer = GFX_BUFFER_INIT();
 	map->mcnk_indices_nb = indices_pos;
 	map->mcnk_indices_buffer = GFX_BUFFER_INIT();
 	gfx_create_buffer(g_wow->device, &map->particles_indices_buffer, GFX_BUFFER_INDICES, particles_indices, 6 * MAX_PARTICLES * sizeof(*particles_indices), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &map->ribbons_indices_buffer, GFX_BUFFER_INDICES, ribbons_indices, 6 * MAX_RIBBONS * sizeof(*ribbons_indices), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &map->mcnk_vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, points_nb * sizeof(*vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &map->mcnk_indices_buffer, GFX_BUFFER_INDICES, indices, indices_pos * sizeof(*indices), GFX_BUFFER_IMMUTABLE);
 	ret = true;
 
-	mem_free(MEM_GX, ribbons_indices);
-err4:
 	mem_free(MEM_GX, particles_indices);
 err3:
 	mem_free(MEM_GX, vertexes);

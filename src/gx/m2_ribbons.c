@@ -284,7 +284,7 @@ static void render_emitter(struct gx_m2_ribbons_emitter *emitter)
 	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	blp_texture_bind(emitter->texture, 0);
-	gfx_draw_indexed(g_wow->device, (emitter->points.size - 1) * 6, 0);
+	gfx_draw(g_wow->device, (emitter->points.size - 1) * 6, 0);
 }
 
 static void initialize(struct gx_m2_ribbons *ribbons)
@@ -302,7 +302,7 @@ static void initialize(struct gx_m2_ribbons *ribbons)
 			};
 			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ribbon_input) * MAX_RIBBONS * 2, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ribbon_model_block), GFX_BUFFER_STREAM);
-			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), &g_wow->map->ribbons_indices_buffer, GFX_INDEX_UINT16);
+			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 		}
 	}
 	ribbons->initialized = true;
