@@ -170,7 +170,7 @@ static void render(struct ui_object *object)
 	int32_t scissor_top = (ui_region_get_top(UI_REGION) + scrolling_message_frame->text_insets.abs.top) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
 	int32_t scissor_width = (ui_region_get_width(UI_REGION) - scrolling_message_frame->text_insets.abs.left - scrolling_message_frame->text_insets.abs.right) * (g_wow->render_width / (float)UI_OBJECT->interface->width);
 	int32_t scissor_height = (ui_region_get_height(UI_REGION) - scrolling_message_frame->text_insets.abs.top - scrolling_message_frame->text_insets.abs.bottom) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
-	gfx_set_scissor(g_wow->device, scissor_left, g_wow->render_height - scissor_height - scissor_top, scissor_width, scissor_height);
+	interface_enable_scissor(scissor_left, scissor_top, scissor_width, scissor_height);
 	int32_t y = 0;
 	for (size_t i = scrolling_message_frame->messages.size; i > 0; --i)
 	{
@@ -212,7 +212,7 @@ static void render(struct ui_object *object)
 		gfx_bind_constant(g_wow->device, 1, &message->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 		gfx_draw_indexed(g_wow->device, message->indices_nb, 0);
 	}
-	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
+	interface_disable_scissor();
 }
 
 static void on_click(struct ui_object *object, enum gfx_mouse_button button)

@@ -434,6 +434,16 @@ void interface_render(struct interface *interface)
 	}
 }
 
+void interface_enable_scissor(int32_t x, int32_t y, int32_t width, int32_t height)
+{
+	gfx_set_scissor(g_wow->device, x, g_wow->render_height - height - y, width, height);
+}
+
+void interface_disable_scissor(void)
+{
+	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
+}
+
 void interface_on_window_resized(struct interface *interface, gfx_resize_event_t *event)
 {
 	if (!interface->is_gluescreen)

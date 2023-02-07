@@ -109,9 +109,9 @@ static void render(struct ui_object *object)
 			top_anchor->offset.abs.y = scroll_frame->vertical_scroll;
 			ui_object_set_dirty_coords((struct ui_object*)scroll_frame->scroll_child);
 		}
-		gfx_set_scissor(g_wow->device, left, g_wow->render_height - height - top, width, height);
+		interface_enable_scissor(left, top, width, height);
 		ui_object_render((struct ui_object*)scroll_frame->scroll_child);
-		gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
+		interface_disable_scissor();
 	}
 	ui_region_vtable.render(object);
 }

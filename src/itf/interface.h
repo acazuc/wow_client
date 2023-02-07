@@ -78,6 +78,8 @@ struct interface *interface_new(void);
 void interface_delete(struct interface *interface);
 void interface_clear(struct interface *interface);
 void interface_render(struct interface *interface);
+void interface_enable_scissor(int32_t x, int32_t y, int32_t width, int32_t height);
+void interface_disable_scissor(void);
 void interface_on_window_resized(struct interface *interface, gfx_resize_event_t *event);
 void interface_on_mouse_move(struct interface *interface, gfx_pointer_event_t *event);
 bool interface_on_mouse_down(struct interface *interface, gfx_mouse_event_t *event);
