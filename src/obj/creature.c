@@ -75,7 +75,6 @@ static void update_render_batches_items(struct object *object)
 	else
 	{
 		has_extra = false;
-		WORLD_OBJECT->m2->bypass_batches = true;
 	}
 	struct blp_texture *hair_tex;
 	unit_get_hair_textures(UNIT, &hair_tex, NULL, NULL);

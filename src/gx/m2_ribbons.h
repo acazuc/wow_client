@@ -19,6 +19,7 @@ struct gx_m2_ribbon_point
 	struct vec4f position;
 	struct vec4f color;
 	struct vec2f size;
+	struct vec3f dir;
 	uint64_t created;
 };
 

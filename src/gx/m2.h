@@ -244,7 +244,7 @@ struct gx_m2_instance
 	bool in_render_list;
 	bool enable_lights;
 	bool bones_calculated;
-	bool bypass_batches;
+	bool has_batches;
 };
 
 struct gx_m2_instance *gx_m2_instance_new(struct gx_m2 *parent);

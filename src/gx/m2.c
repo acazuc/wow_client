@@ -1057,7 +1057,7 @@ static void gx_m2_profile_initialize(struct gx_m2_profile *profile)
 
 static bool should_render_profile(struct gx_m2_instance *instance, struct gx_m2_batch *batch)
 {
-	if (batch->skin_section_id == 0 || instance->bypass_batches) /* XXX: Is it really always the case ? */
+	if (batch->skin_section_id == 0 || !instance->has_batches) /* XXX: Is it really always the case ? */
 		return true;
 	for (size_t i = 0; i < instance->enabled_batches.size; ++i)
 	{

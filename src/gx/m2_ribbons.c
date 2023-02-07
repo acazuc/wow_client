@@ -19,6 +19,7 @@
 #include <gfx/device.h>
 
 #include <stdio.h>
+#include <math.h>
 
 MEMORY_DECL(GX);
 
@@ -181,14 +182,14 @@ static void update_ribbons(struct gx_m2_ribbons *ribbons, struct gx_m2_ribbons_e
 	for (size_t i = 0; i < emitter->points.size; ++i)
 	{
 		struct gx_m2_ribbon_point *point = JKS_ARRAY_GET(&emitter->points, i, struct gx_m2_ribbon_point);
-		uint64_t lifetime = g_wow->frametime - point->created;
-		if (lifetime > emitter->emitter->edge_lifetime * 1000000000)
+		float lifetime = (g_wow->frametime - point->created) / 1000000000.f;
+		if (lifetime >= emitter->emitter->edge_lifetime)
 		{
 			jks_array_erase(&emitter->points, i);
 			i--;
 			continue;
 		}
-		point->position.y += dt * (emitter->emitter->gravity * ((lifetime / 1000000000.f) - dt * .5f));
+		point->position.y += dt * (emitter->emitter->gravity * (lifetime - dt * .5f));
 	}
 	if (!jks_array_resize(&emitter->vertexes, emitter->points.size * 2))
 	{
@@ -200,11 +201,13 @@ static void update_ribbons(struct gx_m2_ribbons *ribbons, struct gx_m2_ribbons_e
 	{
 		struct gx_m2_ribbon_point *point = JKS_ARRAY_GET(&emitter->points, i, struct gx_m2_ribbon_point);
 		struct shader_ribbon_input *vertexes = JKS_ARRAY_GET(&emitter->vertexes, i * 2, struct shader_ribbon_input);
-		float lifetime = (g_wow->frametime - point->created) / 1000000000.f / emitter->emitter->edge_lifetime;
-		vertexes[0].position = point->position;
-		vertexes[0].position.y -= point->size.y;
-		vertexes[1].position = point->position;
-		vertexes[1].position.y += point->size.x;
+		float lifetime = ((g_wow->frametime - point->created) / 1000000000.f) / emitter->emitter->edge_lifetime;
+		VEC3_MULV(vertexes[0].position, point->dir, point->size.y);
+		VEC3_ADD(vertexes[0].position, point->position, vertexes[0].position);
+		VEC3_MULV(vertexes[1].position, point->dir, point->size.x);
+		VEC3_SUB(vertexes[1].position, point->position, vertexes[1].position);
+		vertexes[0].position.w = 1;
+		vertexes[1].position.w = 1;
 		vertexes[0].color = point->color;
 		vertexes[1].color = point->color;
 		VEC2_SET(vertexes[0].uv, lifetime, 0);
@@ -232,6 +235,7 @@ static void create_point(struct gx_m2_ribbons *ribbons, struct gx_m2_ribbons_emi
 		position = tmp;
 	}
 	MAT4_VEC4_MUL(point->position, ribbons->parent->m, position);
+	VEC3_SET(point->dir, 0, 1, 0);
 	int16_t alpha;
 	m2_instance_get_track_value_int16(ribbons->parent, &emitter->emitter->alpha, &alpha);
 	point->color.w = alpha / (float)0x7FFF;
@@ -284,7 +288,7 @@ static void render_emitter(struct gx_m2_ribbons_emitter *emitter)
 	gfx_set_buffer_data(&emitter->uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 	gfx_bind_constant(g_wow->device, 1, &emitter->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
 	blp_texture_bind(emitter->texture, 0);
-	gfx_draw(g_wow->device, (emitter->points.size - 1) * 6, 0);
+	gfx_draw(g_wow->device, emitter->points.size * 2, 0);
 }
 
 static void initialize(struct gx_m2_ribbons *ribbons)

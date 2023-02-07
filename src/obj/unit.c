@@ -469,6 +469,7 @@ static void update_mount_displayid(struct object *object)
 		LOG_ERROR("failed to create unit mount m2");
 		return;
 	}
+	UNIT->mount_m2->has_batches = true;
 	gx_m2_instance_set_sequence(UNIT->mount_m2, ANIM_STAND);
 	gx_m2_ask_load(UNIT->mount_m2->parent);
 	for (int i = 0; i < 3; ++i)
