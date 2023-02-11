@@ -209,7 +209,6 @@ struct wow
 	int device_backend;
 	const char *locale;
 	const char *game_path;
-	const char *shaders_dir;
 };
 
 extern struct wow *g_wow;

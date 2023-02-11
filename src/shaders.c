@@ -5,6 +5,7 @@
 #include "wow.h"
 
 #include <gfx/device.h>
+#include <gfx/window.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -71,6 +72,8 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 	uint8_t *data = NULL;
 	uint32_t data_len;
 	const char *type_str;
+	const char *dir_str;
+	const char *ext_str;
 
 	switch (type)
 	{
@@ -87,7 +90,30 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			LOG_ERROR("invalid shader type: %d", (int)type);
 			return 0;
 	}
-	if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s", SHADERS_DIR, g_wow->shaders_dir, name, type_str) == sizeof(fn))
+	switch (g_wow->window->properties.device_backend)
+	{
+		case GFX_DEVICE_GL3:
+			dir_str = "gl3";
+			ext_str = "glsl";
+			break;
+		case GFX_DEVICE_GL4:
+			dir_str = "gl4";
+			ext_str = "glsl";
+			break;
+		case GFX_DEVICE_D3D9:
+			dir_str = "d3d9";
+			ext_str = "hlsl";
+			break;
+		case GFX_DEVICE_D3D11:
+			dir_str = "d3d11";
+			ext_str = "hlsl";
+			break;
+		case GFX_DEVICE_VK:
+			dir_str = "vk";
+			ext_str = "khr";
+			break;
+	}
+	if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
 	{
 		LOG_ERROR("shader path is too long");
 		return 0;

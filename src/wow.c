@@ -967,31 +967,26 @@ static int wow_main(int ac, char **av)
 
 	if (gfx_has_device_backend(GFX_DEVICE_GL3) && !strcmp(renderer, "gl3"))
 	{
-		g_wow->shaders_dir = "gl3";
 		if (!setup_window(window_backend, GFX_DEVICE_GL3))
 			return EXIT_FAILURE;
 	}
 	else if (gfx_has_device_backend(GFX_DEVICE_GL4) && !strcmp(renderer, "gl4"))
 	{
-		g_wow->shaders_dir = "gl4";
 		if (!setup_window(window_backend, GFX_DEVICE_GL4))
 			return EXIT_FAILURE;
 	}
 	else if (gfx_has_device_backend(GFX_DEVICE_D3D9) && !strcmp(renderer, "d3d9"))
 	{
-		g_wow->shaders_dir = "d3d9";
 		if (!setup_window(window_backend, GFX_DEVICE_D3D9))
 			return EXIT_FAILURE;
 	}
 	else if (gfx_has_device_backend(GFX_DEVICE_D3D11) && !strcmp(renderer, "d3d11"))
 	{
-		g_wow->shaders_dir = "d3d11";
 		if (!setup_window(window_backend, GFX_DEVICE_D3D11))
 			return EXIT_FAILURE;
 	}
 	else if (gfx_has_device_backend(GFX_DEVICE_VK) && !strcmp(renderer, "vk"))
 	{
-		g_wow->shaders_dir = "vk";
 		if (!setup_window(window_backend, GFX_DEVICE_VK))
 			return EXIT_FAILURE;
 	}
