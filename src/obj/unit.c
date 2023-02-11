@@ -442,10 +442,13 @@ static void add_text_to_render(struct object *object)
 
 static void update_mount_displayid(struct object *object)
 {
+	uint32_t mountid = object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID);
+	if (!mountid)
+		return;
 	struct wow_dbc_row row;
-	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &row, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID)))
+	if (!dbc_get_row_indexed(g_wow->dbc.creature_display_info, &row, mountid))
 	{
-		LOG_WARN("unknown mount displayid %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID));
+		LOG_WARN("unknown mount displayid %" PRIu32, mountid);
 		return;
 	}
 	uint32_t model = wow_dbc_get_u32(&row, 4);
@@ -455,7 +458,7 @@ static void update_mount_displayid(struct object *object)
 	snprintf(mount_textures[2], sizeof(mount_textures[2]), "%s", wow_dbc_get_str(&row, 32));
 	if (!dbc_get_row_indexed(g_wow->dbc.creature_model_data, &row, model))
 	{
-		LOG_WARN("unknown model data for mount display id %" PRIu32, object_fields_get_u32(&object->fields, UNIT_FIELD_MOUNTDISPLAYID));
+		LOG_WARN("unknown model data for mount display id %" PRIu32, mountid);
 		return;
 	}
 	char filename[512];

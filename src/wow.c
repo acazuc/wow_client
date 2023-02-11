@@ -703,7 +703,7 @@ static void loop(void)
 		started = nanotime();
 		g_wow->lastframetime = g_wow->frametime;
 		g_wow->frametime = nanotime();
-		if (nanotime() - last_fps >= 1000000000)
+		if (g_wow->frametime - last_fps >= 1000000000)
 		{
 #ifdef WITH_MEMORY
 			mem_dump();
@@ -727,14 +727,6 @@ static void loop(void)
 		camera_handle_keyboard(g_wow->view_camera);
 		camera_handle_mouse(g_wow->view_camera);
 		render_clear_scene(g_wow->cull_frame);
-#if 1
-		JKS_HMAP_FOREACH(iter, g_wow->objects)
-		{
-			struct object *obj = *(struct object**)jks_hmap_iterator_get_value(&iter);
-			if (obj != (struct object*)g_wow->player && object_is_unit(obj))
-				unit_physics((struct unit*)obj);
-		}
-#endif
 		if (!camera_update_matrixes(g_wow->view_camera))
 			LOG_ERROR("failed to update camera matrixes");
 		render_copy_cameras(g_wow->cull_frame, g_wow->frustum_camera, g_wow->view_camera);

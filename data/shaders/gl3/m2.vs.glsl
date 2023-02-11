@@ -76,8 +76,8 @@ vec2 env_coord(vec3 position, vec3 normal)
 
 void main()
 {
-	fs_position_fixed = vec4(vs_position.x, vs_position.z, -vs_position.y, 1);
-	fs_normal_fixed = vec4(vs_normal.x, vs_normal.z, -vs_normal.y, 0);
+	fs_position_fixed = vec4(vs_position.xyz, 1);
+	fs_normal_fixed = vec4(vs_normal.xyz, 0);
 	if (settings.z != 0)
 	{
 		mat4 bone_mat = vs_bone_weights.x * bone_mats[vs_bones.x] + vs_bone_weights.y * bone_mats[vs_bones.y] + vs_bone_weights.z * bone_mats[vs_bones.z] + vs_bone_weights.w * bone_mats[vs_bones.w];
@@ -120,10 +120,29 @@ void main()
 	if (settings.y == 0)
 	{
 		vec3 light_dir = normalize((v * -light_direction).xyz);
-		fs_diffuse = diffuse_color.xyz * clamp(dot(fs_normal, light_dir), 0, 1);
+		vec3 input = diffuse_color.xyz * clamp(dot(fs_normal, light_dir), 0, 1) + ambient_color.xyz;
 		for (int i = 0; i < lights_count.x; ++i)
 		{
-			fs_diffuse += lights[i].ambient.rgb * lights[i].ambient.a;
+			float diffuse_factor;
+			if (lights[i].data.y == 0)
+			{
+				vec3 light_dir = lights[i].position.xyz;
+				diffuse_factor = clamp(dot(fs_normal_fixed.xyz, normalize(light_dir)), 0, 1);
+			}
+			else
+			{
+				vec3 light_dir = lights[i].position.xyz - fs_position_fixed.xyz;
+				diffuse_factor = clamp(dot(fs_normal_fixed.xyz, normalize(light_dir)), 0, 1);
+				float len = length(light_dir);
+				len *= 0.817102;
+				diffuse_factor /= len * (0.7 + len * 0.03);
+			}
+			input += lights[i].ambient.rgb * lights[i].ambient.a + lights[i].diffuse.rgb * lights[i].diffuse.a * diffuse_factor * lights[i].data.x;
 		}
+		fs_diffuse = clamp(input, 0, 1);
+	}
+	else
+	{
+		fs_diffuse = vec3(1);
 	}
 }

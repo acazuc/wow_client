@@ -9,6 +9,9 @@
 #include "map/tile.h"
 #include "map/map.h"
 
+#include "obj/worldobj.h"
+#include "obj/unit.h"
+
 #include "memory.h"
 #include "cache.h"
 #include "log.h"
@@ -405,6 +408,14 @@ void *loader_cull_run(void *data)
 		}
 		loader->cull_ready = false;
 		pthread_mutex_unlock(&loader->cull_mutex);
+#if 1
+		JKS_HMAP_FOREACH(iter, g_wow->objects)
+		{
+			struct object *obj = *(struct object**)jks_hmap_iterator_get_value(&iter);
+			if (obj != (struct object*)g_wow->player && object_is_unit(obj))
+				unit_physics((struct unit*)obj);
+		}
+#endif
 		if (g_wow->map)
 			map_cull(g_wow->map, g_wow->cull_frame);
 		pthread_mutex_lock(&loader->cull_mutex);

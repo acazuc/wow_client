@@ -96,40 +96,7 @@ layout(location=2) out vec4 fragposition;
 
 void main()
 {
-	vec4 input;
-	if (settings.y == 0)
-	{
-		input = vec4(fs_diffuse + ambient_color.xyz, 1);
-		for (int i = 0; i < lights_count.x; ++i)
-		{
-			float diffuse_factor;
-			vec3 attenuated;
-			if (lights[i].data.y == 0)
-			{
-				vec3 light_dir = -lights[i].position.xyz;
-				diffuse_factor = clamp(dot(fs_normal_fixed.xyz, normalize(light_dir)), 0, 1);
-				attenuated = lights[i].diffuse.rgb;
-			}
-			else
-			{
-				vec3 light_dir = lights[i].position.xyz - fs_position_fixed.xyz;
-				diffuse_factor = clamp(dot(fs_normal_fixed.xyz, normalize(light_dir)), 0, 1);
-				float len = length(light_dir);
-				float attenuation;
-				//attenuation = 0;
-				//attenuation = 1 / (((lights[i].attenuation.x + lights[i].attenuation.y * len) * len));
-				//attenuation = 1 - ((lights[i].attenuation.x + lights[i].attenuation.y * len) * len);
-				attenuation = 1 - clamp((len - lights[i].attenuation.x) / (lights[i].attenuation.y - lights[i].attenuation.x), 0, 1);
-				attenuated = lights[i].diffuse.rgb * attenuation;
-				attenuated = attenuated * attenuated;
-			}
-			input.rgb += lights[i].ambient.rgb * lights[i].ambient.a + /*lights[i].diffuse.a * */ diffuse_factor * attenuated/* * lights[i].data.x*/;
-		}
-	}
-	else
-	{
-		input = vec4(1);
-	}
+	vec4 input = vec4(fs_diffuse, 1);
 	input *= color;
 	vec4 tex1_color = texture(tex1, fs_uv1);
 	vec4 output;

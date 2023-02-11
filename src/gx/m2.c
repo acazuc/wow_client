@@ -1474,6 +1474,13 @@ int gx_m2_load(struct gx_m2 *m2, struct wow_m2_file *file)
 		struct wow_vec3f *v = &m2->collision_normals[i];
 		*v = (struct wow_vec3f){v->x, v->z, -v->y};
 	}
+	for (uint32_t i = 0; i < m2->vertexes_nb; ++i)
+	{
+		struct wow_vec3f *v = &m2->vertexes[i].pos;
+		*v = (struct wow_vec3f){v->x, v->z, -v->y};
+		v = &m2->vertexes[i].normal;
+		*v = (struct wow_vec3f){v->x, v->z, -v->y};
+	}
 	m2->has_billboard_bones = false;
 	for (uint32_t i = 0; i < m2->bones_nb; ++i)
 	{
@@ -1866,7 +1873,6 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 		for (int i = 0; i < data.light_count.x; ++i)
 		{
 			struct wow_m2_light *light = &instance->parent->lights[i];
-			/* Ambient */
 			struct vec3f ambient_rgb;
 			if (!m2_instance_get_track_value_vec3f(instance, &light->ambient_color, &ambient_rgb))
 				VEC3_SETV(ambient_rgb, 0);
@@ -1875,7 +1881,6 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 				ambient_alpha = 0;
 			VEC3_CPY(data.lights[i].ambient, ambient_rgb);
 			data.lights[i].ambient.w = ambient_alpha;
-			/* Diffuse */
 			struct vec3f diffuse_rgb;
 			if (!m2_instance_get_track_value_vec3f(instance, &light->diffuse_color, &diffuse_rgb))
 				VEC3_SETV(diffuse_rgb, 0);
@@ -1884,49 +1889,24 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 				diffuse_alpha = 0;
 			VEC3_CPY(data.lights[i].diffuse, diffuse_rgb);
 			data.lights[i].diffuse.w = diffuse_alpha;
-			/* Attenuation */
 			if (!m2_instance_get_track_value_float(instance, &light->attenuation_start, &data.lights[i].attenuation.x))
 				data.lights[i].attenuation.x = 0;
 			if (!m2_instance_get_track_value_float(instance, &light->attenuation_end, &data.lights[i].attenuation.y))
 				data.lights[i].attenuation.y = 0;
-			/* Position */
 			VEC3_CPY(data.lights[i].position, light->position);
 			data.lights[i].position.w = light->type;
-			if (light->bone != -1)
+			if (light->type && light->bone != -1)
 			{
 				struct mat4f *bone_mat = JKS_ARRAY_GET(&instance->render_frames[g_wow->draw_frame_id].bone_mats, light->bone, struct mat4f);
 				struct vec4f tmp;
 				MAT4_VEC4_MUL(tmp, *bone_mat, data.lights[i].position);
-				VEC4_CPY(data.lights[i].position, tmp);
+				data.lights[i].position = tmp;
 			}
-			{
-				struct vec4f tmp;
-				MAT4_VEC4_MUL(tmp, instance->m, data.lights[i].position);
-				VEC4_CPY(data.lights[i].position, tmp);
-			}
-			/* Misc */
 			uint8_t enabled;
 			if (!m2_instance_get_track_value_uint8(instance, &light->visibility, &enabled))
 				enabled = 0;
 			data.lights[i].data.x = enabled;
 			data.lights[i].data.y = light->type;
-			/* if (i != 3)
-				data.lights[i].data.x = 0; */
-			/* 3: dir purple
-			 * 2: left top back bright
-			 * 1: top right front clear
-			 * 0: green
-			 */
-			/*
-			LOG_INFO("light idx: %d", (int)i);
-			LOG_INFO("light attenuation: {x: %f, y: %f}", data.lights[i].attenuation.x, data.lights[i].attenuation.y);
-			LOG_INFO("light enable: %d", (int)enabled);
-			LOG_INFO("light bone: %d / %d", light->bone, (int)instance->parent->bones_nb);
-			LOG_INFO("light type: %d", light->type);
-			LOG_INFO("light diffuse: {%f, %f, %f, %f}", data.lights[i].diffuse.x, data.lights[i].diffuse.y, data.lights[i].diffuse.z, data.lights[i].diffuse.w);
-			LOG_INFO("light ambient: {%f, %f, %f, %f}", data.lights[i].ambient.x, data.lights[i].ambient.y, data.lights[i].ambient.z, data.lights[i].ambient.w);
-			LOG_INFO(" ");
-			*/
 		}
 	}
 	else
@@ -2142,7 +2122,7 @@ static void update_matrix(struct gx_m2_instance *instance, struct gx_m2_render_p
 		return;
 	}
 	struct wow_m2_camera *camera = &instance->parent->cameras[instance->camera];
-	float fov = camera->fov / sqrt(1 + pow(params->aspect, 2));
+	float fov = camera->fov / sqrtf(1 + powf(params->aspect, 2));
 	struct mat4f p;
 	MAT4_PERSPECTIVE(p, fov, params->aspect, camera->near_clip, camera->far_clip);
 	struct mat4f v;
