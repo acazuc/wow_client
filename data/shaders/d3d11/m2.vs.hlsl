@@ -79,11 +79,11 @@ float2 env_coord(float3 position, float3 normal)
 pixel_input main(vertex_input input)
 {
 	pixel_input output;
-	float4 position_fixed = float4(input.position.x, input.position.z, -input.position.y, 1);
-	float4 normal_fixed = float4(input.normal.x, input.normal.z, -input.normal.y, 0);
+	float4 position_fixed = float4(input.position.xyz, 1);
+	float4 normal_fixed = float4(input.normal.xyz, 0);
 	if (settings.z != 0)
 	{
-		row_major float4x4 bone_mat =
+		float4x4 bone_mat =
 		    input.bone_weights.x * bone_mats[input.bones.x];
 		  + input.bone_weights.y * bone_mats[input.bones.y]
 		  + input.bone_weights.z * bone_mats[input.bones.z]

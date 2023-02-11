@@ -80,7 +80,10 @@ void main()
 	fs_normal_fixed = vec4(vs_normal.xyz, 0);
 	if (settings.z != 0)
 	{
-		mat4 bone_mat = vs_bone_weights.x * bone_mats[vs_bones.x] + vs_bone_weights.y * bone_mats[vs_bones.y] + vs_bone_weights.z * bone_mats[vs_bones.z] + vs_bone_weights.w * bone_mats[vs_bones.w];
+		mat4 bone_mat = vs_bone_weights.x * bone_mats[vs_bones.x]
+		              + vs_bone_weights.y * bone_mats[vs_bones.y]
+		              + vs_bone_weights.z * bone_mats[vs_bones.z]
+		              + vs_bone_weights.w * bone_mats[vs_bones.w];
 		fs_position_fixed = bone_mat * fs_position_fixed;
 		fs_normal_fixed = bone_mat * fs_normal_fixed;
 	}

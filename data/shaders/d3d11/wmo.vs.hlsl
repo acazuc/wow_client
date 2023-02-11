@@ -46,8 +46,8 @@ struct pixel_input
 pixel_input main(vertex_input input)
 {
 	pixel_input output;
-	float4 position_fixed = float4(input.position.x, input.position.z, -input.position.y, 1);
-	float4 normal_fixed = float4(input.normal.x, input.normal.z, -input.normal.y, 0);
+	float4 position_fixed = float4(input.position.xyz, 1);
+	float4 normal_fixed = float4(input.normal.xyz, 0);
 	output.out_position = mul(position_fixed, mvp);
 	output.position = mul(position_fixed, mv).xyz;
 	output.uv1 = input.uv;
