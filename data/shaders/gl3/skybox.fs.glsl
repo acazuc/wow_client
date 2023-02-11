@@ -23,15 +23,8 @@ uniform sampler2D clouds2;
 
 void main()
 {
-#if 0
-	fragcolor = vec4(fs_uv.r, 0, 0, 1);
-#else
-	fragcolor = fs_color;
-#if 1
 	float clouds_alpha1 = texture(clouds1, fs_uv + vec2(clouds_drift, 0)).r;
 	float clouds_alpha2 = texture(clouds2, fs_uv + vec2(clouds_drift, 0)).r;
 	float clouds_alpha = mix(clouds_alpha1, clouds_alpha2, clouds_blend);
-	fragcolor = mix(fragcolor, clouds_colors[0], clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0, 1));
-#endif
-#endif
+	fragcolor = mix(fs_color, clouds_colors[0], clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0, 1));
 }

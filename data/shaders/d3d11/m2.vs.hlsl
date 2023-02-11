@@ -127,11 +127,30 @@ pixel_input main(vertex_input input)
 	if (settings.y == 0)
 	{
 		float3 light_dir = normalize((mul(-light_direction, v)).xyz);
-		output.diffuse = diffuse_color.xyz * clamp(dot(output.normal, light_dir), 0, 1);
-		/*for (int i = 0; i < lights_count.x; ++i)
+		float3 input = diffuse_color.xyz * clamp(dot(output.normal, light_dir), 0, 1) + ambient_color.xyz;
+		for (int i = 0; i < lights_count.x; ++i)
 		{
-			output.diffuse += lights[i].ambient.rgb * lights[i].ambient.a;
-		}*/
+			float diffuse_factor;
+			if (lights[i].data.y == 0)
+			{
+				float3 light_dir = lights[i].position.xyz;
+				diffuse_factor = clamp(dot(normal_fixed.xyz, normalize(light_dir)), 0, 1);
+			}
+			else
+			{
+				float3 light_dir = lights[i].position.xyz - position_fixed.xyz;
+				diffuse_factor = clamp(dot(normal_fixed.xyz, normalize(light_dir)), 0, 1);
+				float len = length(light_dir);
+				len *= 0.817102;
+				diffuse_factor /= len * (0.7 + len * 0.03);
+			}
+			input += lights[i].ambient.rgb * lights[i].ambient.a + lights[i].diffuse.rgb * lights[i].diffuse.a * diffuse_factor * lights[i].data.x;
+		}
+		output.diffuse = clamp(input, 0, 1);
+	}
+	else
+	{
+		output.diffuse = float3(1, 1, 1);
 	}
 	return output;
 }

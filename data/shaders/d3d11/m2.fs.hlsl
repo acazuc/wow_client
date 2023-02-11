@@ -101,40 +101,7 @@ SamplerState tex2_sampler : register(s1);
 pixel_output main(pixel_input input)
 {
 	pixel_output output;
-	float4 input_color;
-	if (settings.y == 0)
-	{
-		input_color = float4(input.diffuse + ambient_color.xyz, 1);
-		for (int i = 0; i < lights_count.x; ++i)
-		{
-			float1 diffuse_factor;
-			float3 attenuated;
-			if (lights[i].data.y == 0)
-			{
-				float3 light_dir = lights[i].position.xyz;
-				diffuse_factor = clamp(dot(input.normal_fixed.xyz, normalize(light_dir)), 0, 1);
-				attenuated = lights[i].diffuse.rgb;
-			}
-			else
-			{
-				float3 light_dir = lights[i].position.xyz - input.position_fixed.xyz;
-				diffuse_factor = clamp(dot(input.normal_fixed.xyz, normalize(light_dir)), 0, 1);
-				float1 len = length(light_dir);
-				float1 attenuation;
-				//attenuation = 0;
-				//attenuation = 1 / (((lights[i].attenuation.x + lights[i].attenuation.y * len) * len));
-				//attenuation = 1 - ((lights[i].attenuation.x + lights[i].attenuation.y * len) * len);
-				attenuation = 1 - clamp((len - lights[i].attenuation.x) / (lights[i].attenuation.y - lights[i].attenuation.x), 0, 1);
-				attenuated = lights[i].diffuse.rgb * attenuation;
-				attenuated = attenuated * attenuated;
-			}
-			input_color.rgb += lights[i].ambient.rgb * lights[i].ambient.a + /*lights[i].diffuse.a * */ diffuse_factor * attenuated/* * lights[i].data.x*/;
-		}
-	}
-	else
-	{
-		input_color = float4(1, 1, 1, 1);
-	}
+	float4 input_color = float4(input.diffuse, 1);
 	input_color *= color;
 	float4 tex1_color = tex1.Sample(tex1_sampler, input.uv1);
 	float4 output_color = input_color;
@@ -373,7 +340,7 @@ pixel_output main(pixel_input input)
 	if (settings.x == 0)
 	{
 		float fog_factor = clamp((length(input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
-		output_color = float4(lerp(output_color.rgb, fog_color, fog_factor), output_color.a);
+		output_color.rgb = lerp(output_color.rgb, fog_color, fog_factor);
 	}
 	output.color = clamp(output_color, 0, 1);
 	output.normal = float4(input.normal, 1);

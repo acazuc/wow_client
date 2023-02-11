@@ -28,9 +28,13 @@ pixel_output main(pixel_input input)
 {
 	pixel_output output;
 	float4 texture_color = color_tex.Sample(color_sampler, input.uv);
-	float3 c = float3(cel, cel, cel);
-	float3 tmp = texture_color.rgb - fmod(texture_color.rgb, c) + c * .5;
-	output.color = float4(tmp.r, tmp.g, tmp.b, 1);
+	float pwr = length(texture_color.xyz);
+	float fac;
+	if (pwr > 0)
+		fac = (pwr + cel * .5 - fmod(pwr, cel)) / pwr;
+	else
+		fac = 1;
+	output.color = float4((texture_color.xyz * fac) + cel * .5, 1);
 	output.normal = normal_tex.Sample(normal_sampler, input.uv);
 	output.position = position_tex.Sample(position_sampler, input.uv);
 	return output;
