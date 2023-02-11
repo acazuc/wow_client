@@ -112,6 +112,10 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			dir_str = "vk";
 			ext_str = "khr";
 			break;
+		case GFX_DEVICE_GLES3:
+			dir_str = "gles3";
+			ext_str = "glsl";
+			break;
 	}
 	if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
 	{

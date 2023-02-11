@@ -851,6 +851,8 @@ static int wow_main(int ac, char **av)
 		renderer = "d3d11";
 	else if (gfx_has_device_backend(GFX_DEVICE_D3D9))
 		renderer = "d3d9";
+	else if (gfx_has_device_backend(GFX_DEVICE_GLES3))
+		renderer = "gles3";
 
 	if (!renderer)
 	{
@@ -893,6 +895,8 @@ static int wow_main(int ac, char **av)
 					printf("\td3d11: Direct3D 11\n");
 				if (gfx_has_device_backend(GFX_DEVICE_VK))
 					printf("\tvk: Vulkan\n");
+				if (gfx_has_device_backend(GFX_DEVICE_GLES3))
+					printf("\tgles3: OpenGL ES 3\n");
 				printf("-w: set the windowing framework:\n");
 				if (gfx_has_window_backend(GFX_WINDOW_X11))
 					printf("\tx11: Native x.org\n");
@@ -980,6 +984,11 @@ static int wow_main(int ac, char **av)
 	else if (gfx_has_device_backend(GFX_DEVICE_VK) && !strcmp(renderer, "vk"))
 	{
 		if (!setup_window(window_backend, GFX_DEVICE_VK))
+			return EXIT_FAILURE;
+	}
+	else if (gfx_has_device_backend(GFX_DEVICE_GLES3) && !strcmp(renderer, "gles3"))
+	{
+		if (!setup_window(window_backend, GFX_DEVICE_GLES3))
 			return EXIT_FAILURE;
 	}
 	else
