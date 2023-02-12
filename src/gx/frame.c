@@ -270,6 +270,12 @@ void render_copy_cameras(struct gx_frame *gx_frame, struct camera *cull_camera, 
 	MAT4_ROTATEX(float, tmp2, tmp1, -view_camera->rot.x);
 	MAT4_VEC4_MUL(gx_frame->view_right, tmp2, right);
 	MAT4_VEC4_MUL(gx_frame->view_bottom, tmp2, bottom);
+	gx_frame->m2_params.vp = gx_frame->view_vp;
+	gx_frame->m2_params.v = gx_frame->view_v;
+	gx_frame->m2_params.p = gx_frame->view_p;
+	VEC3_CPY(gx_frame->m2_params.fog_color, g_wow->map->gx_skybox->int_values[SKYBOX_INT_FOG]);
+	VEC3_CPY(gx_frame->m2_params.view_right, gx_frame->view_right);
+	VEC3_CPY(gx_frame->m2_params.view_bottom, gx_frame->view_bottom);
 }
 
 void render_clear_scene(struct gx_frame *gx_frame)
@@ -528,7 +534,7 @@ bool render_add_m2_instance(struct gx_m2_instance *instance, bool bypass_frustum
 	}
 	instance->in_render_list = true;
 	instance->render_frames[g_wow->cull_frame_id].culled = false;
-	gx_m2_instance_update(instance, bypass_frustum);
+	gx_m2_instance_update(instance, bypass_frustum, &g_wow->cull_frame->m2_params);
 	if (instance->render_frames[g_wow->cull_frame_id].culled)
 		return false;
 	gx_m2_instance_calculate_distance_to_camera(instance);

@@ -223,7 +223,6 @@ static void update_edge_vertexes_buffer(struct ui_backdrop *backdrop)
 
 void ui_backdrop_render(struct ui_backdrop *backdrop)
 {
-	interface_set_render_ctx(backdrop->interface, true);
 	if (backdrop->bg_file)
 	{
 		if (!backdrop->bg_initialized)

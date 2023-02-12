@@ -178,7 +178,6 @@ static void render(struct ui_object *object)
 		return;
 	model_block.use_mask = 0;
 	VEC4_SET(model_block.uv_transform, 1, 0, 1, 0);
-	interface_set_render_ctx(UI_OBJECT->interface, true);
 	struct vec3f tmp = {(float)ui_region_get_left(UI_REGION), (float)ui_region_get_top(UI_REGION), 0};
 	struct vec3f scale = {(float)ui_region_get_width(UI_REGION), (float)ui_region_get_height(UI_REGION), 1};
 	MAT4_TRANSLATE(model_block.mvp, UI_OBJECT->interface->mat, tmp);

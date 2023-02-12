@@ -69,7 +69,6 @@ struct interface
 	int32_t mouse_y;
 	bool switch_framescreen;
 	bool switch_gluescreen;
-	bool render_ctx;
 	bool initialized;
 	bool is_gluescreen;
 };
@@ -113,7 +112,6 @@ void interface_register_font(struct interface *interface, const char *name, stru
 struct ui_font *interface_get_font(struct interface *interface, const char *name);
 void interface_unregister_font(struct interface *interface, const char *name);
 void interface_set_error_script(struct interface *interface, struct lua_script *script);
-void interface_set_render_ctx(struct interface *interface, bool enable);
 struct addon *interface_get_addon(struct interface *interface, const char *name);
 const char *lua_gfx_mouse_to_string(enum gfx_mouse_button button);
 const char *lua_gfx_key_to_string(enum gfx_key_code key);

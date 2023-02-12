@@ -194,7 +194,7 @@ static void update_position(struct gx_m2_particles *particles, struct wow_m2_par
 	particle->position.w = 1;
 }
 
-static void update_particles(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
+static void update_particles(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter, struct gx_m2_render_params *params)
 {
 	float dt = (g_wow->frametime - g_wow->lastframetime) / 1000000000.f;
 	for (size_t i = 0; i < emitter->particles.size; ++i)
@@ -296,8 +296,8 @@ static void update_particles(struct gx_m2_particles *particles, struct gx_m2_par
 		scale *= particles->parent->scale;
 		struct vec4f right;
 		struct vec4f bot;
-		VEC3_MULV(right, g_wow->cull_frame->view_right, scale);
-		VEC3_MULV(bot, g_wow->cull_frame->view_bottom, scale);
+		VEC3_MULV(right, params->view_right, scale);
+		VEC3_MULV(bot, params->view_bottom, scale);
 		if (emitter->emitter->spin != 0)
 		{
 			float t = emitter->emitter->spin * lifetime + particle->spin_random + M_PI * .25;
@@ -459,7 +459,7 @@ static void create_particle(struct gx_m2_particles *particles, struct gx_m2_part
 	particle->lifespan = lifespan * 1000000000;
 }
 
-void gx_m2_particles_update(struct gx_m2_particles *particles)
+void gx_m2_particles_update(struct gx_m2_particles *particles, struct gx_m2_render_params *params)
 {
 	for (size_t i = 0; i < particles->emitters.size; ++i)
 	{
@@ -486,11 +486,11 @@ void gx_m2_particles_update(struct gx_m2_particles *particles)
 				++j;
 			}
 		}
-		update_particles(particles, emitter);
+		update_particles(particles, emitter, params);
 	}
 }
 
-static void render_emitter(struct gx_m2_particles_emitter *emitter)
+static void render_emitter(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter, struct gx_m2_render_params *params)
 {
 	if (!emitter->particles.size)
 		return;
@@ -499,8 +499,8 @@ static void render_emitter(struct gx_m2_particles_emitter *emitter)
 	gfx_bind_pipeline_state(g_wow->device, &g_wow->graphics->particles_pipeline_states[emitter->pipeline_state]);
 	struct shader_particle_model_block model_block;
 	model_block.alpha_test = emitter->alpha_test;
-	model_block.mvp = g_wow->draw_frame->view_vp;
-	model_block.mv = g_wow->draw_frame->view_v;
+	model_block.mvp = params->vp;
+	model_block.mv = params->v;
 	if (emitter->fog_override)
 		VEC3_CPY(model_block.fog_color, emitter->fog_color);
 	else
@@ -532,10 +532,10 @@ static void initialize(struct gx_m2_particles *particles)
 	particles->initialized = true;
 }
 
-void gx_m2_particles_render(struct gx_m2_particles *particles)
+void gx_m2_particles_render(struct gx_m2_particles *particles, struct gx_m2_render_params *params)
 {
 	if (!particles->initialized)
 		initialize(particles);
 	for (size_t i = 0; i < particles->emitters.size; ++i)
-		render_emitter(JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter));
+		render_emitter(particles, JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter), params);
 }

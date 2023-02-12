@@ -270,7 +270,7 @@ void gx_m2_ribbons_update(struct gx_m2_ribbons *ribbons)
 	}
 }
 
-static void render_emitter(struct gx_m2_ribbons_emitter *emitter)
+static void render_emitter(struct gx_m2_ribbons_emitter *emitter, struct gx_m2_render_params *params)
 {
 	if (emitter->points.size < 2)
 		return;
@@ -279,8 +279,8 @@ static void render_emitter(struct gx_m2_ribbons_emitter *emitter)
 	gfx_bind_pipeline_state(g_wow->device, &((gfx_pipeline_state_t*)g_wow->graphics->ribbons_pipeline_states)[emitter->pipeline_state]);
 	struct shader_ribbon_model_block model_block;
 	model_block.alpha_test = emitter->alpha_test;
-	model_block.mvp = g_wow->draw_frame->view_vp;
-	model_block.mv = g_wow->draw_frame->view_v;
+	model_block.mvp = params->vp;
+	model_block.mv = params->v;
 	if (emitter->fog_override)
 		VEC3_CPY(model_block.fog_color, emitter->fog_color);
 	else
@@ -312,10 +312,10 @@ static void initialize(struct gx_m2_ribbons *ribbons)
 	ribbons->initialized = true;
 }
 
-void gx_m2_ribbons_render(struct gx_m2_ribbons *ribbons)
+void gx_m2_ribbons_render(struct gx_m2_ribbons *ribbons, struct gx_m2_render_params *params)
 {
 	if (!ribbons->initialized)
 		initialize(ribbons);
 	for (size_t i = 0; i < ribbons->emitters.size; ++i)
-		render_emitter(JKS_ARRAY_GET(&ribbons->emitters, i, struct gx_m2_ribbons_emitter));
+		render_emitter(JKS_ARRAY_GET(&ribbons->emitters, i, struct gx_m2_ribbons_emitter), params);
 }

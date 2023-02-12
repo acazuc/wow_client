@@ -419,7 +419,6 @@ void interface_render(struct interface *interface)
 		interface_on_window_resized(interface, &event);
 	}
 	gfx_bind_render_target(g_wow->device, NULL);
-	interface->render_ctx = false;
 	MAT4_ORTHO(float, interface->mat, 0.f, interface->width, interface->height, 0.f, -2.f, 2.f);
 	for (size_t i = 0; i < sizeof(interface->root_frames) / sizeof(*interface->root_frames); ++i)
 	{
@@ -1003,15 +1002,6 @@ void interface_set_error_script(struct interface *interface, struct lua_script *
 {
 	lua_script_delete(interface->error_script);
 	interface->error_script = script;
-}
-
-void interface_set_render_ctx(struct interface *interface, bool enable)
-{
-	if (interface->render_ctx == enable)
-		return;
-	interface->render_ctx = enable;
-	if (enable)
-		gfx_set_viewport(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 }
 
 void load_ext_addons(struct interface *interface)

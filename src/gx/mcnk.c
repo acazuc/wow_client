@@ -1330,7 +1330,7 @@ void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk)
 				struct vec3f delta;
 				VEC3_SUB(delta, g_wow->cull_frame->view_pos, instance->pos);
 				if (sqrt(delta.x * delta.x + delta.z * delta.z) < CHUNK_WIDTH * 4)
-					gx_m2_instance_add_to_render(instance, true);/* batch.frustumResult == FRUSTUM_INSIDE); */
+					gx_m2_instance_add_to_render(instance, true, &g_wow->cull_frame->m2_params);/* batch.frustumResult == FRUSTUM_INSIDE); */
 			}
 		}
 		if (g_wow->wow_opt & WOW_OPT_AABB_OPTIMIZE)
@@ -1342,7 +1342,7 @@ void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk)
 					PERFORMANCE_BEGIN(M2_CULL);
 					bool bypass = mcnk->doodads_frustum_result == FRUSTUM_INSIDE || batch->doodads_frustum_result == FRUSTUM_INSIDE;
 					for (uint32_t doodad = 0; doodad < batch->doodads_nb; ++doodad)
-						gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, bypass);
+						gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, bypass, &g_wow->cull_frame->m2_params);
 					PERFORMANCE_END(M2_CULL);
 				}
 			}
@@ -1361,7 +1361,7 @@ void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk)
 		else
 		{
 			for (uint32_t doodad = 0; doodad < batch->doodads_nb; ++doodad)
-				gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, false);
+				gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, false, &g_wow->cull_frame->m2_params);
 			for (uint32_t wmo = 0; wmo < batch->wmos_nb; ++wmo)
 				gx_wmo_instance_add_to_render(mcnk->parent->wmo[batch->wmos[wmo]]->instance, false);
 		}

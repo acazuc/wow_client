@@ -10,6 +10,7 @@
 
 #define MAX_RIBBONS 512
 
+struct gx_m2_render_params;
 struct gx_m2_instance;
 struct wow_m2_ribbon;
 struct blp_texture;
@@ -49,6 +50,6 @@ struct gx_m2_ribbons
 struct gx_m2_ribbons *gx_m2_ribbons_new(struct gx_m2_instance *parent);
 void gx_m2_ribbons_delete(struct gx_m2_ribbons *ribbons);
 void gx_m2_ribbons_update(struct gx_m2_ribbons *ribbons);
-void gx_m2_ribbons_render(struct gx_m2_ribbons *ribbons);
+void gx_m2_ribbons_render(struct gx_m2_ribbons *ribbons, struct gx_m2_render_params *params);
 
 #endif

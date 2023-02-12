@@ -4,6 +4,7 @@
 
 #include "xml/model.h"
 
+#include "gx/m2_particles.h"
 #include "gx/m2.h"
 
 #include "shaders.h"
@@ -12,6 +13,8 @@
 #include "wow.h"
 
 #include <gfx/device.h>
+
+#include <math.h>
 
 #ifdef interface
 # undef interface
@@ -35,7 +38,10 @@ static bool ctr(struct ui_object *object, struct interface *interface, const cha
 	model->fog_near = 1;
 	model->fog_far = 1;
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+	{
 		model->uniform_buffers[i] = GFX_BUFFER_INIT();
+		model->particles_uniform_buffers[i] = GFX_BUFFER_INIT();
+	}
 	ui_color_init(&model->fog_color, 1, 1, 1, 1);
 	return true;
 }
@@ -44,7 +50,10 @@ static void dtr(struct ui_object *object)
 {
 	struct ui_model *model = (struct ui_model*)object;
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+	{
 		gfx_delete_buffer(g_wow->device, &model->uniform_buffers[i]);
+		gfx_delete_buffer(g_wow->device, &model->particles_uniform_buffers[i]);
+	}
 	gx_m2_instance_gc(model->m2);
 	ui_frame_vtable.dtr(object);
 }
@@ -80,38 +89,72 @@ static void load_xml(struct ui_object *object, const struct xml_layout_frame *la
 static void render(struct ui_object *object)
 {
 	struct ui_model *model = (struct ui_model*)object;
-	if (model->m2)
+	if (model->m2 && model->m2->parent->cameras && model->camera < model->m2->parent->cameras_nb)
 	{
 		if (!model->uniform_buffers[0].handle.u64)
 		{
 			for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
+			{
 				gfx_create_buffer(g_wow->device, &model->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_m2_scene_block), GFX_BUFFER_STREAM);
+				gfx_create_buffer(g_wow->device, &model->particles_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_scene_block), GFX_BUFFER_STREAM);
+			}
 		}
-		struct shader_m2_scene_block scene_block;
-		VEC4_SET(scene_block.light_direction, -1, -1, 1, 0);
-		VEC4_SETV(scene_block.specular_color, 0);
-		VEC4_SETV(scene_block.diffuse_color, 0);
-		VEC4_SETV(scene_block.ambient_color, 0);
-		scene_block.fog_range.y = model->fog_far;
-		scene_block.fog_range.x = scene_block.fog_range.y * model->fog_near;
-		gfx_set_buffer_data(&model->uniform_buffers[g_wow->draw_frame_id], &scene_block, sizeof(scene_block), 0);
-		interface_set_render_ctx(UI_OBJECT->interface, false);
-		gfx_bind_constant(g_wow->device, 2, &model->uniform_buffers[g_wow->draw_frame_id], sizeof(scene_block), 0);
-		model->m2->camera = model->camera;
-		struct gx_m2_render_params params;
-		VEC3_CPY(params.fog_color, model->fog_color);
-		params.aspect = ui_region_get_width(UI_REGION) / (float)ui_region_get_height(UI_REGION);
 		int32_t left = ui_region_get_left(UI_REGION) * (g_wow->render_width / (float)UI_OBJECT->interface->width);
 		int32_t top = ui_region_get_top(UI_REGION) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
 		int32_t width = ui_region_get_width(UI_REGION) * (g_wow->render_width / (float)UI_OBJECT->interface->width);
 		int32_t height = ui_region_get_height(UI_REGION) * (g_wow->render_height / (float)UI_OBJECT->interface->height);
 		gfx_set_viewport(g_wow->device, left, top, width, height);
 		gfx_clear_depth_stencil(g_wow->device, NULL, 1, 0);
-		model->m2->bones_calculated = false;
-		gx_m2_instance_force_update(model->m2, &params);
-		model->m2->enable_lights = true;
-		gx_m2_instance_render(model->m2, false, &params);
-		gx_m2_instance_render(model->m2, true, &params);
+		struct gx_m2_render_params params;
+		VEC3_CPY(params.fog_color, model->fog_color);
+		{
+			struct wow_m2_camera *camera = &model->m2->parent->cameras[model->camera];
+			float aspect = ui_region_get_width(UI_REGION) / (float)ui_region_get_height(UI_REGION);
+			float fov = camera->fov / sqrtf(1 + powf(aspect, 2));
+			MAT4_PERSPECTIVE(params.p, fov, aspect, camera->near_clip, camera->far_clip);
+			struct vec3f position = {camera->position_base.x, camera->position_base.z, -camera->position_base.y};
+			struct vec3f target = {camera->target_position_base.x, camera->target_position_base.z, -camera->target_position_base.y};
+			struct vec3f up = {0, 1, 0};
+			MAT4_LOOKAT(float, params.v, position, target, up);
+			/* XXX tracks */
+			MAT4_MUL(params.vp, params.p, params.v);
+			const struct vec4f right = {1, 0, 0, 0};
+			const struct vec4f bottom = {0, -1, 0, 0};
+			struct mat4f tmp;
+			struct vec4f t;
+			MAT4_INVERSE(float, tmp, params.v);
+			MAT4_VEC4_MUL(t, tmp, right);
+			VEC3_CPY(params.view_right, t);
+			MAT4_VEC4_MUL(t, tmp, bottom);
+			VEC3_CPY(params.view_bottom, t);
+		}
+		{
+			struct shader_m2_scene_block scene_block;
+			VEC4_SET(scene_block.light_direction, -1, -1, 1, 0);
+			VEC4_SETV(scene_block.specular_color, 0);
+			VEC4_SETV(scene_block.diffuse_color, 0);
+			VEC4_SETV(scene_block.ambient_color, 0);
+			scene_block.fog_range.y = model->fog_far;
+			scene_block.fog_range.x = scene_block.fog_range.y * model->fog_near;
+			gfx_set_buffer_data(&model->uniform_buffers[g_wow->draw_frame_id], &scene_block, sizeof(scene_block), 0);
+			gfx_bind_constant(g_wow->device, 2, &model->uniform_buffers[g_wow->draw_frame_id], sizeof(scene_block), 0);
+			model->m2->camera = model->camera;
+			model->m2->bones_calculated = false;
+			gx_m2_instance_force_update(model->m2, &params);
+			model->m2->enable_lights = true;
+			gx_m2_instance_render(model->m2, false, &params);
+			gx_m2_instance_render(model->m2, true, &params);
+		}
+		if (model->m2->gx_particles)
+		{
+			struct shader_particle_scene_block scene_block;
+			scene_block.fog_range.y = model->fog_far;
+			scene_block.fog_range.x = scene_block.fog_range.y * model->fog_near;
+			gfx_set_buffer_data(&model->particles_uniform_buffers[g_wow->draw_frame_id], &scene_block, sizeof(scene_block), 0);
+			gfx_bind_constant(g_wow->device, 2, &model->particles_uniform_buffers[g_wow->draw_frame_id], sizeof(scene_block), 0);
+			gx_m2_particles_update(model->m2->gx_particles, &params);
+			gx_m2_instance_render_particles(model->m2, &params);
+		}
 	}
 	ui_frame_vtable.render(object);
 }

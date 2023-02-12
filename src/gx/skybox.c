@@ -813,11 +813,11 @@ void gx_skybox_render(struct gx_skybox *skybox)
 		struct mat4f tmp1;
 		struct mat4f tmp2;
 		MAT4_IDENTITY(tmp1);
-		MAT4_TRANSLATE(tmp2, tmp1, g_wow->cull_frame->cull_pos);
+		MAT4_TRANSLATE(tmp2, tmp1, g_wow->draw_frame->cull_pos);
 		skybox->skybox_m2->bones_calculated = false;
 		gx_m2_instance_set_mat(skybox->skybox_m2, &tmp2);
-		gx_m2_instance_force_update(skybox->skybox_m2, NULL);
-		gx_m2_instance_render(skybox->skybox_m2, false, NULL);
-		gx_m2_instance_render(skybox->skybox_m2, true, NULL);
+		gx_m2_instance_force_update(skybox->skybox_m2, &g_wow->draw_frame->m2_params);
+		gx_m2_instance_render(skybox->skybox_m2, false, &g_wow->draw_frame->m2_params);
+		gx_m2_instance_render(skybox->skybox_m2, true, &g_wow->draw_frame->m2_params);
 	}
 }

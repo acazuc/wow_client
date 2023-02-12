@@ -24,8 +24,12 @@ struct blp_texture;
 
 struct gx_m2_render_params
 {
+	struct mat4f vp;
+	struct mat4f v;
+	struct mat4f p;
 	struct vec3f fog_color;
-	float aspect;
+	struct vec3f view_right;
+	struct vec3f view_bottom;
 };
 
 struct gx_m2_instance;
@@ -255,12 +259,12 @@ void gx_m2_instance_calc_remaining_bones(struct gx_m2_instance *instance);
 void gx_m2_instance_calc_bones(struct gx_m2_instance *instance);
 void gx_m2_instance_clear_update(struct gx_m2_instance *instance);
 void gx_m2_instance_force_update(struct gx_m2_instance *instance, struct gx_m2_render_params *params);
-void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum);
+void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum, struct gx_m2_render_params *params);
 void gx_m2_instance_render(struct gx_m2_instance *instance, bool transparent, struct gx_m2_render_params *params);
-void gx_m2_instance_render_particles(struct gx_m2_instance *instance);
-void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance);
+void gx_m2_instance_render_particles(struct gx_m2_instance *instance, struct gx_m2_render_params *params);
+void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance, struct gx_m2_render_params *params);
 void gx_m2_instance_calculate_distance_to_camera(struct gx_m2_instance *instance);
-void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_frustum);
+void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_frustum, struct gx_m2_render_params *params);
 void gx_m2_instance_update_aabb(struct gx_m2_instance *instance);
 void gx_m2_instance_on_parent_loaded(struct gx_m2_instance *instance);
 void gx_m2_instance_set_skin_extra_texture(struct gx_m2_instance *instance, struct blp_texture *texture);

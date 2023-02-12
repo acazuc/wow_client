@@ -5,6 +5,8 @@
 # include "gx/collisions.h"
 #endif
 
+#include "gx/m2.h"
+
 #include <jks/frustum.h>
 #include <jks/array.h>
 #include <jks/mat4.h>
@@ -71,6 +73,7 @@ struct gx_frame
 	gfx_buffer_t wmo_uniform_buffer;
 	gfx_buffer_t m2_uniform_buffer;
 	pthread_mutex_t gc_mutex;
+	struct gx_m2_render_params m2_params;
 	struct frustum wdl_frustum;
 	struct frustum frustum;
 	struct mat4f view_wdl_vp;

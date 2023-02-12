@@ -5,6 +5,7 @@
 #include "net/network.h"
 #include "net/packet.h"
 
+#include "gx/frame.h"
 #include "gx/m2.h"
 
 #include "const.h"
@@ -68,7 +69,7 @@ static void add_to_render(struct object *object)
 {
 	if (!WORLDOBJ->m2)
 		return;
-	gx_m2_instance_add_to_render(WORLDOBJ->m2, false);
+	gx_m2_instance_add_to_render(WORLDOBJ->m2, false, &g_wow->cull_frame->m2_params);
 }
 
 void worldobj_add_to_render(struct worldobj *worldobj)

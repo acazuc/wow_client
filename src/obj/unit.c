@@ -418,7 +418,7 @@ static void add_m2_item(struct object *object, struct gx_m2_instance *m2, uint32
 	MAT4_TRANSLATE(tmp2, tmp1, attachment->position);
 	gx_m2_instance_set_mat(m2, &tmp2);
 	VEC3_CPY(m2->pos, WORLD_OBJECT->position);
-	gx_m2_instance_add_to_render(m2, true);
+	gx_m2_instance_add_to_render(m2, true, &g_wow->cull_frame->m2_params);
 }
 
 static void add_text_to_render(struct object *object)
@@ -519,7 +519,7 @@ static void add_to_render(struct object *object)
 	{
 		VEC3_CPY(UNIT->mount_m2->pos, WORLD_OBJECT->position);
 		gx_m2_instance_set_mat(UNIT->mount_m2, &mat);
-		gx_m2_instance_add_to_render(UNIT->mount_m2, true);
+		gx_m2_instance_add_to_render(UNIT->mount_m2, false, &g_wow->cull_frame->m2_params);
 		struct wow_m2_attachment *attachment;
 		struct mat4f *bone_mat = get_attachment_matrix(UNIT->mount_m2, 0, &attachment);
 		if (!bone_mat)

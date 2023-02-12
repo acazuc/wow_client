@@ -942,7 +942,7 @@ static void render_transparent_m2(struct gx_frame *gx_frame)
 	PERFORMANCE_BEGIN(M2_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->m2_uniform_buffer, sizeof(struct shader_m2_scene_block), 0);
 	for (size_t i = 0; i < gx_frame->render_lists.m2_transparent.size; ++i)
-		gx_m2_instance_render(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_transparent, i, struct gx_m2_instance*), true, NULL);
+		gx_m2_instance_render(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_transparent, i, struct gx_m2_instance*), true, &gx_frame->m2_params);
 	PERFORMANCE_END(M2_RENDER);
 }
 
@@ -953,7 +953,7 @@ static void render_m2_particles(struct gx_frame *gx_frame)
 	PERFORMANCE_BEGIN(M2_PARTICLES_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->particle_uniform_buffer, sizeof(struct shader_particle_scene_block), 0);
 	for (size_t i = 0; i < gx_frame->render_lists.m2_particles.size; ++i)
-		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_particles, i, struct gx_m2_instance*));
+		gx_m2_instance_render_particles(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_particles, i, struct gx_m2_instance*), &gx_frame->m2_params);
 	PERFORMANCE_END(M2_PARTICLES_RENDER);
 }
 
@@ -964,7 +964,7 @@ static void render_m2_ribbons(struct gx_frame *gx_frame)
 	PERFORMANCE_BEGIN(M2_RIBBONS_RENDER);
 	gfx_bind_constant(g_wow->device, 2, &g_wow->draw_frame->ribbon_uniform_buffer, sizeof(struct shader_ribbon_scene_block), 0);
 	for (size_t i = 0; i < gx_frame->render_lists.m2_ribbons.size; ++i)
-		gx_m2_instance_render_ribbons(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_ribbons, i, struct gx_m2_instance*));
+		gx_m2_instance_render_ribbons(*JKS_ARRAY_GET(&gx_frame->render_lists.m2_ribbons, i, struct gx_m2_instance*), &gx_frame->m2_params);
 	PERFORMANCE_END(M2_RIBBONS_RENDER);
 }
 

@@ -11,6 +11,7 @@
 
 #define MAX_PARTICLES 1024
 
+struct gx_m2_render_params;
 struct wow_m2_particle;
 struct gx_m2_instance;
 struct blp_texture;
@@ -50,7 +51,7 @@ struct gx_m2_particles
 
 struct gx_m2_particles *gx_m2_particles_new(struct gx_m2_instance *parent);
 void gx_m2_particles_delete(struct gx_m2_particles *particles);
-void gx_m2_particles_update(struct gx_m2_particles *particles);
-void gx_m2_particles_render(struct gx_m2_particles *particles);
+void gx_m2_particles_update(struct gx_m2_particles *particles, struct gx_m2_render_params *params);
+void gx_m2_particles_render(struct gx_m2_particles *particles, struct gx_m2_render_params *params);
 
 #endif

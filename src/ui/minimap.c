@@ -125,7 +125,6 @@ static void render(struct ui_object *object)
 	model_block.color.w *= ui_object_get_alpha(UI_OBJECT);
 	if (model_block.color.w == 0)
 		return;
-	interface_set_render_ctx(UI_OBJECT->interface, true);
 	struct vec3f tmp = {(float)ui_region_get_left(UI_REGION), (float)ui_region_get_top(UI_REGION), 0};
 	struct vec3f scale = {(float)ui_region_get_width(UI_REGION), (float)ui_region_get_height(UI_REGION), 1};
 	MAT4_TRANSLATE(model_block.mvp, UI_OBJECT->interface->mat, tmp);

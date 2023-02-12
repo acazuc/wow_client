@@ -561,7 +561,7 @@ static bool cull_portal_rec(struct gx_wmo_group *group, struct gx_wmo_instance *
 			if (!frustum_check_fast(JKS_ARRAY_GET(frustums, j, struct frustum), &m2_instance->aabb))
 				goto next_doodad;
 		}
-		gx_m2_instance_add_to_render(m2_instance, true);
+		gx_m2_instance_add_to_render(m2_instance, true, &g_wow->cull_frame->m2_params);
 next_doodad:
 		continue;
 	}

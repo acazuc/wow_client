@@ -256,7 +256,6 @@ static void render(struct ui_object *object)
 		font_string->last_font_revision = font->atlas->revision;
 		font_string->last_font = font;
 	}
-	interface_set_render_ctx(UI_OBJECT->interface, true);
 	font_atlas_bind(font->atlas, 0);
 	gfx_bind_attributes_state(g_wow->device, &font_string->attributes_state, &UI_OBJECT->interface->input_layout);
 	gfx_bind_pipeline_state(g_wow->device, &UI_OBJECT->interface->pipeline_states[INTERFACE_BLEND_ALPHA]);

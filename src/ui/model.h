@@ -16,6 +16,7 @@ struct ui_model
 {
 	struct ui_frame frame;
 	struct gx_m2_instance *m2;
+	gfx_buffer_t particles_uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
 	struct ui_color fog_color;
 	uint32_t camera;

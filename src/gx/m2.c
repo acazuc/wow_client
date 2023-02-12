@@ -1907,6 +1907,17 @@ static void update_instance_uniform_buffer(struct gx_m2_instance *instance)
 				enabled = 0;
 			data.lights[i].data.x = enabled;
 			data.lights[i].data.y = light->type;
+#if 0
+			LOG_INFO("light idx: %d", (int)i);
+			LOG_INFO("light position: {%f, %f, %f, %f}", data.lights[i].position.x, data.lights[i].position.y, data.lights[i].position.z, data.lights[i].position.w);
+			LOG_INFO("light attenuation: {x: %f, y: %f}", data.lights[i].attenuation.x, data.lights[i].attenuation.y);
+			LOG_INFO("light enable: %d", (int)enabled);
+			LOG_INFO("light bone: %d / %d", light->bone, (int)instance->parent->bones_nb);
+			LOG_INFO("light type: %d", light->type);
+			LOG_INFO("light diffuse: {%f, %f, %f, %f}", data.lights[i].diffuse.x, data.lights[i].diffuse.y, data.lights[i].diffuse.z, data.lights[i].diffuse.w);
+			LOG_INFO("light ambient: {%f, %f, %f, %f}", data.lights[i].ambient.x, data.lights[i].ambient.y, data.lights[i].ambient.z, data.lights[i].ambient.w);
+			LOG_INFO(" ");
+#endif
 		}
 	}
 	else
@@ -2108,32 +2119,8 @@ void gx_m2_instance_clear_update(struct gx_m2_instance *instance)
 
 static void update_matrix(struct gx_m2_instance *instance, struct gx_m2_render_params *params)
 {
-	if (instance->camera == (uint32_t)-1)
-	{
-		MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mv, g_wow->cull_frame->view_v, instance->m);
-		MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mvp, g_wow->cull_frame->view_p, instance->render_frames[g_wow->cull_frame_id].mv);
-		return;
-	}
-	if (instance->camera >= instance->parent->cameras_nb)
-	{
-		LOG_WARN("invalid camera id: %u / %u", instance->camera, instance->parent->cameras_nb);
-		MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mv, g_wow->cull_frame->view_v, instance->m);
-		MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mvp, g_wow->cull_frame->view_p, instance->render_frames[g_wow->cull_frame_id].mv);
-		return;
-	}
-	struct wow_m2_camera *camera = &instance->parent->cameras[instance->camera];
-	float fov = camera->fov / sqrtf(1 + powf(params->aspect, 2));
-	struct mat4f p;
-	MAT4_PERSPECTIVE(p, fov, params->aspect, camera->near_clip, camera->far_clip);
-	struct mat4f v;
-	MAT4_IDENTITY(v);
-	struct vec3f position = {camera->position_base.x, camera->position_base.z, -camera->position_base.y};
-	struct vec3f target = {camera->target_position_base.x, camera->target_position_base.z, -camera->target_position_base.y};
-	struct vec3f up = {0, 1, 0};
-	MAT4_LOOKAT(float, v, position, target, up);
-	/* XXX tracks */
-	MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mv, v, instance->m);
-	MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mvp, p, instance->render_frames[g_wow->cull_frame_id].mv);
+	MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mv, params->v, instance->m);
+	MAT4_MUL(instance->render_frames[g_wow->cull_frame_id].mvp, params->p, instance->render_frames[g_wow->cull_frame_id].mv);
 }
 
 static void update_sequences_times(struct gx_m2_instance *instance)
@@ -2157,7 +2144,7 @@ void gx_m2_instance_force_update(struct gx_m2_instance *instance, struct gx_m2_r
 	instance->render_frames[g_wow->cull_frame_id].culled = false;
 }
 
-void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum)
+void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum, struct gx_m2_render_params *params)
 {
 	if (instance->update_calculated)
 		return;
@@ -2187,7 +2174,7 @@ void gx_m2_instance_update(struct gx_m2_instance *instance, bool bypass_frustum)
 			return;
 		}
 	}
-	update_matrix(instance, NULL);
+	update_matrix(instance, params);
 	gx_m2_instance_calc_bones(instance);
 	update_sequences_times(instance);
 }
@@ -2199,18 +2186,18 @@ void gx_m2_instance_render(struct gx_m2_instance *instance, bool transparent, st
 	gx_m2_render_instance(instance->parent, instance, transparent, params);
 }
 
-void gx_m2_instance_render_particles(struct gx_m2_instance *instance)
+void gx_m2_instance_render_particles(struct gx_m2_instance *instance, struct gx_m2_render_params *params)
 {
 	if (instance->render_frames[g_wow->draw_frame_id].culled) /* XXX: still create particles ? */
 		return;
-	gx_m2_particles_render(instance->gx_particles);
+	gx_m2_particles_render(instance->gx_particles, params);
 }
 
-void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance)
+void gx_m2_instance_render_ribbons(struct gx_m2_instance *instance, struct gx_m2_render_params *params)
 {
 	if (instance->render_frames[g_wow->draw_frame_id].culled) /* XXX: still create ribbons ? */
 		return;
-	gx_m2_ribbons_render(instance->gx_ribbons);
+	gx_m2_ribbons_render(instance->gx_ribbons, params);
 }
 
 void gx_m2_instance_calculate_distance_to_camera(struct gx_m2_instance *instance)
@@ -2220,7 +2207,7 @@ void gx_m2_instance_calculate_distance_to_camera(struct gx_m2_instance *instance
 	instance->render_frames[g_wow->cull_frame_id].distance_to_camera = VEC3_NORM(tmp);
 }
 
-void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_frustum)
+void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_frustum, struct gx_m2_render_params *params)
 {
 	if (!render_add_m2_instance(instance, bypass_frustum))
 		return;
@@ -2234,7 +2221,7 @@ void gx_m2_instance_add_to_render(struct gx_m2_instance *instance, bool bypass_f
 		render_add_m2_transparent(instance);
 	if (instance->gx_particles)
 	{
-		gx_m2_particles_update(instance->gx_particles);
+		gx_m2_particles_update(instance->gx_particles, params);
 		render_add_m2_particles(instance);
 	}
 	if (instance->gx_ribbons)
