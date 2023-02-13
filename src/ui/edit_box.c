@@ -332,7 +332,7 @@ static uint32_t coord_to_text_pos(struct ui_edit_box *edit_box, int32_t coord_x,
 	return i;
 }
 
-static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
+static void on_mouse_move(struct ui_object *object, struct gfx_pointer_event *event)
 {
 	struct ui_edit_box *edit_box = (struct ui_edit_box*)object;
 	if (UI_REGION->clicked)
@@ -349,7 +349,7 @@ static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
 	ui_frame_vtable.on_mouse_move(object, event);
 }
 
-static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_down(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	struct ui_edit_box *edit_box = (struct ui_edit_box*)object;
 	ui_frame_vtable.on_mouse_down(object, event);
@@ -362,12 +362,12 @@ static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
 	}
 }
 
-static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_up(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	ui_frame_vtable.on_mouse_up(object, event);
 }
 
-static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_down(struct ui_object *object, struct gfx_key_event *event)
 {
 	struct ui_edit_box *edit_box = (struct ui_edit_box*)object;
 	if (event->key == GFX_KEY_TAB)
@@ -404,7 +404,7 @@ static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
 	return true;
 }
 
-static bool on_key_up(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_up(struct ui_object *object, struct gfx_key_event *event)
 {
 	struct ui_edit_box *edit_box = (struct ui_edit_box*)object;
 	struct lua_State *L = ui_object_get_L(UI_OBJECT);
@@ -416,7 +416,7 @@ static bool on_key_up(struct ui_object *object, gfx_key_event_t *event)
 	return true;
 }
 
-bool ui_edit_box_on_key_press(struct ui_edit_box *edit_box, gfx_key_event_t *event)
+bool ui_edit_box_on_key_press(struct ui_edit_box *edit_box, struct gfx_key_event *event)
 {
 	if (char_input_on_key_press(&edit_box->char_input, event))
 	{
@@ -426,7 +426,7 @@ bool ui_edit_box_on_key_press(struct ui_edit_box *edit_box, gfx_key_event_t *eve
 	return true;
 }
 
-bool ui_edit_box_on_char(struct ui_edit_box *edit_box, gfx_char_event_t *event)
+bool ui_edit_box_on_char(struct ui_edit_box *edit_box, struct gfx_char_event *event)
 {
 	struct lua_State *L = ui_object_get_L(UI_OBJECT);
 	char_input_insert_char(&edit_box->char_input, event->utf8);
@@ -521,7 +521,7 @@ static void update_overlay(struct ui_edit_box *edit_box)
 	gfx_delete_buffer(g_wow->device, &edit_box->indices_buffer);
 	gfx_create_buffer(g_wow->device, &edit_box->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes.data, vertexes.size * sizeof(struct shader_ui_input), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &edit_box->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_IMMUTABLE);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&edit_box->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 		{&edit_box->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
@@ -980,7 +980,7 @@ UI_INH0(frame, float, get_alpha);
 UI_INH1(frame, void, set_alpha, float, alpha);
 UI_INH2(frame, void, get_size, int32_t*, x, int32_t*, y);
 UI_INH0(frame, void, set_dirty_coords);
-UI_INH1(frame, void, on_mouse_scroll, gfx_scroll_event_t*, event);
+UI_INH1(frame, void, on_mouse_scroll, struct gfx_scroll_event*, event);
 UI_INH0(frame, const char*, get_name);
 
 const struct ui_object_vtable ui_edit_box_vtable =

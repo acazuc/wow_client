@@ -29,7 +29,7 @@ struct ssao_render_pass
 	gfx_buffer_t uv_buffer;
 };
 
-static const gfx_input_layout_bind_t g_binds[] =
+static const struct gfx_input_layout_bind g_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
@@ -70,7 +70,7 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_buffer(g_wow->device, &ssao->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &ssao->uv_buffer, GFX_BUFFER_VERTEXES, uvs, sizeof(uvs), GFX_BUFFER_IMMUTABLE);
 	gfx_create_input_layout(g_wow->device, &ssao->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->ssao);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&ssao->positions_buffer, sizeof(struct vec2f), 0},
 		{&ssao->uv_buffer       , sizeof(struct vec2f), 0},

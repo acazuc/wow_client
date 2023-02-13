@@ -17,14 +17,8 @@ struct wow_mpq_compound;
 struct wow_mpq_archive;
 struct wow_trs_file;
 
-typedef struct gfx_pointer_event gfx_pointer_event_t;
-typedef struct gfx_resize_event gfx_resize_event_t;
-typedef struct gfx_scroll_event gfx_scroll_event_t;
-typedef struct gfx_mouse_event gfx_mouse_event_t;
-typedef struct gfx_char_event gfx_char_event_t;
-typedef struct gfx_key_event gfx_key_event_t;
-typedef struct gfx_device gfx_device_t;
-typedef struct gfx_window gfx_window_t;
+struct gfx_device;
+struct gfx_window;
 
 struct render_target;
 struct render_pass;
@@ -161,8 +155,8 @@ struct wow
 	struct post_process post_process;
 	struct jks_array *mpq_archives; /* struct wow_mpq_archive* */
 	struct interface *interface;
-	gfx_device_t *device;
-	gfx_window_t *window;
+	struct gfx_device *device;
+	struct gfx_window *window;
 	struct jks_hmap *objects; /* uint64_t, struct object* */
 	struct jks_hmap *trs; /* char*, struct trs_dir */
 	struct graphics *graphics;
@@ -219,7 +213,6 @@ void normalize_wmo_filename(char *filename, size_t size);
 void normalize_blp_filename(char *filename, size_t size);
 int64_t nanotime(void);
 bool wow_load_compound(struct wow_mpq_compound *compound);
-gfx_window_t *wow_create_window(const char *title);
 bool wow_set_map(uint32_t mapid);
 void wow_set_player(struct player *player);
 bool wow_set_object(uint64_t guid, struct object *object);

@@ -57,7 +57,7 @@ static void initialize(struct gx_aabb *aabb)
 	};
 	aabb->indices_nb = sizeof(indices) / sizeof(*indices);
 	gfx_create_buffer(g_wow->device, &aabb->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&aabb->positions_buffer, sizeof(struct vec3f), 0},
 	};

@@ -550,7 +550,7 @@ int gx_mclq_initialize(struct gx_mclq *mclq)
 		liquid->init_data = NULL;
 		if (i < 2)
 		{
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
 				{&liquid->depths_buffer  , sizeof(uint8_t)                 , 0},
@@ -560,7 +560,7 @@ int gx_mclq_initialize(struct gx_mclq *mclq)
 		}
 		else
 		{
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
 				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, uv)},

@@ -93,7 +93,7 @@ static void render(struct ui_object *object)
 		};
 		gfx_create_buffer(g_wow->device, &minimap->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 		gfx_create_buffer(g_wow->device, &minimap->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-		gfx_attribute_bind_t binds[] =
+		const struct gfx_attribute_bind binds[] =
 		{
 			{&minimap->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 			{&minimap->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
@@ -144,7 +144,7 @@ static void on_click(struct ui_object *object, enum gfx_mouse_button button)
 	ui_frame_vtable.on_click(object, button);
 }
 
-static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
+static void on_mouse_scroll(struct ui_object *object, struct gfx_scroll_event *event)
 {
 	struct ui_minimap *minimap = (struct ui_minimap*)object;
 	if (event->used)
@@ -255,11 +255,11 @@ UI_INH1(frame, void, set_alpha, float, alpha);
 UI_INH1(frame, void, set_hidden, bool, hidden);
 UI_INH2(frame, void, get_size, int32_t*, x, int32_t*, y);
 UI_INH0(frame, void, set_dirty_coords);
-UI_INH1(frame, void, on_mouse_move, gfx_pointer_event_t*, event);
-UI_INH1(frame, void, on_mouse_down, gfx_mouse_event_t*, event);
-UI_INH1(frame, void, on_mouse_up, gfx_mouse_event_t*, event);
-UI_INH1(frame, bool, on_key_down, gfx_key_event_t*, event);
-UI_INH1(frame, bool, on_key_up, gfx_key_event_t*, event);
+UI_INH1(frame, void, on_mouse_move, struct gfx_pointer_event*, event);
+UI_INH1(frame, void, on_mouse_down, struct gfx_mouse_event*, event);
+UI_INH1(frame, void, on_mouse_up, struct gfx_mouse_event*, event);
+UI_INH1(frame, bool, on_key_down, struct gfx_key_event*, event);
+UI_INH1(frame, bool, on_key_up, struct gfx_key_event*, event);
 UI_INH0(frame, struct ui_font_instance*, as_font_instance);
 UI_INH0(frame, const char*, get_name);
 

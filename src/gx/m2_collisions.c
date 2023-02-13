@@ -97,7 +97,7 @@ void gx_m2_collisions_initialize(struct gx_m2_collisions *collisions)
 		return;
 	gfx_create_buffer(g_wow->device, &collisions->vertexes_buffer, GFX_BUFFER_VERTEXES, collisions->init_data->vertexes, collisions->init_data->vertexes_nb * sizeof(*collisions->init_data->vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &collisions->indices_buffer, GFX_BUFFER_INDICES, collisions->init_data->indices, collisions->triangles_nb * sizeof(*collisions->init_data->indices) * 3, GFX_BUFFER_IMMUTABLE);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&collisions->vertexes_buffer, sizeof(struct shader_m2_collisions_input), offsetof(struct shader_m2_collisions_input, position)},
 	};

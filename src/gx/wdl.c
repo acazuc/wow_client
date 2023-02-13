@@ -193,7 +193,7 @@ static void initialize(struct gx_wdl *wdl)
 		gfx_create_buffer(g_wow->device, &wdl->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_wdl_model_block), GFX_BUFFER_STREAM);
 	clean_init_data(wdl->init_data);
 	wdl->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&wdl->vertex_buffer, sizeof(struct vec3f), 0},
 	};

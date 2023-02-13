@@ -43,7 +43,7 @@ struct ui_edit_box
 
 extern const struct ui_object_vtable ui_edit_box_vtable;
 
-bool ui_edit_box_on_key_press(struct ui_edit_box *edit_box, gfx_key_event_t *event);
-bool ui_edit_box_on_char(struct ui_edit_box *edit_box, gfx_char_event_t *event);
+bool ui_edit_box_on_key_press(struct ui_edit_box *edit_box, struct gfx_key_event *event);
+bool ui_edit_box_on_char(struct ui_edit_box *edit_box, struct gfx_char_event *event);
 
 #endif

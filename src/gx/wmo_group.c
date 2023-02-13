@@ -493,7 +493,7 @@ int gx_wmo_group_initialize(struct gx_wmo_group *group)
 		gfx_create_buffer(g_wow->device, &group->colors_buffer, GFX_BUFFER_VERTEXES, group->init_data->colors.data, group->init_data->colors.size * sizeof(vec4b_t), GFX_BUFFER_IMMUTABLE);
 	init_data_delete(group->init_data);
 	group->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&group->vertexes_buffer                         , sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, position)},
 		{&group->vertexes_buffer                         , sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, norm)},

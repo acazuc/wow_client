@@ -1134,7 +1134,7 @@ int gx_mcnk_initialize(struct gx_mcnk *mcnk)
 	}
 	clean_init_data(mcnk->init_data);
 	mcnk->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&mcnk->vertexes_buffer           , sizeof(struct shader_mcnk_input), offsetof(struct shader_mcnk_input, norm)},
 		{&g_wow->map->mcnk_vertexes_buffer, sizeof(struct vec2f) * 2        , sizeof(struct vec2f) * 0},

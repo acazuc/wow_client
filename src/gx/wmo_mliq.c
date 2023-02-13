@@ -193,7 +193,7 @@ void gx_wmo_mliq_initialize(struct gx_wmo_mliq *mliq)
 		gfx_create_buffer(g_wow->device, &mliq->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_mliq_model_block), GFX_BUFFER_STREAM);
 	init_data_delete(mliq->init_data);
 	mliq->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&mliq->vertexes_buffer, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, position)},
 		{&mliq->vertexes_buffer, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},

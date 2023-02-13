@@ -112,7 +112,7 @@ void gx_m2_bones_initialize(struct gx_m2_bones *bones)
 	if (bones->points_indices_nb)
 	{
 		gfx_create_buffer(g_wow->device, &bones->points_vertexes_buffer, GFX_BUFFER_VERTEXES, bones->init_data->points_vertexes, bones->points_indices_nb * sizeof(*bones->init_data->points_vertexes), GFX_BUFFER_IMMUTABLE);
-		gfx_attribute_bind_t binds[] =
+		const struct gfx_attribute_bind binds[] =
 		{
 			{&bones->points_vertexes_buffer, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, position)},
 			{&bones->points_vertexes_buffer, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, color)},
@@ -123,7 +123,7 @@ void gx_m2_bones_initialize(struct gx_m2_bones *bones)
 	if (bones->lines_indices_nb)
 	{
 		gfx_create_buffer(g_wow->device, &bones->lines_vertexes_buffer, GFX_BUFFER_VERTEXES, bones->init_data->lines_vertexes, bones->lines_indices_nb * sizeof(*bones->init_data->lines_vertexes), GFX_BUFFER_IMMUTABLE);
-		gfx_attribute_bind_t binds[] =
+		const struct gfx_attribute_bind binds[] =
 		{
 			{&bones->lines_vertexes_buffer, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, position)},
 			{&bones->lines_vertexes_buffer, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, color)},

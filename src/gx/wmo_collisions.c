@@ -109,7 +109,7 @@ void gx_wmo_collisions_initialize(struct gx_wmo_collisions *collisions)
 	}
 	clear_init_data(collisions->init_data);
 	collisions->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&collisions->vertexes_buffer, sizeof(struct vec3f), 0},
 	};

@@ -298,7 +298,7 @@ static void initialize(struct gx_m2_ribbons *ribbons)
 		struct gx_m2_ribbons_emitter *emitter = JKS_ARRAY_GET(&ribbons->emitters, i, struct gx_m2_ribbons_emitter);
 		for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
 		{
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, position)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, color)},

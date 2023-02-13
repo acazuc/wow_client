@@ -38,7 +38,7 @@ struct bloom_render_pass
 	gfx_buffer_t uv_buffer;
 };
 
-static const gfx_input_layout_bind_t g_binds[] =
+static const struct gfx_input_layout_bind g_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
@@ -94,7 +94,7 @@ static void ctr(struct render_pass *render_pass)
 		gfx_create_buffer(g_wow->device, &bloom->merge_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_bloom_merge_model_block), GFX_BUFFER_STREAM);
 	}
 	gfx_create_input_layout(g_wow->device, &bloom->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->bloom);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&bloom->positions_buffer, sizeof(struct vec2f), 0},
 		{&bloom->uv_buffer       , sizeof(struct vec2f), 0},

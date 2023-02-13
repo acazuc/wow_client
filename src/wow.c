@@ -79,21 +79,21 @@ MEMORY_DECL(GFX);
 
 struct wow *g_wow = NULL;
 
-static void resize_callback(gfx_resize_event_t *event);
-static void key_down_callback(gfx_key_event_t *event);
-static void key_up_callback(gfx_key_event_t *event);
-static void key_press_callback(gfx_key_event_t *event);
-static void char_callback(gfx_char_event_t *event);
-static void mouse_down_callback(gfx_mouse_event_t *event);
-static void mouse_up_callback(gfx_mouse_event_t *event);
-static void mouse_move_callback(gfx_pointer_event_t *event);
-static void mouse_scroll_callback(gfx_scroll_event_t *event);
+static void resize_callback(struct gfx_resize_event *event);
+static void key_down_callback(struct gfx_key_event *event);
+static void key_up_callback(struct gfx_key_event *event);
+static void key_press_callback(struct gfx_key_event *event);
+static void char_callback(struct gfx_char_event *event);
+static void mouse_down_callback(struct gfx_mouse_event *event);
+static void mouse_up_callback(struct gfx_mouse_event *event);
+static void mouse_move_callback(struct gfx_pointer_event *event);
+static void mouse_scroll_callback(struct gfx_scroll_event *event);
 static void error_callback(const char *fmt, ...);
 
-struct gfx_window *wow_create_window(const char *title)
+static struct gfx_window *wow_create_window(const char *title)
 {
 	LOG_INFO("creating window");
-	gfx_window_properties_t properties;
+	struct gfx_window_properties properties;
 	gfx_window_properties_init(&properties);
 	properties.window_backend = (enum gfx_window_backend)g_wow->window_backend;
 	properties.device_backend = (enum gfx_device_backend)g_wow->device_backend;
@@ -324,7 +324,7 @@ static bool setup_interface(void)
 	if (!g_wow->interface)
 		return false;
 	{
-		gfx_resize_event_t event;
+		struct gfx_resize_event event;
 		event.width = g_wow->window->width;
 		event.height = g_wow->window->height;
 		interface_on_window_resized(g_wow->interface, &event);
@@ -1185,7 +1185,7 @@ static int wow_main(int ac, char **av)
 	g_wow->view_camera = g_wow->cameras[0];
 	g_wow->frustum_camera = g_wow->cameras[0];
 	{ /* XXX: try not to do this ? */
-		gfx_resize_event_t event;
+		struct gfx_resize_event event;
 		event.width = g_wow->render_width;
 		event.height = g_wow->render_height;
 		resize_callback(&event);
@@ -1275,7 +1275,7 @@ static int wow_main(int ac, char **av)
 	return EXIT_SUCCESS;
 }
 
-static void resize_callback(gfx_resize_event_t *event)
+static void resize_callback(struct gfx_resize_event *event)
 {
 	g_wow->render_width = event->width;
 	g_wow->render_height = event->height;
@@ -1284,7 +1284,7 @@ static void resize_callback(gfx_resize_event_t *event)
 		interface_on_window_resized(g_wow->interface, event);
 }
 
-static void key_down_callback(gfx_key_event_t *event)
+static void key_down_callback(struct gfx_key_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1467,7 +1467,7 @@ do \
 #undef WORLD_OPTION_FLIP
 }
 
-static void key_up_callback(gfx_key_event_t *event)
+static void key_up_callback(struct gfx_key_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1476,7 +1476,7 @@ static void key_up_callback(gfx_key_event_t *event)
 	}
 }
 
-static void key_press_callback(gfx_key_event_t *event)
+static void key_press_callback(struct gfx_key_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1485,7 +1485,7 @@ static void key_press_callback(gfx_key_event_t *event)
 	}
 }
 
-static void char_callback(gfx_char_event_t *event)
+static void char_callback(struct gfx_char_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1494,7 +1494,7 @@ static void char_callback(gfx_char_event_t *event)
 	}
 }
 
-static void mouse_down_callback(gfx_mouse_event_t *event)
+static void mouse_down_callback(struct gfx_mouse_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1519,7 +1519,7 @@ static void mouse_down_callback(gfx_mouse_event_t *event)
 	}
 }
 
-static void mouse_up_callback(gfx_mouse_event_t *event)
+static void mouse_up_callback(struct gfx_mouse_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1534,13 +1534,13 @@ static void mouse_up_callback(gfx_mouse_event_t *event)
 	}
 }
 
-static void mouse_move_callback(gfx_pointer_event_t *event)
+static void mouse_move_callback(struct gfx_pointer_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 		interface_on_mouse_move(g_wow->interface, event);
 }
 
-static void mouse_scroll_callback(gfx_scroll_event_t *event)
+static void mouse_scroll_callback(struct gfx_scroll_event *event)
 {
 	if ((g_wow->wow_opt & WOW_OPT_RENDER_INTERFACE) && g_wow->interface)
 	{
@@ -1770,7 +1770,7 @@ int main(int ac, char **av)
 #endif
 	g_wow->wow_opt |= WOW_OPT_RENDER_INTERFACE;
 	g_wow->wow_opt |= WOW_OPT_AABB_OPTIMIZE;
-	g_wow->wow_opt |= WOW_OPT_RENDER_GUI;
+	//g_wow->wow_opt |= WOW_OPT_RENDER_GUI;
 #if defined (_WIN32)
 	{
 		LARGE_INTEGER frequency;

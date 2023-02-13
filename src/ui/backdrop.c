@@ -231,7 +231,7 @@ void ui_backdrop_render(struct ui_backdrop *backdrop)
 			gfx_create_buffer(g_wow->device, &backdrop->bg_vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, 4 * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
 			gfx_create_buffer(g_wow->device, &backdrop->bg_indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 			update_bg_vertexes_buffer(backdrop);
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&backdrop->bg_vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 				{&backdrop->bg_vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
@@ -282,7 +282,7 @@ void ui_backdrop_render(struct ui_backdrop *backdrop)
 			gfx_create_buffer(g_wow->device, &backdrop->edge_vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, 32 * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
 			gfx_create_buffer(g_wow->device, &backdrop->edge_indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 			update_edge_vertexes_buffer(backdrop);
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&backdrop->edge_vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 				{&backdrop->edge_vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},

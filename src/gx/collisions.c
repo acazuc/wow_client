@@ -51,7 +51,7 @@ void gx_collisions_update(struct gx_collisions *collisions, struct collision_tri
 	}
 	gfx_create_buffer(g_wow->device, &collisions->positions_buffer, GFX_BUFFER_VERTEXES, points, sizeof(*points) * triangles_nb * 3, GFX_BUFFER_IMMUTABLE);
 	mem_free(MEM_GX, points);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&collisions->positions_buffer, sizeof(struct vec3f), 0},
 	};

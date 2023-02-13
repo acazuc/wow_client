@@ -131,38 +131,38 @@ static void set_dirty_coords(struct ui_object *object)
 	(void)object;
 }
 
-static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
+static void on_mouse_move(struct ui_object *object, struct gfx_pointer_event *event)
 {
 	(void)object;
 	(void)event;
 }
 
-static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_down(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	(void)object;
 	(void)event;
 }
 
-static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_up(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	(void)object;
 	(void)event;
 }
 
-static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
+static void on_mouse_scroll(struct ui_object *object, struct gfx_scroll_event *event)
 {
 	(void)object;
 	(void)event;
 }
 
-static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_down(struct ui_object *object, struct gfx_key_event *event)
 {
 	(void)object;
 	(void)event;
 	return false;
 }
 
-static bool on_key_up(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_up(struct ui_object *object, struct gfx_key_event *event)
 {
 	(void)object;
 	(void)event;
@@ -387,32 +387,32 @@ void ui_object_set_dirty_coords(struct ui_object *object)
 	object->vtable->set_dirty_coords(object);
 }
 
-void ui_object_on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
+void ui_object_on_mouse_move(struct ui_object *object, struct gfx_pointer_event *event)
 {
 	object->vtable->on_mouse_move(object, event);
 }
 
-void ui_object_on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
+void ui_object_on_mouse_down(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	object->vtable->on_mouse_down(object, event);
 }
 
-void ui_object_on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
+void ui_object_on_mouse_up(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	object->vtable->on_mouse_up(object, event);
 }
 
-void ui_object_on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
+void ui_object_on_mouse_scroll(struct ui_object *object, struct gfx_scroll_event *event)
 {
 	object->vtable->on_mouse_scroll(object, event);
 }
 
-bool ui_object_on_key_down(struct ui_object *object, gfx_key_event_t *event)
+bool ui_object_on_key_down(struct ui_object *object, struct gfx_key_event *event)
 {
 	return object->vtable->on_key_down(object, event);
 }
 
-bool ui_object_on_key_up(struct ui_object *object, gfx_key_event_t *event)
+bool ui_object_on_key_up(struct ui_object *object, struct gfx_key_event *event)
 {
 	return object->vtable->on_key_up(object, event);
 }

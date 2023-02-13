@@ -87,7 +87,7 @@ static const register_lua_functions_t g_init_functions[] =
 	register_taxi_functions,
 };
 
-static const gfx_input_layout_bind_t g_binds[] =
+static const struct gfx_input_layout_bind g_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT      , sizeof(float) * 8, sizeof(float) * 0},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(float) * 8, sizeof(float) * 2},
@@ -406,7 +406,7 @@ void interface_render(struct interface *interface)
 		set_frame_screen(interface);
 		interface->switch_framescreen = false;
 		interface->is_gluescreen = false;
-		gfx_resize_event_t event = {.width = g_wow->window->width, g_wow->window->height};
+		struct gfx_resize_event event = {.width = g_wow->window->width, g_wow->window->height};
 		interface_on_window_resized(interface, &event);
 	}
 	if (interface->switch_gluescreen)
@@ -415,7 +415,7 @@ void interface_render(struct interface *interface)
 		set_glue_screen(interface);
 		interface->switch_gluescreen = false;
 		interface->is_gluescreen = true;
-		gfx_resize_event_t event = {.width = g_wow->window->width, g_wow->window->height};
+		struct gfx_resize_event event = {.width = g_wow->window->width, g_wow->window->height};
 		interface_on_window_resized(interface, &event);
 	}
 	gfx_bind_render_target(g_wow->device, NULL);
@@ -443,7 +443,7 @@ void interface_disable_scissor(void)
 	gfx_set_scissor(g_wow->device, 0, 0, g_wow->render_width, g_wow->render_height);
 }
 
-void interface_on_window_resized(struct interface *interface, gfx_resize_event_t *event)
+void interface_on_window_resized(struct interface *interface, struct gfx_resize_event *event)
 {
 	if (!interface->is_gluescreen)
 	{
@@ -467,7 +467,7 @@ void interface_on_window_resized(struct interface *interface, gfx_resize_event_t
 	interface_execute_event(interface, EVENT_DISPLAY_SIZE_CHANGED, 0);
 }
 
-void interface_on_mouse_move(struct interface *interface, gfx_pointer_event_t *event)
+void interface_on_mouse_move(struct interface *interface, struct gfx_pointer_event *event)
 {
 	event->x *= interface->width / (float)g_wow->window->width;
 	event->y *= interface->height / (float)g_wow->window->height;
@@ -486,7 +486,7 @@ void interface_on_mouse_move(struct interface *interface, gfx_pointer_event_t *e
 	}
 }
 
-bool interface_on_mouse_down(struct interface *interface, gfx_mouse_event_t *event)
+bool interface_on_mouse_down(struct interface *interface, struct gfx_mouse_event *event)
 {
 	event->x *= interface->width / (float)g_wow->window->width;
 	event->y *= interface->height / (float)g_wow->window->height;
@@ -504,7 +504,7 @@ bool interface_on_mouse_down(struct interface *interface, gfx_mouse_event_t *eve
 	return event->used;
 }
 
-bool interface_on_mouse_up(struct interface *interface, gfx_mouse_event_t *event)
+bool interface_on_mouse_up(struct interface *interface, struct gfx_mouse_event *event)
 {
 	event->x *= interface->width / (float)g_wow->window->width;
 	event->y *= interface->height / (float)g_wow->window->height;
@@ -522,7 +522,7 @@ bool interface_on_mouse_up(struct interface *interface, gfx_mouse_event_t *event
 	return event->used;
 }
 
-bool interface_on_mouse_scroll(struct interface *interface, gfx_scroll_event_t *event)
+bool interface_on_mouse_scroll(struct interface *interface, struct gfx_scroll_event *event)
 {
 	event->mouse_x *= interface->width / (float)g_wow->window->width;
 	event->mouse_y *= interface->height / (float)g_wow->window->height;
@@ -540,7 +540,7 @@ bool interface_on_mouse_scroll(struct interface *interface, gfx_scroll_event_t *
 	return event->used;
 }
 
-bool interface_on_key_down(struct interface *interface, gfx_key_event_t *event)
+bool interface_on_key_down(struct interface *interface, struct gfx_key_event *event)
 {
 	if (interface->active_input)
 	{
@@ -563,7 +563,7 @@ bool interface_on_key_down(struct interface *interface, gfx_key_event_t *event)
 	return false;
 }
 
-bool interface_on_key_up(struct interface *interface, gfx_key_event_t *event)
+bool interface_on_key_up(struct interface *interface, struct gfx_key_event *event)
 {
 	if (interface->active_input)
 	{
@@ -586,7 +586,7 @@ bool interface_on_key_up(struct interface *interface, gfx_key_event_t *event)
 	return false;
 }
 
-bool interface_on_key_press(struct interface *interface, gfx_key_event_t *event)
+bool interface_on_key_press(struct interface *interface, struct gfx_key_event *event)
 {
 	if (interface->active_input)
 	{
@@ -597,7 +597,7 @@ bool interface_on_key_press(struct interface *interface, gfx_key_event_t *event)
 	return false;
 }
 
-bool interface_on_char(struct interface *interface, gfx_char_event_t *event)
+bool interface_on_char(struct interface *interface, struct gfx_char_event *event)
 {
 	if (interface->active_input)
 	{

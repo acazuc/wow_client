@@ -1571,7 +1571,7 @@ int gx_m2_initialize(struct gx_m2 *m2)
 	gfx_create_buffer(g_wow->device, &m2->indices_buffer, GFX_BUFFER_INDICES, m2->indices.data, m2->indices.size * sizeof(uint16_t), GFX_BUFFER_IMMUTABLE);
 	jks_array_resize(&m2->indices, 0);
 	jks_array_shrink(&m2->indices);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, bone_weights)},
 		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, pos)},

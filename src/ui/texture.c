@@ -153,7 +153,7 @@ static void render(struct ui_object *object)
 		gfx_create_buffer(g_wow->device, &texture->vertexes_buffer, GFX_BUFFER_VERTEXES, NULL, 4 * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
 		gfx_create_buffer(g_wow->device, &texture->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 		update_vertexes_buffer(texture);
-		gfx_attribute_bind_t binds[] =
+		const struct gfx_attribute_bind binds[] =
 		{
 			{&texture->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 			{&texture->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
@@ -392,12 +392,12 @@ UI_INH1(layered_region, void, set_alpha, float, alpha);
 UI_INH1(layered_region, void, set_hidden, bool, hidden);
 UI_INH2(layered_region, void, get_size, int32_t*, x, int32_t*, y);
 UI_INH0(layered_region, void, set_dirty_coords);
-UI_INH1(layered_region, void, on_mouse_move, gfx_pointer_event_t*, event);
-UI_INH1(layered_region, void, on_mouse_down, gfx_mouse_event_t*, event);
-UI_INH1(layered_region, void, on_mouse_up, gfx_mouse_event_t*, event);
-UI_INH1(layered_region, void, on_mouse_scroll, gfx_scroll_event_t*, event);
-UI_INH1(layered_region, bool, on_key_down, gfx_key_event_t*, event);
-UI_INH1(layered_region, bool, on_key_up, gfx_key_event_t*, event);
+UI_INH1(layered_region, void, on_mouse_move, struct gfx_pointer_event*, event);
+UI_INH1(layered_region, void, on_mouse_down, struct gfx_mouse_event*, event);
+UI_INH1(layered_region, void, on_mouse_up, struct gfx_mouse_event*, event);
+UI_INH1(layered_region, void, on_mouse_scroll, struct gfx_scroll_event*, event);
+UI_INH1(layered_region, bool, on_key_down, struct gfx_key_event*, event);
+UI_INH1(layered_region, bool, on_key_up, struct gfx_key_event*, event);
 UI_INH0(layered_region, struct ui_font_instance*, as_font_instance);
 UI_INH0(layered_region, const char*, get_name);
 

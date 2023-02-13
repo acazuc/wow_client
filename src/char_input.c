@@ -61,7 +61,7 @@ void char_input_destroy(struct char_input *input)
 	mem_free(MEM_GENERIC, input->text);
 }
 
-bool char_input_on_key_press(struct char_input *input, gfx_key_event_t *event)
+bool char_input_on_key_press(struct char_input *input, struct gfx_key_event *event)
 {
 	if (input->flags & CHAR_INPUT_EDITABLE)
 	{
@@ -202,7 +202,7 @@ bool char_input_on_key_press(struct char_input *input, gfx_key_event_t *event)
 	return false;
 }
 
-bool char_input_on_char(struct char_input *input, gfx_char_event_t *event)
+bool char_input_on_char(struct char_input *input, struct gfx_char_event *event)
 {
 	if (!(input->flags & CHAR_INPUT_EDITABLE))
 		return true;

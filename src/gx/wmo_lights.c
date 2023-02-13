@@ -80,7 +80,7 @@ void gx_wmo_lights_initialize(struct gx_wmo_lights *lights)
 		gfx_create_buffer(g_wow->device, &lights->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_basic_model_block), GFX_BUFFER_STREAM);
 	clear_init_data(lights->init_data);
 	lights->init_data = NULL;
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&lights->vertexes_buffer, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, position)},
 		{&lights->vertexes_buffer, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, color)},

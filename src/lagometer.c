@@ -10,7 +10,7 @@
 
 #define WIDTH 500
 
-static const gfx_input_layout_bind_t g_binds[] =
+static const struct gfx_input_layout_bind g_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT      , sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, color)},
@@ -38,7 +38,7 @@ struct lagometer *lagometer_new(void)
 		lagometer->uniform_buffers[i] = GFX_BUFFER_INIT();
 		gfx_create_buffer(g_wow->device, &lagometer->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_gui_model_block), GFX_BUFFER_STREAM);
 	}
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&lagometer->vertexes_buffer, sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, position)},
 		{&lagometer->vertexes_buffer, sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, color)},

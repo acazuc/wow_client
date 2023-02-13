@@ -361,7 +361,7 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 		gfx_create_buffer(g_wow->device, &skybox->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_skybox_model_block), GFX_BUFFER_STREAM);
 		gfx_create_buffer(g_wow->device, &skybox->m2_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_m2_scene_block), GFX_BUFFER_STREAM);
 	}
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, position)},
 		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[0])},

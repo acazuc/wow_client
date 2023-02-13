@@ -447,7 +447,7 @@ popargs:
 	return ret;
 }
 
-static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
+static void on_mouse_move(struct ui_object *object, struct gfx_pointer_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)
@@ -477,7 +477,7 @@ static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
 	}
 }
 
-static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_down(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)
@@ -498,7 +498,7 @@ static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
 	}
 }
 
-static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_up(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)
@@ -532,7 +532,7 @@ static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
 	ui_region_vtable.on_mouse_up(object, event);
 }
 
-static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
+static void on_mouse_scroll(struct ui_object *object, struct gfx_scroll_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)
@@ -553,7 +553,7 @@ static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
 	ui_region_vtable.on_mouse_scroll(object, event);
 }
 
-static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_down(struct ui_object *object, struct gfx_key_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)
@@ -572,7 +572,7 @@ static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
 	return ui_region_vtable.on_key_down(object, event);
 }
 
-static bool on_key_up(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_up(struct ui_object *object, struct gfx_key_event *event)
 {
 	struct ui_frame *frame = (struct ui_frame*)object;
 	for (size_t i = frame->frames.size; i > 0; --i)

@@ -9,61 +9,61 @@
 #include <stddef.h>
 
 #ifdef WITH_DEBUG_RENDERING
-static const gfx_input_layout_bind_t g_m2_bones_points_binds[] =
+static const struct gfx_input_layout_bind g_m2_bones_points_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, color)},
 	{GFX_ATTR_R32_UINT          , sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, bone)},
 };
 
-static const gfx_input_layout_bind_t g_m2_bones_lines_binds[] =
+static const struct gfx_input_layout_bind g_m2_bones_lines_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, color)},
 	{GFX_ATTR_R32_UINT          , sizeof(struct shader_m2_bones_input), offsetof(struct shader_m2_bones_input, bone)},
 };
 
-static const gfx_input_layout_bind_t g_wmo_collisions_binds[] =
+static const struct gfx_input_layout_bind g_wmo_collisions_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct vec3f), 0},
 };
 
-static const gfx_input_layout_bind_t g_m2_collisions_binds[] =
+static const struct gfx_input_layout_bind g_m2_collisions_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_m2_collisions_input), offsetof(struct shader_m2_collisions_input, position)},
 };
 
-static const gfx_input_layout_bind_t g_wmo_portals_binds[] =
+static const struct gfx_input_layout_bind g_wmo_portals_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, color)},
 };
 
-static const gfx_input_layout_bind_t g_collisions_binds[] =
+static const struct gfx_input_layout_bind g_collisions_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct vec3f), 0},
 };
 
-static const gfx_input_layout_bind_t g_wmo_lights_binds[] =
+static const struct gfx_input_layout_bind g_wmo_lights_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, color)},
 };
 
-static const gfx_input_layout_bind_t g_m2_lights_binds[] =
+static const struct gfx_input_layout_bind g_m2_lights_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, color)},
 	{GFX_ATTR_R32_UINT          , sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, bone)},
 };
 
-static const gfx_input_layout_bind_t g_aabb_binds[] =
+static const struct gfx_input_layout_bind g_aabb_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct vec3f), 0},
 };
 #endif
 
-static const gfx_input_layout_bind_t g_wmo_colored_binds[] =
+static const struct gfx_input_layout_bind g_wmo_colored_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, position)},
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, norm)},
@@ -71,40 +71,40 @@ static const gfx_input_layout_bind_t g_wmo_colored_binds[] =
 	{GFX_ATTR_R8G8B8A8_UNORM , sizeof(uint8_t) * 4            , 0},
 };
 
-static const gfx_input_layout_bind_t g_mclq_water_binds[] =
+static const struct gfx_input_layout_bind g_mclq_water_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
 	{GFX_ATTR_R8_UNORM       , sizeof(uint8_t)                 , 0},
 	{GFX_ATTR_R32G32_FLOAT   , sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_mclq_magma_binds[] =
+static const struct gfx_input_layout_bind g_mclq_magma_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
 	{GFX_ATTR_R32G32_FLOAT   , sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_particles_binds[] =
+static const struct gfx_input_layout_bind g_particles_binds[] =
 {
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},
 	{GFX_ATTR_R32G32_FLOAT      , sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_wmo_mliq_binds[] =
+static const struct gfx_input_layout_bind g_wmo_mliq_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT   , sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_ribbons_binds[] =
+static const struct gfx_input_layout_bind g_ribbons_binds[] =
 {
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, position)},
 	{GFX_ATTR_R32G32B32A32_FLOAT, sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, color)},
 	{GFX_ATTR_R32G32_FLOAT      , sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_skybox_binds[] =
+static const struct gfx_input_layout_bind g_skybox_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, position)},
 	{GFX_ATTR_R32_FLOAT      , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[0])},
@@ -114,7 +114,7 @@ static const gfx_input_layout_bind_t g_skybox_binds[] =
 	{GFX_ATTR_R32_FLOAT      , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[4])},
 };
 
-static const gfx_input_layout_bind_t g_mcnk_binds[] =
+static const struct gfx_input_layout_bind g_mcnk_binds[] =
 {
 	{GFX_ATTR_R8G8B8A8_SNORM, sizeof(struct shader_mcnk_input), offsetof(struct shader_mcnk_input, norm)},
 	{GFX_ATTR_R32G32_FLOAT  , sizeof(struct vec2f) * 2        , sizeof(struct vec2f) * 0},
@@ -122,18 +122,18 @@ static const gfx_input_layout_bind_t g_mcnk_binds[] =
 	{GFX_ATTR_R32_FLOAT     , sizeof(struct shader_mcnk_input), offsetof(struct shader_mcnk_input, y)},
 };
 
-static const gfx_input_layout_bind_t g_text_binds[] =
+static const struct gfx_input_layout_bind g_text_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_text_input), offsetof(struct shader_text_input, position)},
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_text_input), offsetof(struct shader_text_input, uv)},
 };
 
-static const gfx_input_layout_bind_t g_wdl_binds[] =
+static const struct gfx_input_layout_bind g_wdl_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct vec3f), 0},
 };
 
-static const gfx_input_layout_bind_t g_wmo_binds[] =
+static const struct gfx_input_layout_bind g_wmo_binds[] =
 {
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, position)},
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, norm)},
@@ -141,7 +141,7 @@ static const gfx_input_layout_bind_t g_wmo_binds[] =
 	{GFX_ATTR_DISABLED       , 0                              , 0},
 };
 
-static const gfx_input_layout_bind_t g_m2_binds[] =
+static const struct gfx_input_layout_bind g_m2_binds[] =
 {
 	{GFX_ATTR_R8G8B8A8_UNORM , sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, bone_weights)},
 	{GFX_ATTR_R32G32B32_FLOAT, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, pos)},

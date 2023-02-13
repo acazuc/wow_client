@@ -299,7 +299,7 @@ static void eval_name(struct ui_object *object)
 	} while (parent);
 }
 
-static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
+static void on_mouse_move(struct ui_object *object, struct gfx_pointer_event *event)
 {
 	struct ui_region *region = (struct ui_region*)object;
 	if (!region->mouse_enabled)
@@ -340,7 +340,7 @@ static void on_mouse_move(struct ui_object *object, gfx_pointer_event_t *event)
 	event->used = true;
 }
 
-static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_down(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	struct ui_region *region = (struct ui_region*)object;
 	if (!region->mouse_enabled)
@@ -355,7 +355,7 @@ static void on_mouse_down(struct ui_object *object, gfx_mouse_event_t *event)
 	}
 }
 
-static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
+static void on_mouse_up(struct ui_object *object, struct gfx_mouse_event *event)
 {
 	struct ui_region *region = (struct ui_region*)object;
 	if (!region->mouse_enabled)
@@ -374,7 +374,7 @@ static void on_mouse_up(struct ui_object *object, gfx_mouse_event_t *event)
 	region->clicked = false;
 }
 
-static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
+static void on_mouse_scroll(struct ui_object *object, struct gfx_scroll_event *event)
 {
 	struct ui_region *region = (struct ui_region*)object;
 	if (!region->mouse_enabled)
@@ -385,14 +385,14 @@ static void on_mouse_scroll(struct ui_object *object, gfx_scroll_event_t *event)
 		event->used = true;
 }
 
-static bool on_key_down(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_down(struct ui_object *object, struct gfx_key_event *event)
 {
 	(void)object;
 	(void)event;
 	return false;
 }
 
-static bool on_key_up(struct ui_object *object, gfx_key_event_t *event)
+static bool on_key_up(struct ui_object *object, struct gfx_key_event *event)
 {
 	(void)object;
 	(void)event;

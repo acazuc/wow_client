@@ -358,6 +358,7 @@ static void update_particles(struct gx_m2_particles *particles, struct gx_m2_par
 		}
 		float u = 1.f / emitter->emitter->texture_dimensions_columns;
 		float v = 1.f / emitter->emitter->texture_dimensions_rows;
+#if 0
 		switch (emitter->emitter->texture_tile_rotation)
 		{
 			case -1:
@@ -372,10 +373,12 @@ static void update_particles(struct gx_m2_particles *particles, struct gx_m2_par
 #endif
 				/* FALLTHROUGH */
 			case 0:
+#endif
 				VEC2_SET(vertexes[0].uv, 0, 0);
 				VEC2_SET(vertexes[1].uv, u, 0);
 				VEC2_SET(vertexes[2].uv, u, v);
 				VEC2_SET(vertexes[3].uv, 0, v);
+#if 0
 				break;
 			case 1:
 				VEC2_SET(vertexes[1].uv, 0, 0);
@@ -384,13 +387,12 @@ static void update_particles(struct gx_m2_particles *particles, struct gx_m2_par
 				VEC2_SET(vertexes[0].uv, 0, v);
 				break;
 		}
+#endif
 	}
 }
 
 static void create_particle(struct gx_m2_particles *particles, struct gx_m2_particles_emitter *emitter)
 {
-	if (!emitter->emitter->particle_type)
-		return;
 	struct gx_m2_particle *particle = jks_array_grow(&emitter->particles, 1);
 	if (!particle)
 	{
@@ -543,7 +545,7 @@ static void initialize(struct gx_m2_particles *particles)
 		struct gx_m2_particles_emitter *emitter = JKS_ARRAY_GET(&particles->emitters, i, struct gx_m2_particles_emitter);
 		for (size_t j = 0; j < RENDER_FRAMES_COUNT; ++j)
 		{
-			gfx_attribute_bind_t binds[] =
+			const struct gfx_attribute_bind binds[] =
 			{
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, position)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},

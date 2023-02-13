@@ -454,7 +454,7 @@ shadow_end:
 	gfx_delete_attributes_state(g_wow->device, &message->attributes_state);
 	gfx_create_buffer(g_wow->device, &message->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes.data, vertexes.size * sizeof(struct shader_ui_input), GFX_BUFFER_STATIC);
 	gfx_create_buffer(g_wow->device, &message->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_STATIC);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&message->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
 		{&message->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
@@ -650,12 +650,12 @@ UI_INH1(frame, void, set_alpha, float, alpha);
 UI_INH1(frame, void, set_hidden, bool, hidden);
 UI_INH2(frame, void, get_size, int32_t*, x, int32_t*, y);
 UI_INH0(frame, void, set_dirty_coords);
-UI_INH1(frame, void, on_mouse_move, gfx_pointer_event_t*, event);
-UI_INH1(frame, void, on_mouse_down, gfx_mouse_event_t*, event);
-UI_INH1(frame, void, on_mouse_up, gfx_mouse_event_t*, event);
-UI_INH1(frame, void, on_mouse_scroll, gfx_scroll_event_t*, event);
-UI_INH1(frame, bool, on_key_down, gfx_key_event_t*, event);
-UI_INH1(frame, bool, on_key_up, gfx_key_event_t*, event);
+UI_INH1(frame, void, on_mouse_move, struct gfx_pointer_event*, event);
+UI_INH1(frame, void, on_mouse_down, struct gfx_mouse_event*, event);
+UI_INH1(frame, void, on_mouse_up, struct gfx_mouse_event*, event);
+UI_INH1(frame, void, on_mouse_scroll, struct gfx_scroll_event*, event);
+UI_INH1(frame, bool, on_key_down, struct gfx_key_event*, event);
+UI_INH1(frame, bool, on_key_up, struct gfx_key_event*, event);
 UI_INH0(frame, const char*, get_name);
 
 const struct ui_object_vtable ui_scrolling_message_frame_vtable =

@@ -103,7 +103,7 @@ static void initialize(struct gx_taxi *taxi)
 	gfx_create_buffer(g_wow->device, &taxi->indices_buffer, GFX_BUFFER_INDICES, indices.data, sizeof(uint16_t) * indices.size, GFX_BUFFER_IMMUTABLE);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 		gfx_create_buffer(g_wow->device, &taxi->uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_aabb_mesh_block), GFX_BUFFER_STREAM);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&taxi->vertexes_buffer, sizeof(struct vec3f), 0},
 	};

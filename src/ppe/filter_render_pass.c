@@ -31,7 +31,7 @@ struct filter_render_pass
 
 static const struct render_pass_vtable filter_render_pass_vtable;
 
-static const gfx_input_layout_bind_t g_binds[] =
+static const struct gfx_input_layout_bind g_binds[] =
 {
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
 	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
@@ -65,7 +65,7 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_buffer(g_wow->device, &filter->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &filter->uv_buffer, GFX_BUFFER_VERTEXES, uvs, sizeof(uvs), GFX_BUFFER_IMMUTABLE);
 	gfx_create_input_layout(g_wow->device, &filter->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), filter->shader_state);
-	gfx_attribute_bind_t binds[] =
+	const struct gfx_attribute_bind binds[] =
 	{
 		{&filter->positions_buffer, sizeof(struct vec2f), 0},
 		{&filter->uv_buffer       , sizeof(struct vec2f), 0},
