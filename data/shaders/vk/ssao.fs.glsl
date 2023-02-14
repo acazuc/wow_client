@@ -1,19 +1,19 @@
-#version 330
+#version 450
 
 #define SAMPLES 4
 
-in fs_block
+layout(location = 0) in fs_block
 {
 	vec2 fs_uv;
 };
 
 layout(location=0) out vec4 fragcolor;
 
-uniform sampler2D tex_position;
-uniform sampler2D tex_normal;
-uniform sampler2D tex_noise;
+layout(set = 1, binding = 0) uniform sampler2D tex_position;
+layout(set = 1, binding = 1) uniform sampler2D tex_normal;
+layout(set = 1, binding = 2) uniform sampler2D tex_noise;
 
-layout(std140) uniform model_block
+layout(set = 0, binding = 1, std140) uniform model_block
 {
 	mat4 mvp;
 	mat4 p;

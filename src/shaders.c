@@ -110,7 +110,7 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			break;
 		case GFX_DEVICE_VK:
 			dir_str = "vk";
-			ext_str = "khr";
+			ext_str = "glsl.spv";
 			break;
 		case GFX_DEVICE_GLES3:
 			dir_str = "gles3";
@@ -137,7 +137,7 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 	ret = 1;
 
 cleanup:
-	mem_free(MEM_GENERIC, data);
+	//mem_free(MEM_GENERIC, data);
 	return ret;
 }
 
@@ -187,9 +187,9 @@ static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name
 		LOG_ERROR("failed to create %s shader state", name);
 
 cleanup:
-	gfx_delete_shader(g_wow->device, &geometry_shader);
-	gfx_delete_shader(g_wow->device, &fragment_shader);
-	gfx_delete_shader(g_wow->device, &vertex_shader);
+	//gfx_delete_shader(g_wow->device, &geometry_shader);
+	//gfx_delete_shader(g_wow->device, &fragment_shader);
+	//gfx_delete_shader(g_wow->device, &vertex_shader);
 	return ret;
 }
 

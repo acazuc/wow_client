@@ -1,4 +1,4 @@
-#version 330
+#version 450
 
 layout(location=0) in vec3 vs_position;
 layout(location=1) in float vs_color0;
@@ -8,13 +8,13 @@ layout(location=4) in float vs_color3;
 layout(location=5) in float vs_color4;
 layout(location=6) in vec2 vs_uv;
 
-out fs_block
+layout(location = 0) out fs_block
 {
 	vec4 fs_color;
 	vec2 fs_uv;
 };
 
-layout(std140) uniform model_block
+layout(set = 0, binding = 1, std140) uniform model_block
 {
 	mat4 mvp;
 	vec4 sky_colors[6];

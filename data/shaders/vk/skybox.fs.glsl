@@ -1,12 +1,12 @@
-#version 330
+#version 450
 
-in fs_block
+layout(location = 0) in fs_block
 {
 	vec4 fs_color;
 	vec2 fs_uv;
 };
 
-layout(std140) uniform model_block
+layout(set = 0, binding = 1, std140) uniform model_block
 {
 	mat4 mvp;
 	vec4 sky_colors[6];
@@ -18,8 +18,8 @@ layout(std140) uniform model_block
 
 layout(location=0) out vec4 fragcolor;
 
-uniform sampler2D clouds1;
-uniform sampler2D clouds2;
+layout(set = 1, binding = 0) uniform sampler2D clouds1;
+layout(set = 1, binding = 1) uniform sampler2D clouds2;
 
 void main()
 {

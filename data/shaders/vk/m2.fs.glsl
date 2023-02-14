@@ -1,6 +1,6 @@
-#version 330
+#version 450
 
-in fs_block
+layout(location = 0) in fs_block
 {
 	vec4 fs_position_fixed;
 	vec4 fs_normal_fixed;
@@ -11,8 +11,8 @@ in fs_block
 	vec2 fs_uv2;
 };
 
-uniform sampler2D tex1;
-uniform sampler2D tex2;
+layout(set = 1, binding = 0) uniform sampler2D tex1;
+layout(set = 1, binding = 1) uniform sampler2D tex2;
 
 struct Light
 {
@@ -23,7 +23,7 @@ struct Light
 	vec2 data;
 };
 
-layout(std140) uniform mesh_block
+layout(set = 0, binding = 0, std140) uniform mesh_block
 {
 	mat4 tex1_matrix;
 	mat4 tex2_matrix;
@@ -34,7 +34,7 @@ layout(std140) uniform mesh_block
 	float alpha_test;
 };
 
-layout(std140) uniform model_block
+layout(set = 0, binding = 1, std140) uniform model_block
 {
 	mat4 v;
 	mat4 mv;
@@ -44,7 +44,7 @@ layout(std140) uniform model_block
 	mat4 bone_mats[256];
 };
 
-layout(std140) uniform scene_block
+layout(set = 0, binding = 2, std140) uniform scene_block
 {
 	vec4 light_direction;
 	vec4 specular_color;

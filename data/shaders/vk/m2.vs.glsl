@@ -1,4 +1,4 @@
-#version 330
+#version 450
 
 layout(location=0) in vec4 vs_bone_weights;
 layout(location=1) in vec3 vs_position;
@@ -7,7 +7,7 @@ layout(location=3) in ivec4 vs_bones;
 layout(location=4) in vec2 vs_uv1;
 layout(location=5) in vec2 vs_uv2;
 
-out fs_block
+layout(location = 0) out fs_block
 {
 	vec4 fs_position_fixed;
 	vec4 fs_normal_fixed;
@@ -27,7 +27,7 @@ struct Light
 	vec2 data;
 };
 
-layout(std140) uniform mesh_block
+layout(set = 0, binding = 0, std140) uniform mesh_block
 {
 	mat4 tex1_matrix;
 	mat4 tex2_matrix;
@@ -38,7 +38,7 @@ layout(std140) uniform mesh_block
 	float alpha_test;
 };
 
-layout(std140) uniform model_block
+layout(set = 0, binding = 1, std140) uniform model_block
 {
 	mat4 v;
 	mat4 mv;
@@ -48,7 +48,7 @@ layout(std140) uniform model_block
 	mat4 bone_mats[256];
 };
 
-layout(std140) uniform scene_block
+layout(set = 0, binding = 2, std140) uniform scene_block
 {
 	vec4 light_direction;
 	vec4 specular_color;
