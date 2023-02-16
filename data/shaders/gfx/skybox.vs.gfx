@@ -1,0 +1,40 @@
+in 0 vec3 position
+in 1 float color0
+in 2 float color1
+in 3 float color2
+in 4 float color3
+in 5 float color4
+in 6 vec2 uv
+
+out 0 vec4 color
+out 1 vec2 uv
+
+constant 1 model_block
+{
+	mat4 mvp
+	vec4 sky_colors0
+	vec4 sky_colors1
+	vec4 sky_colors2
+	vec4 sky_colors3
+	vec4 sky_colors4
+	vec4 sky_colors5
+	vec4 clouds_colors0
+	vec4 clouds_colors1
+	vec2 clouds_factors
+	float clouds_blend
+	float clouds_drift
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	gfx_output.gfx_position = mul(vec4(gfx_input.position, 1), mvp);
+	gfx_output.color = sky_colors0;
+	gfx_output.color = mix(gfx_output.color, sky_colors1, gfx_input.color0);
+	gfx_output.color = mix(gfx_output.color, sky_colors2, gfx_input.color1);
+	gfx_output.color = mix(gfx_output.color, sky_colors3, gfx_input.color2);
+	gfx_output.color = mix(gfx_output.color, sky_colors4, gfx_input.color3);
+	gfx_output.color = mix(gfx_output.color, sky_colors5, gfx_input.color4);
+	gfx_output.uv = gfx_input.uv;
+	return gfx_output;
+}
