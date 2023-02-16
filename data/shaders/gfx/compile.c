@@ -322,21 +322,22 @@ static bool parse_out(struct shader *shader, const char *line)
 
 static bool parse_constant_members(struct shader_constant *constant, FILE *fp)
 {
-	char *line = NULL;
+	char *lineptr = NULL;
 	size_t len = 0;
 	bool ret = false;
-	if (getline(&line, &len, fp) == -1)
+	if (getline(&lineptr, &len, fp) == -1)
 	{
 		fprintf(stderr, "invalid constant: failed to find {\n");
 		return false;
 	}
-	if (strcmp(line, "{\n"))
+	if (strcmp(lineptr, "{\n"))
 	{
 		fprintf(stderr, "invalid constant: '{' expected\n");
 		return false;
 	}
-	while (getline(&line, &len, fp) != -1)
+	while (getline(&lineptr, &len, fp) != -1)
 	{
+		const char *line = lineptr;
 		if (!strcmp(line, "}\n"))
 			break;
 		struct shader_constant_member *member = &constant->members[constant->members_nb];
@@ -345,11 +346,11 @@ static bool parse_constant_members(struct shader_constant *constant, FILE *fp)
 			fprintf(stderr, "invalid constant: too much members\n");
 			return false;
 		}
-		skip_spaces((const char**)&line);
-		if (!parse_variable_type((const char**)&line, &member->type))
+		skip_spaces(&line);
+		if (!parse_variable_type(&line, &member->type))
 			return false;
-		skip_spaces((const char**)&line);
-		if (!parse_variable_name((const char**)&line, member->name, sizeof(member->name)))
+		skip_spaces(&line);
+		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
 			return false;
 		constant->members_nb++;
 	}
@@ -364,11 +365,11 @@ static bool parse_constant(struct shader *shader, const char *line, FILE *fp)
 		return false;
 	}
 	struct shader_constant *constant = &shader->constants[shader->constants_nb];
-	skip_spaces((const char**)&line);
+	skip_spaces(&line);
 	if (!parse_bind(&line, &constant->bind))
 		return false;
-	skip_spaces((const char**)&line);
-	if (!parse_variable_name((const char**)&line, constant->name, sizeof(constant->name)))
+	skip_spaces(&line);
+	if (!parse_variable_name(&line, constant->name, sizeof(constant->name)))
 		return false;
 	if (!parse_constant_members(constant, fp))
 		return false;
@@ -399,7 +400,7 @@ static bool parse_code(struct shader *shader, char **line, size_t *len, FILE *fp
 	do
 	{
 		size_t line_len = strlen(*line);
-		char *code = realloc(shader->code, shader->code_size + line_len);
+		char *code = realloc(shader->code, shader->code_size + line_len + 1);
 		if (!code)
 		{
 			fprintf(stderr, "realloc failed\n");
