@@ -1,0 +1,27 @@
+in 0 vec2 position
+in 1 vec4 color
+in 2 vec2 uv
+
+out 0 vec4 col
+out 1 vec4 uv
+
+constant 1 model_block
+{
+	mat4 mvp
+	vec4 color
+	vec4 uv_transform
+	float alpha_test
+	int use_mask
+}
+
+vs_output gfx_main(vs_input gfx_in)
+{
+	vs_output gfx_out;
+	gfx_out.gfx_position = mul(vec4(gfx_in.position, 0, 1), mvp);
+	gfx_out.col = gfx_in.color * color;
+	gfx_out.uv = vec4(gfx_in.uv.x * uv_transform.x + uv_transform.y,
+	                  gfx_in.uv.y * uv_transform.z + uv_transform.w,
+	                  gfx_in.uv.x,
+	                  gfx_in.uv.y);
+	return gfx_out;
+}

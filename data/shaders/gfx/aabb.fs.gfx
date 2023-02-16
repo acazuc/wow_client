@@ -1,0 +1,14 @@
+out 0 vec4 color
+
+constant 0 mesh_block
+{
+	mat4 mvp
+	vec4 color
+}
+
+fs_output gfx_main(fs_input gfx_in)
+{
+	fs_output gfx_out;
+	gfx_out.color = color;
+	return gfx_out;
+}

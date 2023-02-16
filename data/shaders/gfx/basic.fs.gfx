@@ -1,0 +1,10 @@
+in 0 vec4 color
+
+out 0 vec4 color
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_out;
+	gfx_out.color = gfx_input.color;
+	return gfx_out;
+}

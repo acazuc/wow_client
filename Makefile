@@ -445,4 +445,7 @@ clean:
 lib:
 	@cd lib/jkl && SL_LIBS="$(JKL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(JKL_TARGET)" -m static -o "$(PWD)/$(LIB_DIR)" -j6
 
+shaders:
+	@cd data/shaders/gfx && sh compile.sh
+
 .PHONY: clean size objsize lib

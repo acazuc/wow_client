@@ -1,0 +1,27 @@
+in 0 vec4 col
+in 1 vec4 uv
+
+out 0 vec4 color
+
+constant 1 model_block
+{
+	mat4 mvp
+	vec4 color
+	vec4 uv_transform
+	float alpha_test
+	int use_mask
+}
+
+sampler 0 tex
+sampler 1 mask
+
+fs_output gfx_main(fs_input gfx_in)
+{
+	fs_output gfx_out;
+	gfx_out.color = gfx_in.col * gfx_sample(tex, gfx_in.uv.xy);
+	if (use_mask != 0)
+		gfx_out.color *= gfx_sample(mask, gfx_in.uv.zw);
+	if (gfx_out.color.a < alpha_test)
+		discard;
+	return gfx_out;
+}

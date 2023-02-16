@@ -1,0 +1,115 @@
+in 0 vec3 position
+in 1 vec3 light_dir
+in 2 vec3 normal
+in 3 vec4 color
+in 4 vec3 light
+in 5 vec2 uv1
+in 6 vec2 uv2
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+constant 0 mesh_block
+{
+	vec4 emissive_color
+	ivec4 combiners
+	ivec4 settings
+	float alpha_test
+}
+
+constant 1 model_block
+{
+	mat4 m
+	mat4 mv
+	mat4 mvp
+}
+
+constant 2 scene_block
+{
+	vec4 light_direction
+	vec4 specular_color
+	vec4 diffuse_color
+	vec4 ambient_color
+	vec4 fog_color
+	vec2 fog_range
+}
+
+sampler 0 tex1
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec4 input_color = vec4(mix(gfx_input.color.xyz, gfx_input.light, gfx_input.color.a), 1);
+	vec4 tex1_color = gfx_sample(tex1, gfx_input.uv1);
+	vec4 output_color = input_color;
+	switch (combiners.y)
+	{
+		case 0: //Diffuse
+		{
+			output_color = tex1_color * input_color;
+			//output_color = vec4(.25, .25, .25, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 1: //Specular
+		{
+			float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10);
+			output_color = tex1_color * input_color;
+			output_color.rgb += vec3(specular_factor * specular_color.rgb);
+			//output_color = vec4(1, 1, 1, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 2: //Metal
+		{
+			float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10);
+			output_color = tex1_color * input_color;
+			output_color.rgb += vec3(specular_factor * specular_color.rgb * tex1_color.a * 4);
+			//output_color = vec4(0, 1, 1, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 3: //Env
+		{
+			//2 textures
+			output_color = tex1_color * input_color;
+			//output_color = vec4(0, 0, 1, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 4: //Opaque
+		{
+			output_color.rgb = input_color.rgb * tex1_color.rgb;
+			//output_color = vec4(1, 0, 1, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 5: //EnvMetal
+		{
+			//2 textures
+			float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10);
+			output_color = tex1_color * input_color + vec4(vec3(specular_factor * specular_color.xyz * tex1_color.rgb), 1);
+			//output_color = vec4(1, 1, 0, 1) * vec4(vec3(length(input_color.rgb)), 1);
+			break;
+		}
+		case 6: //MapObjTwoLayerDiffuse
+		{
+			float len = length(input_color.rgb);
+			output_color = vec4(1, 0, 0, 1) * vec4(len, len, len, 1);
+			break;
+		}
+		default:
+		{
+			float len = length(input_color.rgb);
+			output_color = vec4(0, 1, 0, 1) * vec4(len, len, len, 1);
+			break;
+		}
+	}
+	if (output_color.a < alpha_test)
+		discard;
+	if (settings.z == 0)
+	{
+		float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+		output_color = vec4(mix(output_color.rgb, fog_color.xyz, fog_factor), output_color.a);
+	}
+	gfx_output.color = output_color;
+	gfx_output.normal = vec4(gfx_input.normal, 1);
+	gfx_output.position = vec4(gfx_input.position, 1);
+	return gfx_output;
+}
