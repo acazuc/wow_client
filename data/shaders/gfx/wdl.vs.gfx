@@ -1,0 +1,19 @@
+in 0 vec3 position
+
+out 0 vec3 position
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	vec4 color
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	vec4 position_fixed = vec4(gfx_input.position, 1);
+	gfx_output.position = mul(position_fixed, mv).xyz;
+	gfx_output.gfx_position = mul(position_fixed, mvp);
+	return gfx_output;
+}

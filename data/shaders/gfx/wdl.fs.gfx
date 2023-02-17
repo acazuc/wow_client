@@ -1,0 +1,21 @@
+in 0 vec3 position
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	vec4 color
+}
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	gfx_output.color = color;
+	gfx_output.normal = vec4(0, 1, 0, 1);
+	gfx_output.position = vec4(0, 0, 0, 0); //vec4(gfx_input.position, 1);
+	return gfx_output;
+}
