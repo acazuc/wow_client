@@ -23,27 +23,36 @@ enum shader_api
 	SHADER_D3D11,
 };
 
-enum shader_variable_type
+enum variable_type
 {
-	SHADER_FLOAT,
-	SHADER_VEC1,
-	SHADER_VEC2,
-	SHADER_VEC3,
-	SHADER_VEC4,
-	SHADER_MAT1,
-	SHADER_MAT2,
-	SHADER_MAT3,
-	SHADER_MAT4,
-	SHADER_INT,
-	SHADER_IVEC1,
-	SHADER_IVEC2,
-	SHADER_IVEC3,
-	SHADER_IVEC4,
+	VARIABLE_FLOAT,
+	VARIABLE_VEC1,
+	VARIABLE_VEC2,
+	VARIABLE_VEC3,
+	VARIABLE_VEC4,
+	VARIABLE_MAT1,
+	VARIABLE_MAT2,
+	VARIABLE_MAT3,
+	VARIABLE_MAT4,
+	VARIABLE_INT,
+	VARIABLE_IVEC1,
+	VARIABLE_IVEC2,
+	VARIABLE_IVEC3,
+	VARIABLE_IVEC4,
+	VARIABLE_STRUCT,
+};
+
+enum sampler_type
+{
+	SAMPLER_2D,
+	SAMPLER_2D_ARRAY,
+	SAMPLER_3D,
 };
 
 struct shader_constant_member
 {
-	enum shader_variable_type type;
+	enum variable_type type;
+	char struct_name[64];
 	char name[64];
 };
 
@@ -59,30 +68,46 @@ struct shader_sampler
 {
 	uint8_t bind;
 	char name[64];
+	enum sampler_type type;
 };
 
 struct shader_output
 {
 	uint8_t bind;
 	char name[64];
-	enum shader_variable_type type;
+	enum variable_type type;
 };
 
 struct shader_input
 {
 	uint8_t bind;
 	char name[64];
-	enum shader_variable_type type;
+	enum variable_type type;
+};
+
+struct shader_struct_member
+{
+	enum variable_type type;
+	char name[64];
+};
+
+struct shader_struct
+{
+	char name[64];
+	struct shader_struct_member members[64];
+	uint32_t members_nb;
 };
 
 struct shader
 {
-	struct shader_constant constants[4];
-	struct shader_sampler samplers[4];
+	struct shader_constant constants[16];
+	struct shader_sampler samplers[16];
+	struct shader_struct structs[16];
 	struct shader_output outputs[16];
 	struct shader_input inputs[16];
 	uint8_t constants_nb;
 	uint8_t samplers_nb;
+	uint8_t structs_nb;
 	uint8_t outputs_nb;
 	uint8_t inputs_nb;
 	char *code;
@@ -130,12 +155,12 @@ static bool shader_api_from_string(const char *str, enum shader_api *api)
 	return false;
 }
 
-static bool variable_type_from_string(const char *str, size_t len, enum shader_variable_type *type)
+static bool variable_type_from_string(const char *str, size_t len, enum variable_type *type)
 {
 #define TEST(name, val) \
 	if (!strncmp(str, #name, len)) \
 	{ \
-		*type = SHADER_##val; \
+		*type = VARIABLE_##val; \
 		return true; \
 	}
 
@@ -158,24 +183,52 @@ static bool variable_type_from_string(const char *str, size_t len, enum shader_v
 #undef TEST
 }
 
-static const char *variable_type_to_string(enum shader_variable_type type)
+static bool sampler_type_from_string(const char *str, size_t len, enum sampler_type *type)
+{
+#define TEST(name, val) \
+	if (!strncmp(str, #name, len)) \
+	{ \
+		*type = SAMPLER_##val; \
+		return true; \
+	}
+
+	TEST(2d, 2D);
+	TEST(2d_array, 2D_ARRAY);
+	TEST(3d, 3D);
+	return false;
+
+#undef TEST
+}
+
+static const char *variable_type_to_string(enum variable_type type)
 {
 	static const char *strings[] =
 	{
-		[SHADER_FLOAT] = "float",
-		[SHADER_VEC1] = "vec1",
-		[SHADER_VEC2] = "vec2",
-		[SHADER_VEC3] = "vec3",
-		[SHADER_VEC4] = "vec4",
-		[SHADER_MAT1] = "mat1",
-		[SHADER_MAT2] = "mat2",
-		[SHADER_MAT3] = "mat3",
-		[SHADER_MAT4] = "mat4",
-		[SHADER_INT] = "int",
-		[SHADER_IVEC1] = "ivec1",
-		[SHADER_IVEC2] = "ivec2",
-		[SHADER_IVEC3] = "ivec3",
-		[SHADER_IVEC4] = "ivec4",
+		[VARIABLE_FLOAT] = "float",
+		[VARIABLE_VEC1] = "vec1",
+		[VARIABLE_VEC2] = "vec2",
+		[VARIABLE_VEC3] = "vec3",
+		[VARIABLE_VEC4] = "vec4",
+		[VARIABLE_MAT1] = "mat1",
+		[VARIABLE_MAT2] = "mat2",
+		[VARIABLE_MAT3] = "mat3",
+		[VARIABLE_MAT4] = "mat4",
+		[VARIABLE_INT] = "int",
+		[VARIABLE_IVEC1] = "ivec1",
+		[VARIABLE_IVEC2] = "ivec2",
+		[VARIABLE_IVEC3] = "ivec3",
+		[VARIABLE_IVEC4] = "ivec4",
+	};
+	return strings[type];
+}
+
+static const char *sampler_type_to_string(enum sampler_type type)
+{
+	static const char *strings[] =
+	{
+		[SAMPLER_2D] = "sampler2D",
+		[SAMPLER_2D_ARRAY] = "sampler2DArray",
+		[SAMPLER_3D] = "sampler3D",
 	};
 	return strings[type];
 }
@@ -216,29 +269,24 @@ static bool parse_bind(const char **line, uint8_t *bindp)
 	return true;
 }
 
-static bool parse_variable_type(const char **line, enum shader_variable_type *type)
+static bool parse_variable_type(const char **line, enum variable_type *type)
 {
 	const char *str = *line;
 	if (!**line)
 	{
-		fprintf(stderr, "invalid type: empty\n");
+		fprintf(stderr, "invalid variable type: empty\n");
 		return false;
 	}
 	while (**line && !isspace(**line))
 	{
-		if (!isalnum(**line))
+		if (!isalnum(**line) && **line != '_')
 		{
-			fprintf(stderr, "invalid type: isn't [a-zA-Z0-9]\n");
+			fprintf(stderr, "invalid variable type: isn't [a-zA-Z0-9_]\n");
 			return false;
 		}
 		(*line)++;
 	}
-	if (!variable_type_from_string(str, *line - str, type))
-	{
-		fprintf(stderr, "invalid type: unknown type: %.*s\n", (int)(*line - str), str);
-		return false;
-	}
-	return true;
+	return variable_type_from_string(str, *line - str, type);
 }
 
 static bool parse_variable_name(const char **line, char *name, size_t size)
@@ -246,12 +294,12 @@ static bool parse_variable_name(const char **line, char *name, size_t size)
 	const char *str = *line;
 	if (!**line)
 	{
-		fprintf(stderr, "invalid name: empty\n");
+		fprintf(stderr, "invalid variable name: empty\n");
 		return false;
 	}
 	while (**line && !isspace(**line))
 	{
-		if (!isalnum(**line) && **line != '_')
+		if (!isalnum(**line) && **line != '_' && **line != '[' && **line != ']')
 		{
 			fprintf(stderr, "invalid variable name: isn't [a-zA-Z0-9_]\n");
 			return false;
@@ -268,6 +316,26 @@ static bool parse_variable_name(const char **line, char *name, size_t size)
 	return true;
 }
 
+static bool parse_sampler_type(const char **line, enum sampler_type *type)
+{
+	const char *str = *line;
+	if (!**line)
+	{
+		fprintf(stderr, "invalid sampler type: empty\n");
+		return false;
+	}
+	while (**line && !isspace(**line))
+	{
+		if (!isalnum(**line) && **line != '_')
+		{
+			fprintf(stderr, "invalid sampler type: isn't [a-zA-Z0-9_]\n");
+			return false;
+		}
+		(*line)++;
+	}
+	return sampler_type_from_string(str, *line - str, type);
+}
+
 static bool parse_in(struct shader *shader, const char *line)
 {
 	if (shader->inputs_nb >= sizeof(shader->inputs) / sizeof(*shader->inputs))
@@ -281,7 +349,10 @@ static bool parse_in(struct shader *shader, const char *line)
 		return false;
 	skip_spaces(&line);
 	if (!parse_variable_type(&line, &input->type))
+	{
+		fprintf(stderr, "invalid input type\n");
 		return false;
+	}
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, input->name, sizeof(input->name)))
 		return false;
@@ -307,7 +378,10 @@ static bool parse_out(struct shader *shader, const char *line)
 		return false;
 	skip_spaces(&line);
 	if (!parse_variable_type(&line, &output->type))
+	{
+		fprintf(stderr, "invalid output type\n");
 		return false;
+	}
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, output->name, sizeof(output->name)))
 		return false;
@@ -317,6 +391,22 @@ static bool parse_out(struct shader *shader, const char *line)
 		return false;
 	}
 	shader->outputs_nb++;
+	return true;
+}
+
+static bool parse_constant_member_type(const char **line, struct shader_constant_member *member)
+{
+	const char *ptr = *line;
+	if (parse_variable_type(line, &member->type))
+		return true;
+	if (*line - ptr >= sizeof(member->struct_name))
+	{
+		fprintf(stderr, "invalid constant: member type too long\n");
+		return false;
+	}
+	memcpy(member->struct_name, ptr, *line - ptr);
+	member->type = VARIABLE_STRUCT;
+	member->struct_name[*line - ptr] = '\0';
 	return true;
 }
 
@@ -347,7 +437,7 @@ static bool parse_constant_members(struct shader_constant *constant, FILE *fp)
 			return false;
 		}
 		skip_spaces(&line);
-		if (!parse_variable_type(&line, &member->type))
+		if (!parse_constant_member_type(&line, member))
 			return false;
 		skip_spaces(&line);
 		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
@@ -377,6 +467,46 @@ static bool parse_constant(struct shader *shader, const char *line, FILE *fp)
 	return true;
 }
 
+static bool parse_struct_members(struct shader_struct *st, FILE *fp)
+{
+	char *lineptr = NULL;
+	size_t len = 0;
+	bool ret = false;
+	if (getline(&lineptr, &len, fp) == -1)
+	{
+		fprintf(stderr, "invalid struct: failed to find {\n");
+		return false;
+	}
+	if (strcmp(lineptr, "{\n"))
+	{
+		fprintf(stderr, "invalid struct: '{' expected\n");
+		return false;
+	}
+	while (getline(&lineptr, &len, fp) != -1)
+	{
+		const char *line = lineptr;
+		if (!strcmp(line, "}\n"))
+			break;
+		struct shader_struct_member *member = &st->members[st->members_nb];
+		if (st->members_nb >= sizeof(st->members) / sizeof(*st->members))
+		{
+			fprintf(stderr, "invalid struct: too much members\n");
+			return false;
+		}
+		skip_spaces(&line);
+		if (!parse_variable_type(&line, &member->type))
+		{
+			fprintf(stderr, "invalid struct: unknown member type\n");
+			return false;
+		}
+		skip_spaces(&line);
+		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
+			return false;
+		st->members_nb++;
+	}
+	return true;
+}
+
 static bool parse_sampler(struct shader *shader, const char *line)
 {
 	if (shader->samplers_nb >= sizeof(shader->samplers) / sizeof(*shader->samplers))
@@ -385,13 +515,38 @@ static bool parse_sampler(struct shader *shader, const char *line)
 		return false;
 	}
 	struct shader_sampler *sampler = &shader->samplers[shader->samplers_nb];
-	skip_spaces((const char**)&line);
+	skip_spaces(&line);
 	if (!parse_bind(&line, &sampler->bind))
 		return false;
-	skip_spaces((const char**)&line);
-	if (!parse_variable_name((const char**)&line, sampler->name, sizeof(sampler->name)))
+	skip_spaces(&line);
+	if (!parse_sampler_type(&line, &sampler->type))
 		return false;
+	skip_spaces(&line);
+	if (!parse_variable_name(&line, sampler->name, sizeof(sampler->name)))
+		return false;
+	if (*line && *line != '\n')
+	{
+		fprintf(stderr, "invalid sampler: trailing char\n");
+		return false;
+	}
 	shader->samplers_nb++;
+	return true;
+}
+
+static bool parse_struct(struct shader *shader, const char *line, FILE *fp)
+{
+	if (shader->structs_nb >= sizeof(shader->structs) / sizeof(*shader->structs))
+	{
+		fprintf(stderr, "too much struct\n");
+		return false;
+	}
+	struct shader_struct *st = &shader->structs[shader->structs_nb];
+	skip_spaces(&line);
+	if (!parse_variable_name(&line, st->name, sizeof(st->name)))
+		return false;
+	if (!parse_struct_members(st, fp))
+		return false;
+	shader->structs_nb++;
 	return true;
 }
 
@@ -448,6 +603,12 @@ static bool parse_shader(struct shader *shader, FILE *fp, enum shader_type type)
 				goto end;
 			continue;
 		}
+		if (!strncmp(line, "struct ", 7))
+		{
+			if (!parse_struct(shader, line + 7, fp))
+				goto end;
+			continue;
+		}
 		if (!parse_code(shader, &line, &len, fp))
 			goto end;
 		break;
@@ -461,13 +622,22 @@ static void print_glsl_defines(FILE *fp)
 {
 	fprintf(fp, "vec4 mul(vec4 v, mat4 m)\n");
 	fprintf(fp, "{\n");
-	fprintf(fp, "\treturn m * v;");
+	fprintf(fp, "\treturn m * v;\n");
 	fprintf(fp, "}\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "vec4 gfx_sample(sampler2D tex, vec2 uv)\n");
 	fprintf(fp, "{\n");
 	fprintf(fp, "\treturn texture(tex, uv);\n");
 	fprintf(fp, "}\n");
+	fprintf(fp, "vec4 gfx_sample(sampler2DArray tex, vec3 uv)\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\treturn texture(tex, uv);\n");
+	fprintf(fp, "}\n");
+	fprintf(fp, "vec4 gfx_sample(sampler3D tex, vec3 uv)\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\treturn texture(tex, uv);\n");
+	fprintf(fp, "}\n");
+	fprintf(fp, "\n");
 }
 
 static void print_gl4_constant(const struct shader_constant *constant, FILE *fp)
@@ -476,7 +646,18 @@ static void print_gl4_constant(const struct shader_constant *constant, FILE *fp)
 	fprintf(fp, "{\n");
 	for (size_t j = 0; j < constant->members_nb; ++j)
 	{
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(constant->members[j].type), constant->members[j].name);
+		fprintf(fp, "\t%s %s;\n", constant->members[j].type == VARIABLE_STRUCT ? constant->members[j].struct_name : variable_type_to_string(constant->members[j].type), constant->members[j].name);
+	}
+	fprintf(fp, "};\n\n");
+}
+
+static void print_gl4_struct(const struct shader_struct *st, FILE *fp)
+{
+	fprintf(fp, "struct %s\n", st->name);
+	fprintf(fp, "{\n");
+	for (size_t j = 0; j < st->members_nb; ++j)
+	{
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(st->members[j].type), st->members[j].name);
 	}
 	fprintf(fp, "};\n\n");
 }
@@ -495,9 +676,11 @@ static bool print_gl4_vs(const struct shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
 		const struct shader_output *output = &shader->outputs[i];
-		fprintf(fp, "layout(location = %u) out %s fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
+		fprintf(fp, "layout(location = %u) out %s%s fs_%s;\n", output->bind, output->type == VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
 	}
 	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_gl4_struct(&shader->structs[i], fp);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
 		print_gl4_constant(&shader->constants[i], fp);
 	fprintf(fp, "struct vs_input\n");
@@ -547,7 +730,7 @@ static bool print_gl4_fs(const struct shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];
-		fprintf(fp, "layout(location = %u) in %s vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
+		fprintf(fp, "layout(location = %u) in %s%s vs_%s;\n", input->bind, input->type == VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
 	}
 	if (shader->inputs_nb)
 		fprintf(fp, "\n");
@@ -557,12 +740,14 @@ static bool print_gl4_fs(const struct shader *shader, FILE *fp)
 		fprintf(fp, "layout(location = %u) out %s fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
 	}
 	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_gl4_struct(&shader->structs[i], fp);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
 		print_gl4_constant(&shader->constants[i], fp);
 	for (size_t i = 0; i < shader->samplers_nb; ++i)
 	{
 		const struct shader_sampler *sampler = &shader->samplers[i];
-		fprintf(fp, "layout(location = %u) uniform sampler2D %s;\n", sampler->bind, sampler->name);
+		fprintf(fp, "layout(binding = %u) uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 	}
 	if (shader->samplers_nb)
 		fprintf(fp, "\n");
@@ -708,6 +893,9 @@ static void print_hlsl_defines(FILE *fp)
 	fprintf(fp, "#define mat3 float3x3\n");
 	fprintf(fp, "#define mat4 float4x4\n");
 	fprintf(fp, "\n");
+	fprintf(fp, "#define sampler2D Texture2D\n");
+	fprintf(fp, "#define sampler2DArray Texture2DArray\n");
+	fprintf(fp, "\n");
 	fprintf(fp, "#define gfx_sample(name, uv) name.Sample(name##_sampler, uv)\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define mix(a, b, v) lerp(a, b, v)\n");
@@ -719,15 +907,26 @@ static void print_d3d11_constant(const struct shader_constant *constant, FILE *f
 	fprintf(fp, "{\n");
 	for (size_t j = 0; j < constant->members_nb; ++j)
 	{
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(constant->members[j].type), constant->members[j].name);
+		fprintf(fp, "\t%s %s;\n", constant->members[j].type == VARIABLE_STRUCT ? constant->members[j].struct_name : variable_type_to_string(constant->members[j].type), constant->members[j].name);
 	}
 	fprintf(fp, "};\n\n");
 }
 
 static void print_d3d11_sampler(const struct shader_sampler *sampler, FILE *fp)
 {
-	fprintf(fp, "Texture2D %s : register(t%u);\n", sampler->name, sampler->bind);
+	fprintf(fp, "%s %s : register(t%u);\n", sampler_type_to_string(sampler->type), sampler->name, sampler->bind);
 	fprintf(fp, "SamplerState %s_sampler : register(s%u);\n", sampler->name, sampler->bind);
+}
+
+static void print_d3d11_struct(const struct shader_struct *st, FILE *fp)
+{
+	fprintf(fp, "struct %s\n", st->name);
+	fprintf(fp, "{\n");
+	for (size_t j = 0; j < st->members_nb; ++j)
+	{
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(st->members[j].type), st->members[j].name);
+	}
+	fprintf(fp, "};\n\n");
 }
 
 static bool print_d3d11_vs(const struct shader *shader, FILE *fp)
@@ -749,10 +948,12 @@ static bool print_d3d11_vs(const struct shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
 		const struct shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s %s : FS_INPUT%u;\n", variable_type_to_string(output->type), output->name, output->bind);
+		fprintf(fp, "\t%s%s %s : FS_INPUT%u;\n", output->type == VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(output->type), output->name, output->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_d3d11_struct(&shader->structs[i], fp);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
 		print_d3d11_constant(&shader->constants[i], fp);
 	fprintf(fp, shader->code);
@@ -774,7 +975,7 @@ static bool print_d3d11_fs(const struct shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s %s : FS_INPUT%u;\n", variable_type_to_string(input->type), input->name, input->bind);
+		fprintf(fp, "\t%s%s %s : FS_INPUT%u;\n", input->type == VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(input->type), input->name, input->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
@@ -787,6 +988,8 @@ static bool print_d3d11_fs(const struct shader *shader, FILE *fp)
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_d3d11_struct(&shader->structs[i], fp);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
 		print_d3d11_constant(&shader->constants[i], fp);
 	for (size_t i = 0; i < shader->samplers_nb; ++i)

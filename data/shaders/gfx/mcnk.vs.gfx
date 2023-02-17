@@ -1,0 +1,64 @@
+in 0 vec3 normal
+in 1 vec2 xz
+in 2 vec2 uv
+in 3 float y
+
+out 0 vec3 position
+out 1 vec3 light_dir
+out 2 vec3 normal
+out 3 vec2 uv0
+out 4 vec2 uv1
+out 5 vec2 uv2
+out 6 vec2 uv3
+out 7 vec2 uv4
+out 8 int id
+
+struct mesh_block_st
+{
+	vec2 uv_offset0
+	vec2 uv_offset1
+	vec2 uv_offset2
+	vec2 uv_offset3
+}
+
+constant 0 mesh_block
+{
+	mesh_block_st mesh_blocks[256]
+}
+
+constant 1 model_block
+{
+	mat4 v
+	mat4 mv
+	mat4 mvp
+	float offset_time
+}
+
+constant 2 scene_block
+{
+	vec4 light_direction
+	vec4 ambient_color
+	vec4 diffuse_color
+	vec4 specular_color
+	vec4 fog_color
+	vec2 fog_range
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	vec4 position_fixed = vec4(gfx_input.xz.x, gfx_input.y, gfx_input.xz.y, 1);
+	vec4 normal_fixed = vec4(gfx_input.normal, 0);
+	gfx_output.gfx_position =  mul(position_fixed, mvp);
+	gfx_output.position = mul(position_fixed, mv).xyz;
+	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
+	gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
+	gfx_output.uv0 = gfx_input.uv;
+	int offset = gl_VertexID / 145;
+	gfx_output.uv1 = -(gfx_input.uv + mesh_blocks[offset].uv_offset0 * offset_time).yx * 8;
+	gfx_output.uv2 = -(gfx_input.uv + mesh_blocks[offset].uv_offset1 * offset_time).yx * 8;
+	gfx_output.uv3 = -(gfx_input.uv + mesh_blocks[offset].uv_offset2 * offset_time).yx * 8;
+	gfx_output.uv4 = -(gfx_input.uv + mesh_blocks[offset].uv_offset3 * offset_time).yx * 8;
+	gfx_output.id = gl_VertexID;
+	return gfx_output;
+}

@@ -35,7 +35,7 @@ constant 2 scene_block
 	vec2 fog_range
 }
 
-sampler 0 tex1
+sampler 0 2d tex1
 
 fs_output gfx_main(fs_input gfx_input)
 {

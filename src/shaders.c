@@ -755,15 +755,15 @@ static bool build_mcnk(gfx_shader_state_t *shader_state)
 	};
 	static const struct gfx_shader_sampler samplers[] =
 	{
-		{"textures[0]", 1},
-		{"textures[1]", 2},
-		{"textures[2]", 3},
-		{"textures[3]", 4},
-		{"textures[4]", 5},
-		{"textures[5]", 6},
-		{"textures[6]", 7},
-		{"textures[7]", 8},
-		{"alpha_map", 0},
+		/*{"texture0", 1},
+		{"texture1", 2},
+		{"texture2", 3},
+		{"texture3", 4},
+		{"texture4", 5},
+		{"texture5", 6},
+		{"texture6", 7},
+		{"texture7", 8},
+		{"alpha_map", 0},*/
 		{NULL, 0}
 	};
 	return load_shader_state(shader_state, "mcnk", attributes, constants, samplers);

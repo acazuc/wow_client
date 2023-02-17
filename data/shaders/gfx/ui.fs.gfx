@@ -12,8 +12,8 @@ constant 1 model_block
 	int use_mask
 }
 
-sampler 0 tex
-sampler 1 mask
+sampler 0 2d tex
+sampler 1 2d mask
 
 fs_output gfx_main(fs_input gfx_in)
 {

@@ -19,8 +19,8 @@ constant 1 model_block
 	float clouds_drift
 }
 
-sampler 0 clouds1
-sampler 1 clouds2
+sampler 0 2d clouds1
+sampler 1 2d clouds2
 
 fs_output gfx_main(fs_input gfx_input)
 {
