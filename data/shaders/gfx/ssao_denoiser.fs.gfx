@@ -1,0 +1,51 @@
+in 0 vec2 uv
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+sampler 0 2d color_tex
+sampler 1 2d normal_tex
+sampler 2 2d position_tex
+sampler 3 2d ssao_tex
+
+float weight = .5;
+
+#define LINEAR_SAMPLING
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	gfx_output.normal = gfx_sample(normal_tex, gfx_input.uv);
+	gfx_output.position = gfx_sample(position_tex, gfx_input.uv);
+#ifdef LINEAR_SAMPLING
+	float result = 0;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-2, -2)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-2, -1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-2,  0)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-2,  1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-1, -2)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-1, -1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-1,  0)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2(-1,  1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 0, -2)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 0, -1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 0,  0)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 0,  1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 1, -2)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 1, -1)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 1,  0)).r;
+	result += gfx_sample_offset(ssao_tex, gfx_input.uv, ivec2( 1,  1)).r;
+	result *= 0.0625;
+#else
+	float result = gfx_sample(ssao_tex, gfx_input.uv).r;
+#endif
+	//gfx_output.color = vec4(vec3(result), 1);
+	//result = 1 - pow(1 - result, 3);
+	//gfx_output.color = vec4(vec3(mix(1, result, weight)), 1);
+	gfx_output.color = vec4(gfx_sample(color_tex, gfx_input.uv).rgb * mix(1, result, weight), 1);
+	//gfx_output.color = vec4(gfx_sample(color_tex, gfx_input.uv).rgb * clamp(1 - (1 - result) * weight, 0, 1), 1);
+	//gfx_output.color = vec4(gfx_sample(color_tex, gfx_input.uv).rgb * result, 1);
+	//gfx_output.color = vec4(abs(gfx_sample(normal_tex, gfx_input.uv).rgb), 1);
+	return gfx_output;
+}
