@@ -577,7 +577,7 @@ static bool parse_shader(struct shader *shader, FILE *fp, enum shader_type type)
 	bool ret = false;
 	while (getline(&line, &len, fp) != -1)
 	{
-		if (!line[0] || line[0] == '#' || line[0] == '\n')
+		if (!line[0] || line[0] == '\n')
 			continue;
 		if (!strncmp(line, "in ", 3))
 		{
