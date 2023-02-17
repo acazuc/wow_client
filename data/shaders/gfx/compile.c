@@ -633,6 +633,10 @@ static void print_glsl_defines(FILE *fp)
 	fprintf(fp, "{\n");
 	fprintf(fp, "\treturn texture(tex, uv);\n");
 	fprintf(fp, "}\n");
+	fprintf(fp, "vec4 gfx_sample_offset(sampler2D tex, vec2 uv, ivec2 offset)\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\treturn textureOffset(tex, uv, offset);\n");
+	fprintf(fp, "}\n");
 	fprintf(fp, "vec4 gfx_sample(sampler2DArray tex, vec3 uv)\n");
 	fprintf(fp, "{\n");
 	fprintf(fp, "\treturn texture(tex, uv);\n");
@@ -903,6 +907,7 @@ static void print_hlsl_defines(FILE *fp)
 	fprintf(fp, "#define sampler2DArray Texture2DArray\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define gfx_sample(name, uv) name.Sample(name##_sampler, uv)\n");
+	fprintf(fp, "#define gfx_sample_offset(name, uv, offset) name.Sample(name##_sampler, uv, offset)\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define mix(a, b, v) lerp(a, b, v)\n");
 	fprintf(fp, "#define mod(a, b) fmod(a, b)\n");
