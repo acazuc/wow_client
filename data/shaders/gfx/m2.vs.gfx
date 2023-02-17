@@ -59,9 +59,9 @@ constant 2 scene_block
 #define M2_VERTEX_DIFFUSE_ENV_MAP_2TEX      0x5
 #define M2_VERTEX_DIFFUSE_DUAL_ENV_MAP_2TEX 0x6
 
-vec2 diffuse_coord(vec2 uv, mat4 matrix)
+vec2 diffuse_coord(vec2 uv, mat4 mat)
 {
-	return (matrix * vec4(uv - .5, 0, 1)).xy;
+	return mul(vec4(uv - .5, 0, 1), mat).xy;
 }
 
 vec2 env_coord(vec3 position, vec3 normal)
@@ -76,12 +76,12 @@ vs_output gfx_main(vs_input gfx_input)
 	gfx_output.normal_fixed = vec4(gfx_input.normal.xyz, 0);
 	if (settings.z != 0)
 	{
-		mat4 bone_mat = gfx_input.bone_weights.x * bone_mats[gfx_input.bones.x]
-		              + gfx_input.bone_weights.y * bone_mats[gfx_input.bones.y]
-		              + gfx_input.bone_weights.z * bone_mats[gfx_input.bones.z]
-		              + gfx_input.bone_weights.w * bone_mats[gfx_input.bones.w];
-		gfx_output.position_fixed = bone_mat * gfx_output.position_fixed;
-		gfx_output.normal_fixed = bone_mat * gfx_output.normal_fixed;
+		mat4 bone_mat = mul(bone_mats[gfx_input.bones.x], gfx_input.bone_weights.x)
+		              + mul(bone_mats[gfx_input.bones.y], gfx_input.bone_weights.y)
+		              + mul(bone_mats[gfx_input.bones.z], gfx_input.bone_weights.z)
+		              + mul(bone_mats[gfx_input.bones.w], gfx_input.bone_weights.w);
+		gfx_output.position_fixed = mul(gfx_output.position_fixed, bone_mat);
+		gfx_output.normal_fixed = mul(gfx_output.normal_fixed, bone_mat);
 	}
 	gfx_output.normal_fixed = normalize(gfx_output.normal_fixed);
 	gfx_output.gfx_position = mul(gfx_output.position_fixed, mvp);
@@ -109,7 +109,7 @@ vs_output gfx_main(vs_input gfx_input)
 			break;
 		case M2_VERTEX_DIFFUSE_DUAL_ENV_MAP_2TEX:
 			gfx_output.uv1 = env_coord(gfx_output.position, gfx_output.normal);
-			gfx_output.uv2 = fs_uv1;
+			gfx_output.uv2 = gfx_output.uv1;
 			break;
 		default:
 			gfx_output.uv1 = diffuse_coord(gfx_input.uv1, tex1_matrix);
@@ -142,7 +142,7 @@ vs_output gfx_main(vs_input gfx_input)
 	}
 	else
 	{
-		gfx_output.diffuse = vec3(1);
+		gfx_output.diffuse = vec3(1, 1, 1);
 	}
 	return gfx_output;
 }

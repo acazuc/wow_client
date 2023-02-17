@@ -624,6 +624,10 @@ static void print_glsl_defines(FILE *fp)
 	fprintf(fp, "{\n");
 	fprintf(fp, "\treturn m * v;\n");
 	fprintf(fp, "}\n");
+	fprintf(fp, "mat4 mul(mat4 m, float v)\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\treturn m * v;\n");
+	fprintf(fp, "}\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "vec4 gfx_sample(sampler2D tex, vec2 uv)\n");
 	fprintf(fp, "{\n");
@@ -685,6 +689,7 @@ static bool print_gl4_vs(const struct shader *shader, FILE *fp)
 		print_gl4_constant(&shader->constants[i], fp);
 	fprintf(fp, "struct vs_input\n");
 	fprintf(fp, "{\n");
+	fprintf(fp, "\tint vertex_id;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];
@@ -707,6 +712,7 @@ static bool print_gl4_vs(const struct shader *shader, FILE *fp)
 	fprintf(fp, "void main()\n");
 	fprintf(fp, "{\n");
 	fprintf(fp, "\tvs_input gfx_in;\n");
+	fprintf(fp, "\tgfx_in.vertex_id = gl_VertexID;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];
@@ -935,6 +941,7 @@ static bool print_d3d11_vs(const struct shader *shader, FILE *fp)
 	fprintf(fp, "\n");
 	fprintf(fp, "struct vs_input\n");
 	fprintf(fp, "{\n");
+	fprintf(fp, "\tuint vertex_id : SV_VertexID;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];

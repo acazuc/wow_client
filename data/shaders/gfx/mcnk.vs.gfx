@@ -54,11 +54,11 @@ vs_output gfx_main(vs_input gfx_input)
 	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
 	gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
 	gfx_output.uv0 = gfx_input.uv;
-	int offset = gl_VertexID / 145;
+	int offset = gfx_input.vertex_id / 145;
 	gfx_output.uv1 = -(gfx_input.uv + mesh_blocks[offset].uv_offset0 * offset_time).yx * 8;
 	gfx_output.uv2 = -(gfx_input.uv + mesh_blocks[offset].uv_offset1 * offset_time).yx * 8;
 	gfx_output.uv3 = -(gfx_input.uv + mesh_blocks[offset].uv_offset2 * offset_time).yx * 8;
 	gfx_output.uv4 = -(gfx_input.uv + mesh_blocks[offset].uv_offset3 * offset_time).yx * 8;
-	gfx_output.id = gl_VertexID;
+	gfx_output.id = gfx_input.vertex_id;
 	return gfx_output;
 }
