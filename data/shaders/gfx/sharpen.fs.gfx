@@ -1,0 +1,27 @@
+in 0 vec2 uv
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+constant 1 model_block
+{
+	mat4 mvp
+	float power
+}
+
+sampler 0 2d color_tex
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	float other = power * -1;
+	float self = power * 4 + 1;
+	vec3 color = gfx_sample(color_tex, gfx_input.uv).rgb * self;
+	color += gfx_sample_offset(color_tex, gfx_input.uv, ivec2( 1,  0)).rgb * other;
+	color += gfx_sample_offset(color_tex, gfx_input.uv, ivec2(-1,  0)).rgb * other;
+	color += gfx_sample_offset(color_tex, gfx_input.uv, ivec2( 0,  1)).rgb * other;
+	color += gfx_sample_offset(color_tex, gfx_input.uv, ivec2( 0, -1)).rgb * other;
+	gfx_output.color = vec4(color, 1);
+	return gfx_output;
+}
