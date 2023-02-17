@@ -1,0 +1,26 @@
+in 0 vec2 uv
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+sampler 0 2d color_tex
+sampler 1 2d normal_tex
+sampler 2 2d position_tex
+
+constant 1 model_block
+{
+	mat4 mvp
+	float factor
+}
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec3 texture_color = gfx_sample(color_tex, gfx_input.uv).xyz;
+	vec3 tmp = texture_color * texture_color;
+	gfx_output.color = vec4(tmp * factor + texture_color, 1);
+	gfx_output.normal = gfx_sample(normal_tex, gfx_input.uv);
+	gfx_output.position = gfx_sample(position_tex, gfx_input.uv);
+	return gfx_output;
+}
