@@ -1,0 +1,45 @@
+in 0 vec3 position
+in 1 float depth
+in 2 vec2 uv
+
+out 0 vec3 position
+out 1 vec3 light_dir
+out 2 vec3 diffuse
+out 3 vec3 normal
+out 4 float alpha
+out 5 vec2 uv
+
+constant 1 model_block
+{
+	mat4 p
+	mat4 v
+	mat4 mv
+	mat4 mvp
+}
+
+constant 2 scene_block
+{
+	vec4 light_direction
+	vec4 diffuse_color
+	vec4 specular_color
+	vec4 base_color
+	vec4 final_color
+	vec4 fog_color
+	vec2 fog_range
+	vec2 alphas
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	vec4 position_fixed = vec4(gfx_input.position, 1);
+	gfx_output.gfx_position =  mul(position_fixed, mvp);
+	gfx_output.position = mul(position_fixed, mv).xyz;
+	gfx_output.normal = normalize(mul(vec4(0, 1, 0, 0), mv).xyz);
+	gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
+	gfx_output.uv = gfx_input.uv;
+	float tmp = min(1, gfx_input.depth * 4);
+	gfx_output.diffuse = mix(base_color.xyz, final_color.xyz, tmp);
+	gfx_output.alpha = mix(alphas.x, alphas.y, tmp);
+	return gfx_output;
+}
