@@ -620,7 +620,12 @@ end:
 
 static void print_glsl_defines(FILE *fp)
 {
+	fprintf(fp, "#define GFX_GLSL\n");
 	fprintf(fp, "vec4 mul(vec4 v, mat4 m)\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\treturn m * v;\n");
+	fprintf(fp, "}\n");
+	fprintf(fp, "vec3 mul(vec3 v, mat3 m)\n");
 	fprintf(fp, "{\n");
 	fprintf(fp, "\treturn m * v;\n");
 	fprintf(fp, "}\n");
@@ -890,6 +895,7 @@ static bool print_vk_fs(const struct shader *shader, FILE *fp)
 
 static void print_hlsl_defines(FILE *fp)
 {
+	fprintf(fp, "#define GFX_HLSL\n");
 	fprintf(fp, "#define vec1 float1\n");
 	fprintf(fp, "#define vec2 float2\n");
 	fprintf(fp, "#define vec3 float3\n");
