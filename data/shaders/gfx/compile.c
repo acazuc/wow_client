@@ -905,6 +905,7 @@ static void print_hlsl_defines(FILE *fp)
 	fprintf(fp, "#define gfx_sample(name, uv) name.Sample(name##_sampler, uv)\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define mix(a, b, v) lerp(a, b, v)\n");
+	fprintf(fp, "#define mod(a, b) fmod(a, b)\n");
 }
 
 static void print_d3d11_constant(const struct shader_constant *constant, FILE *fp)
