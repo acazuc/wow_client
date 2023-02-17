@@ -1,0 +1,24 @@
+in 0 vec4 position
+in 1 vec2 uv
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+sampler 0 2d tex
+
+constant 1 model_block
+{
+	mat4 mvp
+	vec4 color
+}
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	float alpha = gfx_sample(tex, gfx_input.uv).r;
+	gfx_output.color = color * vec4(1, 1, 1, alpha);
+	gfx_output.normal = vec4(0, 0, 1, 1);
+	gfx_output.position = gfx_input.position;
+	return gfx_output;
+}
