@@ -1,0 +1,54 @@
+in 0 vec3 position
+in 1 vec4 uv
+
+out 0 vec3 position
+out 1 vec3 light_dir
+out 2 vec3 diffuse
+out 3 vec3 normal
+out 4 vec2 uv
+
+constant 0 mesh_block
+{
+	float alpha
+	int type
+}
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	mat4 v
+}
+
+constant 2 scene_block
+{
+	vec4 light_direction
+	vec4 specular_color
+	vec4 diffuse_color
+	vec4 final_color
+	vec4 base_color
+	vec4 fog_color
+	vec2 fog_range
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	vec4 position_fixed = vec4(gfx_input.position, 1);
+	gfx_output.gfx_position = mul(position_fixed, mvp);
+	gfx_output.position = mul(position_fixed, mv).xyz;
+	gfx_output.normal = normalize(mul(vec4(0, 1, 0, 1), mv).xyz);
+	if (type <= 1 || type == 4 || type == 8)
+	{
+		gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
+		//gfx_output.diffuse = mix(base_color, final_color, min(1, vs_depth * 5));
+		//gfx_output.diffuse = base_color + final_color;
+		gfx_output.diffuse = vec3(.2, .2, .2);//vec3(clamp(dot(gfx_output.normal, gfx_output.light_dir), 0, 1));
+		gfx_output.uv = gfx_input.uv.zw;
+	}
+	else
+	{
+		gfx_output.uv = gfx_output.uv.xy;
+	}
+	return gfx_output;
+}

@@ -1,0 +1,56 @@
+in 0 vec3 position
+in 1 vec3 light_dir
+in 2 vec3 diffuse
+in 3 vec3 normal
+in 4 vec2 uv
+
+out 0 vec4 color
+out 1 vec4 normal
+out 2 vec4 position
+
+sampler 0 2d tex
+
+constant 0 mesh_block
+{
+	float alpha
+	int type
+}
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	mat4 v
+}
+
+constant 2 scene_block
+{
+	vec4 light_direction
+	vec4 specular_color
+	vec4 diffuse_color
+	vec4 final_color
+	vec4 base_color
+	vec4 fog_color
+	vec2 fog_range
+}
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec3 color;
+	vec3 tex_col = gfx_sample(tex, gfx_input.uv).rgb;
+	if (type <= 1 || type == 4 || type == 8)
+	{
+		float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10) * 20;
+		color = gfx_input.diffuse.xyz + tex_col * (1 + specular_color.xyz * specular_factor);
+	}
+	else
+	{
+		color = tex_col;
+	}
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), alpha);
+	gfx_output.normal = vec4(gfx_input.normal, 1);
+	gfx_output.position = vec4(gfx_input.position, 1);
+	return gfx_output;
+}
