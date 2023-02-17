@@ -1,0 +1,30 @@
+in 0 vec4 position
+in 1 vec4 color
+in 2 vec2 uv
+
+out 0 vec3 position
+out 1 vec4 color
+out 2 vec2 uv
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	vec4 fog_color
+	float alpha_test
+}
+
+constant 2 scene_block
+{
+	vec2 fog_range
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	gfx_output.gfx_position = mul(gfx_input.position, mvp);
+	gfx_output.position = mul(gfx_input.position, mv).xyz;
+	gfx_output.color = gfx_input.color;
+	gfx_output.uv = gfx_input.uv;
+	return gfx_output;
+}

@@ -1,0 +1,33 @@
+in 0 vec3 position
+in 1 vec4 color
+in 2 vec2 uv
+
+out 0 vec4 color
+
+sampler 0 2d tex
+
+constant 1 model_block
+{
+	mat4 mvp
+	mat4 mv
+	vec4 fog_color
+	float alpha_test
+}
+
+constant 2 scene_block
+{
+	vec2 fog_range
+}
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec4 tex_color = gfx_sample(tex, gfx_input.uv);
+	vec4 color = gfx_input.color * tex_color;
+	if (color.a < alpha_test)
+		discard;
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+	color.rgb = mix(color.rgb, fog_color.rgb, fog_factor);
+	gfx_output.color = color;
+	return gfx_output;
+}
