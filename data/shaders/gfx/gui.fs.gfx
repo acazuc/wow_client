@@ -1,0 +1,17 @@
+in 0 vec4 color
+in 1 vec2 uv
+
+out 0 vec4 color
+
+sampler 0 2d tex
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec4 tex_col = gfx_sample(tex, gfx_input.uv);
+	vec4 col = gfx_input.color * tex_col;
+	if (col.a == 0)
+		discard;
+	gfx_output.color = col;
+	return gfx_output;
+}
