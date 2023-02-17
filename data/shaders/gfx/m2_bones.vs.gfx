@@ -1,0 +1,33 @@
+in 0 vec3 position
+in 1 vec4 color
+in 2 in bone
+
+out 0 vec4 color
+
+struct light
+{
+	vec4 ambient
+	vec4 diffuse
+	vec4 position
+	vec2 attenuation
+	vec2 data
+}
+
+constant 1 model_block
+{
+	mat4 v
+	mat4 mv
+	mat4 mvp
+	ivec4 lights_count
+	light lights[4]
+	mat4 bone_mats[256]
+}
+
+vs_output gfx_main(vs_input gfx_input)
+{
+	vs_output gfx_output;
+	vec4 boned = mul(vec4(gfx_input.position, 1), bone_mats[gfx_input.bone]);
+	gfx_output.gfx_position = mul(boned, mvp);
+	gfx_output.color = gfx_input.color;
+	return gfx_output;
+}
