@@ -1096,6 +1096,7 @@ int gx_mcnk_initialize(struct gx_mcnk *mcnk)
 	if (!mcnk->alpha_texture.handle.u64)
 	{
 		gfx_create_texture(g_wow->device, &mcnk->alpha_texture, GFX_TEXTURE_2D_ARRAY, (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA) ? GFX_R8G8B8A8 : GFX_R4G4B4A4, 1, 64, 64, 256);
+		gfx_set_texture_filtering(&mcnk->alpha_texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);
 		gfx_set_texture_anisotropy(&mcnk->alpha_texture, 16);
 		gfx_set_texture_addressing(&mcnk->alpha_texture, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP);
 		gfx_set_texture_levels(&mcnk->alpha_texture, 0, 0);
@@ -1402,6 +1403,8 @@ void gx_mcnk_render(struct gx_mcnk *mcnk)
 			indices_buffer = 1;
 		else
 			indices_buffer = 2;
+		if (!batch->indices_nbs[indices_buffer])
+			continue;
 		textures[0] = &mcnk->alpha_texture;
 		size_t n = 1;
 		for (size_t j = 0; j < 4; ++j)
