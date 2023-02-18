@@ -601,8 +601,9 @@ static void init_layer_big_alpha(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk
 static void init_layer_std_alpha(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, uint32_t batch, uint32_t l, uint8_t *mcal_iter)
 {
 	uint8_t *iter = mcnk->init_data->alpha[batch];
-	uint8_t shifter = ((l + 1) % 2) * 4;
-	if (l == 1)
+	l = 4 - l;
+	uint8_t shifter = (l % 2) * 4;
+	if (l > 1)
 		++iter;
 	for (size_t z = 0; z < 64; ++z)
 	{
@@ -669,8 +670,8 @@ static void init_batch_shadow(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, u
 			{
 				for (size_t x = 0; x < 64; ++x)
 				{
-					++iter;
-					*(iter++) |= ((wow_mcnk->mcsh.shadow[z][x / 8] >> (x % 8)) & 1) ? 0 : 0xF0;
+					*iter |= ((wow_mcnk->mcsh.shadow[z][x / 8] >> (x % 8)) & 1) ? 0 : 0xF;
+					iter += 2;
 				}
 			}
 		}
@@ -696,8 +697,8 @@ static void init_batch_shadow(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, u
 			{
 				for (size_t x = 0; x < 64; ++x)
 				{
-					++iter;
-					*(iter++) |= 0xF0;
+					*iter |= 0xF;
+					iter += 2;
 				}
 			}
 		}
@@ -1094,7 +1095,7 @@ int gx_mcnk_initialize(struct gx_mcnk *mcnk)
 		return 1;
 	if (!mcnk->alpha_texture.handle.u64)
 	{
-		gfx_create_texture(g_wow->device, &mcnk->alpha_texture, GFX_TEXTURE_2D_ARRAY, (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA) ? GFX_B8G8R8A8 : GFX_B4G4R4A4, 1, 64, 64, 256);
+		gfx_create_texture(g_wow->device, &mcnk->alpha_texture, GFX_TEXTURE_2D_ARRAY, (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA) ? GFX_R8G8B8A8 : GFX_R4G4B4A4, 1, 64, 64, 256);
 		gfx_set_texture_anisotropy(&mcnk->alpha_texture, 16);
 		gfx_set_texture_addressing(&mcnk->alpha_texture, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP);
 		gfx_set_texture_levels(&mcnk->alpha_texture, 0, 0);

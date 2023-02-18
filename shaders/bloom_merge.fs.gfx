@@ -18,7 +18,7 @@ constant 1 model_block
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	gfx_output.color = gfx_sample(color_tex, gfx_input.uv) + vec4(gfx_sample(bloom_tex, gfx_input.uv).xyz * factor, 1);
+	gfx_output.color = gfx_sample(color_tex, gfx_input.uv) + vec4(gfx_sample(bloom_tex, gfx_input.uv).xyz * factor, 1.0);
 	gfx_output.normal = gfx_sample(normal_tex, gfx_input.uv);
 	gfx_output.position = gfx_sample(position_tex, gfx_input.uv);
 	return gfx_output;

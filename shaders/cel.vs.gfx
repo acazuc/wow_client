@@ -13,6 +13,6 @@ vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
 	gfx_output.uv = gfx_input.uv;
-	gfx_output.gfx_position = mul(vec4(gfx_input.position, 0, 1), mvp);
+	gfx_output.gfx_position = mul(vec4(gfx_input.position, 0.0, 1.0), mvp);
 	return gfx_output;
 }

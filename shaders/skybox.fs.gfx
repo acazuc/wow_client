@@ -25,9 +25,9 @@ sampler 1 2d clouds2
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	float clouds_alpha1 = gfx_sample(clouds1, gfx_input.uv + vec2(clouds_drift, 0)).r;
-	float clouds_alpha2 = gfx_sample(clouds2, gfx_input.uv + vec2(clouds_drift, 0)).r;
+	float clouds_alpha1 = gfx_sample(clouds1, gfx_input.uv + vec2(clouds_drift, 0.0)).r;
+	float clouds_alpha2 = gfx_sample(clouds2, gfx_input.uv + vec2(clouds_drift, 0.0)).r;
 	float clouds_alpha = mix(clouds_alpha1, clouds_alpha2, clouds_blend);
-	gfx_output.color = mix(gfx_input.color, clouds_colors0, clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0, 1));
+	gfx_output.color = mix(gfx_input.color, clouds_colors0, clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0.0, 1.0));
 	return gfx_output;
 }

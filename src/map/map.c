@@ -1331,7 +1331,7 @@ static void update_minimap_texture(struct map *map)
 		return;
 	}
 	gfx_delete_texture(g_wow->device, &map->minimap.texture);
-	gfx_create_texture(g_wow->device, &map->minimap.texture, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, 768, 768, 0);
+	gfx_create_texture(g_wow->device, &map->minimap.texture, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, 768, 768, 0);
 	gfx_set_texture_levels(&map->minimap.texture, 0, 0);
 	gfx_set_texture_anisotropy(&map->minimap.texture, g_wow->anisotropy);
 	gfx_set_texture_filtering(&map->minimap.texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR);

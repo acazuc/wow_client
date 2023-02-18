@@ -56,31 +56,31 @@ sampler 8 2d texture7
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	gfx_output.color = vec4(gfx_input.normal, 1);
-	gfx_output.normal = vec4(gfx_input.normal, 1);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	gfx_output.color = vec4(gfx_input.normal, 1.0);
+	gfx_output.normal = vec4(gfx_input.normal, 1.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	vec4 alpha = gfx_sample(alpha_map, vec3(gfx_input.uv0, gfx_input.id / 145));
 	vec3 t1 = gfx_sample(texture0, gfx_input.uv1).rgb;
 	vec3 t2 = gfx_sample(texture2, gfx_input.uv2).rgb;
 	vec3 t3 = gfx_sample(texture4, gfx_input.uv3).rgb;
 	vec3 t4 = gfx_sample(texture6, gfx_input.uv4).rgb;
-	vec3 diff_mix = mix(mix(mix(t1, t2, alpha.r), t3, alpha.g), t4, alpha.b) * (alpha.a * .3 + .7);
+	vec3 diff_mix = mix(mix(mix(t1, t2, alpha.r), t3, alpha.g), t4, alpha.b) * (alpha.a * 0.3 + 0.7);
 	//diff_mix = alpha.rgb;
 	vec4 s1 = gfx_sample(texture1, gfx_input.uv1);
 	vec4 s2 = gfx_sample(texture3, gfx_input.uv2);
 	vec4 s3 = gfx_sample(texture5, gfx_input.uv3);
 	vec4 s4 = gfx_sample(texture7, gfx_input.uv4);
 	vec4 spec_mix = mix(mix(mix(s1, s2, alpha.r), s3, alpha.g), s4, alpha.b);
-	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10);
+	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0.0, 1.0), 10.0);
 	specular_factor = specular_factor * alpha.a;
-	vec3 specular = clamp(specular_factor * specular_color.xyz, 0, 1);
+	vec3 specular = clamp(specular_factor * specular_color.xyz, 0.0, 1.0);
 	specular *= spec_mix.rgb * spec_mix.a;
-	specular *= 2;
-	vec3 diffuse = diffuse_color.xyz * clamp(dot(gfx_input.normal, gfx_input.light_dir), 0, 1);
-	vec3 color = clamp(diffuse + ambient_color.xyz, 0, 1);
-	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
-	gfx_output.color = vec4(mix(diff_mix * color + specular, fog_color.xyz, fog_factor), 1);
-	gfx_output.normal = vec4(gfx_input.normal, 1);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	specular *= 2.0;
+	vec3 diffuse = diffuse_color.xyz * clamp(dot(gfx_input.normal, gfx_input.light_dir), 0.0, 1.0);
+	vec3 color = clamp(diffuse + ambient_color.xyz, 0.0, 1.0);
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
+	gfx_output.color = vec4(mix(diff_mix * color + specular, fog_color.xyz, fog_factor), 1.0);
+	gfx_output.normal = vec4(gfx_input.normal, 1.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

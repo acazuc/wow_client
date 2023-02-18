@@ -130,7 +130,7 @@ static void resize(struct render_pass *render_pass, uint32_t width, uint32_t hei
 	render_pass_vtable.resize(render_pass, width, height);
 	struct ssao_render_pass *ssao = (struct ssao_render_pass*)render_pass;
 	gfx_delete_texture(g_wow->device, &ssao->texture);
-	gfx_create_texture(g_wow->device, &ssao->texture, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, width, height, 0);
+	gfx_create_texture(g_wow->device, &ssao->texture, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, width, height, 0);
 	gfx_set_texture_filtering(&ssao->texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);
 	gfx_set_texture_addressing(&ssao->texture, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP);
 	gfx_set_render_target_texture(&ssao->render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, &ssao->texture);

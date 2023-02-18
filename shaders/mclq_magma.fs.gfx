@@ -20,9 +20,9 @@ fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
 	vec3 color = gfx_sample(tex, gfx_input.uv).rgb;
-	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
-	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), 1);
-	gfx_output.normal = vec4(gfx_input.normal, 1);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
+	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), 1.0);
+	gfx_output.normal = vec4(gfx_input.normal, 1.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

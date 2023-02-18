@@ -90,7 +90,7 @@ sampler 1 2d tex2
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	vec4 color_input = vec4(gfx_input.diffuse, 1);
+	vec4 color_input = vec4(gfx_input.diffuse, 1.0);
 	color_input *= color;
 	vec4 tex1_color = gfx_sample(tex1, gfx_input.uv1);
 	vec4 color_output;
@@ -111,7 +111,7 @@ fs_output gfx_main(fs_input gfx_input)
 			color_output = color_input + tex1_color;
 			break;
 		case M2_FRAGMENT_DIFFUSE2X:
-			color_output = color_input * tex1_color * 2;
+			color_output = color_input * tex1_color * 2.0;
 			break;
 		case M2_FRAGMENT_FADE:
 			color_output.rgb = mix(tex1_color.rgb, color_input.rgb, color_input.a);
@@ -148,8 +148,8 @@ fs_output gfx_main(fs_input gfx_input)
 		case M2_FRAGMENT_OPAQUE_MOD2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output.rgb = color_input.rgb * tex1_color.rgb * tex2_color.rgb * 2;
-			color_output.a = color_input.a * tex2_color.a * 2;
+			color_output.rgb = color_input.rgb * tex1_color.rgb * tex2_color.rgb * 2.0;
+			color_output.a = color_input.a * tex2_color.a * 2.0;
 			break;
 		}
 		case M2_FRAGMENT_OPAQUE_FADE:
@@ -190,7 +190,7 @@ fs_output gfx_main(fs_input gfx_input)
 		case M2_FRAGMENT_DIFFUSE_2TEX_2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output = color_input * tex1_color * tex2_color * 2;
+			color_output = color_input * tex1_color * tex2_color * 2.0;
 			break;
 		}
 		case M2_FRAGMENT_DIFFUSE_2TEX_FADE:
@@ -234,7 +234,7 @@ fs_output gfx_main(fs_input gfx_input)
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
 			color_output.rgb = tex2_color.rgb * mix(color_input.rgb, tex1_color.rgb, color_input.a);
 			color_output.a = color_input.a * tex2_color.a;
-			color_output = color_output * 2;
+			color_output = color_output * 2.0;
 			break;
 		}
 		case M2_FRAGMENT_DECAL_FADE:
@@ -274,7 +274,7 @@ fs_output gfx_main(fs_input gfx_input)
 		case M2_FRAGMENT_ADD_MOD2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output = (color_input + tex1_color) * tex2_color * 2;
+			color_output = (color_input + tex1_color) * tex2_color * 2.0;
 			break;
 		}
 		case M2_FRAGMENT_ADD_FADE:
@@ -288,14 +288,14 @@ fs_output gfx_main(fs_input gfx_input)
 		case M2_FRAGMENT_DIFFUSE_2TEX_OPAQUE_2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output.rgb = color_input.rgb * tex1_color.rgb * tex2_color.rgb * 2;
+			color_output.rgb = color_input.rgb * tex1_color.rgb * tex2_color.rgb * 2.0;
 			color_output.a = color_input.a * tex1_color.a;
 			break;
 		}
 		case M2_FRAGMENT_DIFFUSE_2TEX_DECAL_2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			vec4 tmp = color_input * tex1_color * 2;
+			vec4 tmp = color_input * tex1_color * 2.0;
 			color_output.rgb = mix(tmp.rgb, tex2_color.rgb, tmp.a);
 			color_output.a = tmp.a;
 			break;
@@ -303,37 +303,37 @@ fs_output gfx_main(fs_input gfx_input)
 		case M2_FRAGMENT_DIFFUSE_2TEX_ADD_2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output = color_input * tex1_color * 2 + tex2_color;
+			color_output = color_input * tex1_color * 2.0 + tex2_color;
 			break;
 		}
 		case M2_FRAGMENT_DIFFUSE_2TEX_4X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			color_output = color_input * tex1_color * tex2_color * 4;
+			color_output = color_input * tex1_color * tex2_color * 4.0;
 			break;
 		}
 		case M2_FRAGMENT_DIFFUSE_2TEX_FADE_2X:
 		{
 			vec4 tex2_color = gfx_sample(tex2, gfx_input.uv2);
-			vec3 tmp = color_input.rgb * tex1_color.rgb * 2;
+			vec3 tmp = color_input.rgb * tex1_color.rgb * 2.0;
 			color_output.rgb = mix(tex2_color.rgb, tmp, color_input.a);
 			color_output.a = color_input.a * tex1_color.a;
 			break;
 		}
 		default:
-			color_output = vec4(0, 1, 0, 1);
+			color_output = vec4(0.0, 1.0, 0.0, 1.0);
 			break;
 	}
 	if (color_output.a < alpha_test)
 		discard;
 	if (settings.x == 0)
 	{
-		float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+		float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
 		color_output.rgb = mix(color_output.rgb, fog_color, fog_factor);
 	}
-	color_output = clamp(color_output, 0, 1);
+	color_output = clamp(color_output, 0.0, 1.0);
 	gfx_output.color = color_output;
-	gfx_output.normal = vec4(gfx_input.normal, 1);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	gfx_output.normal = vec4(gfx_input.normal, 1.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

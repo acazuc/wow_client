@@ -20,11 +20,11 @@ fs_output gfx_main(fs_input gfx_input)
 	vec4 texture_color = gfx_sample(color_tex, gfx_input.uv);
 	float pwr = length(texture_color.xyz);
 	float fac;
-	if (pwr > 0)
-		fac = (pwr + cel * .5 - mod(pwr, cel)) / pwr;
+	if (pwr > 0.0)
+		fac = (pwr + cel * 0.5 - mod(pwr, cel)) / pwr;
 	else
-		fac = 1;
-	gfx_output.color = vec4((texture_color.xyz * fac) + cel * .5, 1);
+		fac = 1.0;
+	gfx_output.color = vec4((texture_color.xyz * fac) + cel * 0.5, 1.0);
 	gfx_output.normal = gfx_sample(normal_tex, gfx_input.uv);
 	gfx_output.position = gfx_sample(position_tex, gfx_input.uv);
 	return gfx_output;

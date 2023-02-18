@@ -83,7 +83,7 @@ void render_target_resize(struct render_target *render_target, uint32_t width, u
 	gfx_set_render_target_texture(&render_target->render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR1, &render_target->normal_texture);
 	/* color */
 	gfx_delete_texture(g_wow->device, &render_target->color_texture);
-	gfx_create_texture(g_wow->device, &render_target->color_texture, type, GFX_B8G8R8A8, lod, width, height, 0);
+	gfx_create_texture(g_wow->device, &render_target->color_texture, type, GFX_R8G8B8A8, lod, width, height, 0);
 	if (type == GFX_TEXTURE_2D)
 	{
 		gfx_set_texture_filtering(&render_target->color_texture, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);

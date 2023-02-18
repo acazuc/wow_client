@@ -17,8 +17,8 @@ fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
 	float alpha = gfx_sample(tex, gfx_input.uv).r;
-	gfx_output.color = color * vec4(1, 1, 1, alpha);
-	gfx_output.normal = vec4(0, 0, 1, 1);
+	gfx_output.color = color * vec4(1.0, 1.0, 1.0, alpha);
+	gfx_output.normal = vec4(0.0, 0.0, 1.0, 1.0);
 	gfx_output.position = gfx_input.position;
 	return gfx_output;
 }

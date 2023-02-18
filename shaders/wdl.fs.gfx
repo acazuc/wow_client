@@ -15,7 +15,7 @@ fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
 	gfx_output.color = color;
-	gfx_output.normal = vec4(0, 1, 0, 1);
-	gfx_output.position = vec4(0, 0, 0, 0); //vec4(gfx_input.position, 1);
+	gfx_output.normal = vec4(0.0, 1.0, 0.0, 1.0);
+	gfx_output.position = vec4(0.0, 0.0, 0.0, 0.0); //vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

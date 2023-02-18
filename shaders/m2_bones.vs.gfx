@@ -26,7 +26,7 @@ constant 1 model_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 boned = mul(vec4(gfx_input.position, 1), bone_mats[gfx_input.bone]);
+	vec4 boned = mul(vec4(gfx_input.position, 1.0), bone_mats[gfx_input.bone]);
 	gfx_output.gfx_position = mul(boned, mvp);
 	gfx_output.color = gfx_input.color;
 	return gfx_output;

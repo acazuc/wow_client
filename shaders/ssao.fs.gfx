@@ -81,38 +81,38 @@ static vec2 noise[16] =
 float get_occlusion(vec3 frag_pos, mat3 tbn, int sample_id)
 {
 	vec3 sample_pos = mul(samples[sample_id], tbn);
-	sample_pos = frag_pos + sample_pos * radius * 2;
-	vec4 offset = mul(vec4(sample_pos, 1), p);
+	sample_pos = frag_pos + sample_pos * radius * 2.0;
+	vec4 offset = mul(vec4(sample_pos, 1.0), p);
 	offset.xy = offset.xy / offset.w;
-	offset.xy = offset.xy * .5 + .5;
+	offset.xy = offset.xy * 0.5 + 0.5;
 	vec4 pick = gfx_sample(tex_position, offset.xy);
 	if (pick.z < sample_pos.z + 0.01)
-		return 0;
-	return smoothstep(0, 1, radius / abs(frag_pos.z - pick.z));
+		return 0.0;
+	return smoothstep(0.0, 1.0, radius / abs(frag_pos.z - pick.z));
 }
 
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
 	vec4 pos = gfx_sample(tex_position, gfx_input.uv);
-	if (pos.w <= 0)
+	if (pos.w <= 0.0)
 	{
-		gfx_output.color = vec4(1, 1, 1, 1);
+		gfx_output.color = vec4(1.0, 1.0, 1.0, 1.0);
 		return gfx_output;
 	}
 	vec3 frag_pos = pos.xyz;
 	vec3 normal = gfx_sample(tex_normal, gfx_input.uv).xyz;
 #if 1
-	vec2 noise_pos = mod(gfx_input.uv * window_size, vec2(4, 4));
-	vec3 random_vec = vec3(noise[int(noise_pos.x + noise_pos.y * 4)].xy, 0);
+	vec2 noise_pos = mod(gfx_input.uv * window_size, vec2(4.0, 4.0));
+	vec3 random_vec = vec3(noise[int(noise_pos.x + noise_pos.y * 4.0)].xy, 0.0);
 #else
-	vec2 noise_pos = mod(uv * window_size, vec2(100, 100)) / vec2(100, 100);
+	vec2 noise_pos = mod(uv * window_size, vec2(100.0, 100.0)) / vec2(100.0, 100.0);
 	vec3 random_vec = gfx_sample(tex_noise, noise_pos).xyz;
 #endif
 	vec3 tangent = normalize(random_vec - normal * dot(random_vec, normal));
 	vec3 bitangent = cross(normal, tangent);
 	mat3 tbn = mat3(tangent, bitangent, normal);
-	float occlusion = 0;
+	float occlusion = 0.0;
 #if SAMPLES > 0
 	occlusion += get_occlusion(frag_pos, tbn, 96);
 #endif
@@ -258,23 +258,23 @@ fs_output gfx_main(fs_input gfx_input)
 	occlusion += get_occlusion(frag_pos, tbn, 127);
 #endif
 #if SAMPLES > 7
-	occlusion /= 128;
+	occlusion /= 128.0;
 #elif SAMPLES > 6
-	occlusion /= 64;
+	occlusion /= 64.0;
 #elif SAMPLES > 5
-	occlusion /= 32;
+	occlusion /= 32.0;
 #elif SAMPLES > 4
-	occlusion /= 16;
+	occlusion /= 16.0;
 #elif SAMPLES > 3
-	occlusion /= 8;
+	occlusion /= 8.0;
 #elif SAMPLES > 2
-	occlusion /= 4;
+	occlusion /= 4.0;
 #elif SAMPLES > 1
-	occlusion /= 2;
+	occlusion /= 2.0;
 #endif
 	//occlusion = pow(occlusion, 1.1);
-	//occlusion = 1.1 * (occlusion - .5) + .5;
-	occlusion = 1 - occlusion;
-	gfx_output.color = vec4(occlusion, occlusion, occlusion, 1);
+	//occlusion = 1.1 * (occlusion - 0.5) + 0.5;
+	occlusion = 1.0 - occlusion;
+	gfx_output.color = vec4(occlusion, occlusion, occlusion, 1.0);
 	return gfx_output;
 }

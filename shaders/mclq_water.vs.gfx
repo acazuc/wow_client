@@ -32,13 +32,13 @@ constant 2 scene_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 position_fixed = vec4(gfx_input.position, 1);
+	vec4 position_fixed = vec4(gfx_input.position, 1.0);
 	gfx_output.gfx_position =  mul(position_fixed, mvp);
 	gfx_output.position = mul(position_fixed, mv).xyz;
-	gfx_output.normal = normalize(mul(vec4(0, 1, 0, 0), mv).xyz);
+	gfx_output.normal = normalize(mul(vec4(0.0, 1.0, 0.0, 0.0), mv).xyz);
 	gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
 	gfx_output.uv = gfx_input.uv;
-	float tmp = min(1, gfx_input.depth * 4);
+	float tmp = min(1.0, gfx_input.depth * 4.0);
 	gfx_output.diffuse = mix(base_color.xyz, final_color.xyz, tmp);
 	gfx_output.alpha = mix(alphas.x, alphas.y, tmp);
 	return gfx_output;

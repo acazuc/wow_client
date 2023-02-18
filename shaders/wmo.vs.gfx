@@ -39,8 +39,8 @@ constant 2 scene_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 position_fixed = vec4(gfx_input.position.xyz, 1);
-	vec4 normal_fixed = vec4(gfx_input.normal.xyz, 0);
+	vec4 position_fixed = vec4(gfx_input.position.xyz, 1.0);
+	vec4 normal_fixed = vec4(gfx_input.normal.xyz, 0.0);
 	gfx_output.gfx_position = mul(position_fixed, mvp);
 	gfx_output.position = mul(position_fixed, mv).xyz;
 	switch (combiners.x)
@@ -56,17 +56,17 @@ vs_output gfx_main(vs_input gfx_input)
 	if (settings.x != 0)
 		gfx_output.color = gfx_input.color.bgra;
 	else
-		gfx_output.color = vec4(1, 1, 1, 1);
+		gfx_output.color = vec4(1.0, 1.0, 1.0, 1.0);
 	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
 	if (settings.y == 0)
 	{
 		gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
-		float diffuse_factor = clamp(dot(gfx_output.normal, gfx_output.light_dir), 0, 1);
+		float diffuse_factor = clamp(dot(gfx_output.normal, gfx_output.light_dir), 0.0, 1.0);
 		gfx_output.light = ambient_color.xyz + diffuse_color.xyz * diffuse_factor + emissive_color.xyz;
 	}
 	else
 	{
-		gfx_output.light = vec3(1, 1, 1);
+		gfx_output.light = vec3(1.0, 1.0, 1.0);
 	}
 	return gfx_output;
 }

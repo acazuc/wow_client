@@ -26,7 +26,7 @@ fs_output gfx_main(fs_input gfx_input)
 	vec4 color = gfx_input.color * tex_color;
 	if (color.a < alpha_test)
 		discard;
-	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
 	color.rgb = mix(color.rgb, fog_color.rgb, fog_factor);
 	gfx_output.color = color;
 	return gfx_output;

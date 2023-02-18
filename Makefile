@@ -447,6 +447,6 @@ lib:
 	@cd lib/jkl && SL_LIBS="$(JKL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(JKL_TARGET)" -m static -o "$(PWD)/$(LIB_DIR)" -j6
 
 shaders:
-	@make -C shaders WITH_GL3=YES WITH_GL4=YES WITH_GLES3=NO WITH_D3D9=NO WITH_D3D11=YES WITH_VK=NO
+	@make -C shaders WITH_GL3=YES WITH_GL4=YES WITH_GLES3=YES WITH_D3D9=NO WITH_D3D11=YES WITH_VK=NO
 
 .PHONY: clean size objsize lib shaders

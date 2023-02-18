@@ -14,22 +14,20 @@ constant 1 model_block
 
 sampler 0 2d color_tex
 
-#define PIXEL_SIZE (vec2(1. / 1920, 1. / 1080))
-
-#define R_FACTOR 0
+#define R_FACTOR  0.0
 #define G_FACTOR -0.5
-#define B_FACTOR -1
+#define B_FACTOR -1.0
 
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	vec2 factor = (gfx_input.uv - .5) * 2;
-	factor = sign(factor) * pow(factor, vec2(2, 2));
+	vec2 factor = (gfx_input.uv - 0.5) * 2.0;
+	factor = sign(factor) * pow(factor, vec2(2.0, 2.0));
 	vec2 offset = size * factor / screen_size;
 	vec3 color = gfx_sample(color_tex, gfx_input.uv).rgb;
-	color.r = color.r * (1 - power) + power * gfx_sample(color_tex, gfx_input.uv + R_FACTOR * offset).r;
-	color.g = color.g * (1 - power) + power * gfx_sample(color_tex, gfx_input.uv + G_FACTOR * offset).g;
-	color.b = color.b * (1 - power) + power * gfx_sample(color_tex, gfx_input.uv + B_FACTOR * offset).b;
-	gfx_output.color = vec4(color, 1);
+	color.r = color.r * (1.0 - power) + power * gfx_sample(color_tex, gfx_input.uv + R_FACTOR * offset).r;
+	color.g = color.g * (1.0 - power) + power * gfx_sample(color_tex, gfx_input.uv + G_FACTOR * offset).g;
+	color.b = color.b * (1.0 - power) + power * gfx_sample(color_tex, gfx_input.uv + B_FACTOR * offset).b;
+	gfx_output.color = vec4(color, 1.0);
 	return gfx_output;
 }

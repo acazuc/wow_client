@@ -26,7 +26,7 @@ constant 1 model_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 boned = vec4(gfx_input.position, 1);
+	vec4 boned = vec4(gfx_input.position, 1.0);
 	if (gfx_input.bone != -1)
 		boned = mul(boned, bone_mats[gfx_input.bone]);
 	gfx_output.gfx_position = mul(boned, mvp);

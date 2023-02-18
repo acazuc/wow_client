@@ -28,7 +28,7 @@ constant 1 model_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	gfx_output.gfx_position = mul(vec4(gfx_input.position, 1), mvp);
+	gfx_output.gfx_position = mul(vec4(gfx_input.position, 1.0), mvp);
 	gfx_output.color = sky_colors0;
 	gfx_output.color = mix(gfx_output.color, sky_colors1, gfx_input.color0);
 	gfx_output.color = mix(gfx_output.color, sky_colors2, gfx_input.color1);

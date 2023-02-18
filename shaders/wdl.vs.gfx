@@ -12,7 +12,7 @@ constant 1 model_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 position_fixed = vec4(gfx_input.position, 1);
+	vec4 position_fixed = vec4(gfx_input.position, 1.0);
 	gfx_output.position = mul(position_fixed, mv).xyz;
 	gfx_output.gfx_position = mul(position_fixed, mvp);
 	return gfx_output;

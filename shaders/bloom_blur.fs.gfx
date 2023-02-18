@@ -28,22 +28,24 @@ static float weights[WEIGHTS_NB] = {
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	vec2 tex_offset = 1. / screen_size;
+	vec2 tex_offset = 1.0 / screen_size;
 	vec3 result = gfx_sample(color_tex, gfx_input.uv).xyz * weights[0];
 	vec2 offset;
 	if (horizontal != 0)
 	{
-		offset = vec2(tex_offset.x, 0);
+		offset = vec2(tex_offset.x, 0.0);
 	}
 	else
 	{
-		offset = vec2(0, tex_offset.y);
+		offset = vec2(0.0, tex_offset.y);
 	}
+	vec2 off = vec2(0.0, 0.0);
 	for (int i = 1; i < WEIGHTS_NB; ++i)
 	{
-		result += gfx_sample(color_tex, gfx_input.uv - offset * i).xyz * weights[i];
-		result += gfx_sample(color_tex, gfx_input.uv + offset * i).xyz * weights[i];
+		result += gfx_sample(color_tex, gfx_input.uv - off).xyz * weights[i];
+		result += gfx_sample(color_tex, gfx_input.uv + off).xyz * weights[i];
+		off += offset;
 	}
-	gfx_output.color = vec4(result, 1);
+	gfx_output.color = vec4(result, 1.0);
 	return gfx_output;
 }

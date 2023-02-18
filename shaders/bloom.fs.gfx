@@ -16,8 +16,8 @@ fs_output gfx_main(fs_input gfx_input)
 	vec3 texture_color = gfx_sample(color_tex, gfx_input.uv).xyz;
 	float brightness = dot(texture_color, vec3(0.2126, 0.7152, 0.0722));
 	if (brightness >= threshold)
-		gfx_output.color = vec4(texture_color, 1);
+		gfx_output.color = vec4(texture_color, 1.0);
 	else
-		gfx_output.color = vec4(0, 0, 0, 0);
+		gfx_output.color = vec4(0.0, 0.0, 0.0, 0.0);
 	return gfx_output;
 }

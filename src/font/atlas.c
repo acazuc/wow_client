@@ -141,7 +141,7 @@ void font_atlas_update(struct font_atlas *atlas)
 			return;
 		gfx_delete_texture(g_wow->device, &atlas->texture);
 		if (atlas->bpp == 32)
-			gfx_create_texture(g_wow->device, &atlas->texture, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, atlas->width, atlas->height, 0);
+			gfx_create_texture(g_wow->device, &atlas->texture, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, atlas->width, atlas->height, 0);
 		else
 			gfx_create_texture(g_wow->device, &atlas->texture, GFX_TEXTURE_2D, GFX_R8, 1, atlas->width, atlas->height, 0);
 		gfx_set_texture_levels(&atlas->texture, 0, 0);

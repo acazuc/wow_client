@@ -169,11 +169,11 @@ static void resize(struct render_pass *render_pass, uint32_t width, uint32_t hei
 		width = 1;
 	if (height < 1)
 		height = 1;
-	gfx_create_texture(g_wow->device, &bloom->texture1, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, width, height, 0);
+	gfx_create_texture(g_wow->device, &bloom->texture1, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, width, height, 0);
 	gfx_set_texture_filtering(&bloom->texture1, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);
 	gfx_set_texture_addressing(&bloom->texture1, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP);
 	gfx_delete_texture(g_wow->device, &bloom->texture2);
-	gfx_create_texture(g_wow->device, &bloom->texture2, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, width, height, 0);
+	gfx_create_texture(g_wow->device, &bloom->texture2, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, width, height, 0);
 	gfx_set_texture_filtering(&bloom->texture2, GFX_FILTERING_LINEAR, GFX_FILTERING_LINEAR, GFX_FILTERING_NONE);
 	gfx_set_texture_addressing(&bloom->texture2, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP, GFX_TEXTURE_ADDRESSING_CLAMP);
 	gfx_set_render_target_texture(&bloom->bloom_render_target, GFX_RENDERTARGET_ATTACHMENT_COLOR0, &bloom->texture1);

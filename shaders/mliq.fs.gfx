@@ -41,16 +41,16 @@ fs_output gfx_main(fs_input gfx_input)
 	vec3 tex_col = gfx_sample(tex, gfx_input.uv).rgb;
 	if (type <= 1 || type == 4 || type == 8)
 	{
-		float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10) * 20;
-		color = gfx_input.diffuse.xyz + tex_col * (1 + specular_color.xyz * specular_factor);
+		float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0.0, 1.0), 10.0) * 20.0;
+		color = gfx_input.diffuse.xyz + tex_col * (1.0 + specular_color.xyz * specular_factor);
 	}
 	else
 	{
 		color = tex_col;
 	}
-	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
 	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), alpha);
-	gfx_output.normal = vec4(gfx_input.normal, 1);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	gfx_output.normal = vec4(gfx_input.normal, 1.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

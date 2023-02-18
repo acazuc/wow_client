@@ -619,13 +619,21 @@ end:
 	return ret;
 }
 
-static void print_glsl_defines(FILE *fp)
+static void print_glsl_defines(FILE *fp, enum shader_api api)
 {
 	fprintf(fp, "#define GFX_GLSL\n");
 	fprintf(fp, "#define mul(a, b) (b * a)\n");
 	fprintf(fp, "#define gfx_sample(t, u) texture(t, u)\n");
 	fprintf(fp, "#define gfx_sample_offset(t, u, o) textureOffset(t, u, o)\n");
 	fprintf(fp, "\n");
+	if (api == API_GLES3)
+	{
+		fprintf(fp, "precision highp float;\n");
+		fprintf(fp, "precision highp int;\n");
+		fprintf(fp, "precision highp sampler2D;\n");
+		fprintf(fp, "precision highp sampler2DArray;\n");
+		fprintf(fp, "\n");
+	}
 }
 
 static void print_glsl_constant(const struct shader_constant *constant, FILE *fp, enum shader_api api)
@@ -636,6 +644,7 @@ static void print_glsl_constant(const struct shader_constant *constant, FILE *fp
 			fprintf(fp, "layout(set = 0, binding = %u, std140) uniform %s\n", constant->bind, constant->name);
 			break;
 		case API_GL4:
+		case API_GLES3:
 			fprintf(fp, "layout(binding = %u, std140) uniform %s\n", constant->bind, constant->name);
 			break;
 		case API_GL3:
@@ -671,6 +680,7 @@ static void print_glsl_sampler(const struct shader_sampler *sampler, FILE *fp, e
 			fprintf(fp, "layout(set = 1, binding = %u) uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
 		case API_GL4:
+		case API_GLES3:
 			fprintf(fp, "layout(binding = %u) uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
 		case API_GL3:
@@ -692,6 +702,9 @@ static void print_glsl_version(FILE *fp, enum shader_api api)
 		case API_GL3:
 			fprintf(fp, "#version 330 core\n\n");
 			break;
+		case API_GLES3:
+			fprintf(fp, "#version 320 es\n\n");
+			break;
 		default:
 			assert(!"unknown api\n");
 	}
@@ -700,7 +713,7 @@ static void print_glsl_version(FILE *fp, enum shader_api api)
 static bool print_glsl_vs(const struct shader *shader, FILE *fp, enum shader_api api)
 {
 	print_glsl_version(fp, api);
-	print_glsl_defines(fp);
+	print_glsl_defines(fp, api);
 	fprintf(fp, "\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
@@ -718,6 +731,7 @@ static bool print_glsl_vs(const struct shader *shader, FILE *fp, enum shader_api
 				break;
 			case API_GL4:
 			case API_VK:
+			case API_GLES3:
 				fprintf(fp, "layout(location = %u) out %s%s gfx_in_fs_%s;\n", output->bind, output->type == VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
 				break;
 			default:
@@ -758,6 +772,7 @@ static bool print_glsl_vs(const struct shader *shader, FILE *fp, enum shader_api
 	{
 		case API_GL3:
 		case API_GL4:
+		case API_GLES3:
 			fprintf(fp, "\tgfx_in.vertex_id = gl_VertexID;\n");
 			break;
 		case API_VK:
@@ -785,7 +800,7 @@ static bool print_glsl_vs(const struct shader *shader, FILE *fp, enum shader_api
 static bool print_glsl_fs(const struct shader *shader, FILE *fp, enum shader_api api)
 {
 	print_glsl_version(fp, api);
-	print_glsl_defines(fp);
+	print_glsl_defines(fp, api);
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct shader_input *input = &shader->inputs[i];
@@ -986,6 +1001,7 @@ static bool print_shader(struct shader *shader, FILE *fp, enum shader_api api)
 	{
 		case API_GL3:
 		case API_GL4:
+		case API_GLES3:
 		case API_VK:
 			switch (shader->type)
 			{

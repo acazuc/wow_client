@@ -279,7 +279,7 @@ struct interface *interface_new(void)
 	gfx_set_cursor(g_wow->window, interface->cursors[CURSOR_POINT]);
 	interface->white_pixel = GFX_TEXTURE_INIT();
 	static const uint8_t data[4] = {0xff, 0xff, 0xff, 0xff};
-	gfx_create_texture(g_wow->device, &interface->white_pixel, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, 1, 1, 0);
+	gfx_create_texture(g_wow->device, &interface->white_pixel, GFX_TEXTURE_2D, GFX_R8G8B8A8, 1, 1, 1, 0);
 	gfx_set_texture_data(&interface->white_pixel, 0, 0, 1, 1, 0, 4, data);
 	return interface;
 }

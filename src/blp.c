@@ -50,7 +50,7 @@ struct blp_texture *blp_texture_from_data(const uint8_t *data, uint32_t width, u
 	if (!texture)
 		return NULL;
 	texture->mipmaps = NULL;
-	texture->format = GFX_B8G8R8A8;
+	texture->format = GFX_R8G8B8A8;
 	texture->mipmaps_nb = 1;
 	texture->load_asked = false;
 	texture->loading = false;
@@ -140,7 +140,7 @@ bool blp_texture_load(struct blp_texture *texture, struct wow_blp_file *file)
 	{
 		case 1:
 		{
-			texture->format = GFX_B8G8R8A8;
+			texture->format = GFX_R8G8B8A8;
 			for (uint32_t i = 0; i < texture->mipmaps_nb; ++i)
 			{
 				struct blp_texture_mipmap *mipmap = &texture->mipmaps[i];
@@ -157,9 +157,9 @@ bool blp_texture_load(struct blp_texture *texture, struct wow_blp_file *file)
 				for (uint32_t j = 0; j < n; ++j)
 				{
 					uint32_t p = file->header.palette[indexes[j]];
-					mipmap->data[idx++] = p >> 0;
-					mipmap->data[idx++] = p >> 8;
 					mipmap->data[idx++] = p >> 16;
+					mipmap->data[idx++] = p >> 8;
+					mipmap->data[idx++] = p >> 0;
 					switch (file->header.alpha_depth)
 					{
 						case 0:

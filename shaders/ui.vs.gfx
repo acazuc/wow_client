@@ -17,7 +17,7 @@ constant 1 model_block
 vs_output gfx_main(vs_input gfx_in)
 {
 	vs_output gfx_out;
-	gfx_out.gfx_position = mul(vec4(gfx_in.position, 0, 1), mvp);
+	gfx_out.gfx_position = mul(vec4(gfx_in.position, 0.0, 1.0), mvp);
 	gfx_out.col = gfx_in.color * color;
 	gfx_out.uv = vec4(gfx_in.uv.x * uv_transform.x + uv_transform.y,
 	                  gfx_in.uv.y * uv_transform.z + uv_transform.w,

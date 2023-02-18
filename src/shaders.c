@@ -23,7 +23,10 @@ static uint8_t *read_file(const char *path, uint32_t *len)
 	*len = 0;
 	file = fopen(path, "rb");
 	if (!file)
+	{
+		LOG_ERROR("failed to open shader file '%s'", path);
 		return NULL;
+	}
 	do
 	{
 		if (*len == buf_size)
@@ -79,9 +82,6 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			break;
 		case GFX_SHADER_FRAGMENT:
 			type_str = "fs";
-			break;
-		case GFX_SHADER_GEOMETRY:
-			type_str = "gs";
 			break;
 		default:
 			LOG_ERROR("invalid shader type: %d", (int)type);
@@ -142,10 +142,8 @@ static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name
 {
 	const gfx_shader_t *shaders[3];
 	uint32_t shaders_count = 0;
-	gfx_shader_t geometry_shader = GFX_SHADER_INIT();
 	gfx_shader_t fragment_shader = GFX_SHADER_INIT();
 	gfx_shader_t vertex_shader = GFX_SHADER_INIT();
-	bool geometry = false;
 	bool ret = false;
 
 	switch (load_shader(&vertex_shader, name, GFX_SHADER_VERTEX))
@@ -164,27 +162,14 @@ static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name
 		case 1:
 			break;
 	}
-	switch (load_shader(&geometry_shader, name, GFX_SHADER_GEOMETRY))
-	{
-		case -1:
-			break;
-		case 0:
-			goto cleanup;
-		case 1:
-			geometry = true;
-			break;
-	}
 	*shader_state = GFX_SHADER_STATE_INIT();
 	shaders[shaders_count++] = &vertex_shader;
 	shaders[shaders_count++] = &fragment_shader;
-	if (geometry)
-		shaders[shaders_count++] = &geometry_shader;
 	ret = gfx_create_shader_state(g_wow->device, shader_state, shaders, shaders_count, attributes, constants, samplers);
 	if (!ret)
 		LOG_ERROR("failed to create %s shader state", name);
 
 cleanup:
-	//gfx_delete_shader(g_wow->device, &geometry_shader);
 	//gfx_delete_shader(g_wow->device, &fragment_shader);
 	//gfx_delete_shader(g_wow->device, &vertex_shader);
 	return ret;

@@ -38,11 +38,11 @@ fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
 	vec3 tex_col = gfx_sample(tex, gfx_input.uv).rgb;
-	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0, 1), 10) * 20;
-	vec3 color = gfx_input.diffuse + tex_col * (1 + specular_color.xyz * specular_factor);
-	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0, 1);
+	float specular_factor = pow(clamp(dot(normalize(-gfx_input.position), normalize(reflect(-gfx_input.light_dir, gfx_input.normal))), 0.0, 1.0), 10.0) * 20.0;
+	vec3 color = gfx_input.diffuse + tex_col * (1.0 + specular_color.xyz * specular_factor);
+	float fog_factor = clamp((length(gfx_input.position) - fog_range.x) / (fog_range.y - fog_range.x), 0.0, 1.0);
 	gfx_output.color = vec4(mix(color, fog_color.xyz, fog_factor), gfx_input.alpha);
-	gfx_output.normal = vec4(0, 1, 0, 0);
-	gfx_output.position = vec4(gfx_input.position, 1);
+	gfx_output.normal = vec4(0.0, 1.0, 0.0, 0.0);
+	gfx_output.position = vec4(gfx_input.position, 1.0);
 	return gfx_output;
 }

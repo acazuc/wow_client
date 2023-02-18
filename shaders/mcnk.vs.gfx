@@ -47,18 +47,18 @@ constant 2 scene_block
 vs_output gfx_main(vs_input gfx_input)
 {
 	vs_output gfx_output;
-	vec4 position_fixed = vec4(gfx_input.xz.x, gfx_input.y, gfx_input.xz.y, 1);
-	vec4 normal_fixed = vec4(gfx_input.normal, 0);
+	vec4 position_fixed = vec4(gfx_input.xz.x, gfx_input.y, gfx_input.xz.y, 1.0);
+	vec4 normal_fixed = vec4(gfx_input.normal, 0.0);
 	gfx_output.gfx_position =  mul(position_fixed, mvp);
 	gfx_output.position = mul(position_fixed, mv).xyz;
 	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
 	gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
 	gfx_output.uv0 = gfx_input.uv;
 	int offset = gfx_input.vertex_id / 145;
-	gfx_output.uv1 = -(gfx_input.uv + mesh_blocks[offset].uv_offset0 * offset_time).yx * 8;
-	gfx_output.uv2 = -(gfx_input.uv + mesh_blocks[offset].uv_offset1 * offset_time).yx * 8;
-	gfx_output.uv3 = -(gfx_input.uv + mesh_blocks[offset].uv_offset2 * offset_time).yx * 8;
-	gfx_output.uv4 = -(gfx_input.uv + mesh_blocks[offset].uv_offset3 * offset_time).yx * 8;
+	gfx_output.uv1 = -(gfx_input.uv + mesh_blocks[offset].uv_offset0 * offset_time).yx * 8.0;
+	gfx_output.uv2 = -(gfx_input.uv + mesh_blocks[offset].uv_offset1 * offset_time).yx * 8.0;
+	gfx_output.uv3 = -(gfx_input.uv + mesh_blocks[offset].uv_offset2 * offset_time).yx * 8.0;
+	gfx_output.uv4 = -(gfx_input.uv + mesh_blocks[offset].uv_offset3 * offset_time).yx * 8.0;
 	gfx_output.id = gfx_input.vertex_id;
 	return gfx_output;
 }

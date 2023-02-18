@@ -389,7 +389,9 @@ static bool setup_render_passes(void)
 		LOG_ERROR("failed to load glow render pass");
 		return false;
 	}
+#if 0
 	g_wow->post_process.glow->enabled = true;
+#endif
 	LOG_INFO("loading sobel render pass");
 	g_wow->post_process.sobel = sobel_render_pass_new();
 	if (!g_wow->post_process.sobel)
