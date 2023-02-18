@@ -20,7 +20,7 @@ constant 0 mesh_block
 
 constant 1 model_block
 {
-	mat4 m
+	mat4 v
 	mat4 mv
 	mat4 mvp
 }

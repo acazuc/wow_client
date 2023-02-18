@@ -21,7 +21,7 @@ constant 0 mesh_block
 
 constant 1 model_block
 {
-	mat4 m
+	mat4 v
 	mat4 mv
 	mat4 mvp
 }
@@ -60,7 +60,7 @@ vs_output gfx_main(vs_input gfx_input)
 	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
 	if (settings.y == 0)
 	{
-		gfx_output.light_dir = normalize(mul(-light_direction, mv).xyz);
+		gfx_output.light_dir = normalize(mul(-light_direction, v).xyz);
 		float diffuse_factor = clamp(dot(gfx_output.normal, gfx_output.light_dir), 0, 1);
 		gfx_output.light = ambient_color.xyz + diffuse_color.xyz * diffuse_factor + emissive_color.xyz;
 	}
