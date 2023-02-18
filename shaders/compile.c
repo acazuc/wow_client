@@ -639,6 +639,158 @@ static void print_glsl_defines(FILE *fp)
 	fprintf(fp, "\n");
 }
 
+static void print_gl3_constant(const struct shader_constant *constant, FILE *fp)
+{
+	fprintf(fp, "layout(std140) uniform %s\n", constant->name);
+	fprintf(fp, "{\n");
+	for (size_t j = 0; j < constant->members_nb; ++j)
+	{
+		fprintf(fp, "\t%s %s;\n", constant->members[j].type == VARIABLE_STRUCT ? constant->members[j].struct_name : variable_type_to_string(constant->members[j].type), constant->members[j].name);
+	}
+	fprintf(fp, "};\n\n");
+}
+
+static void print_gl3_struct(const struct shader_struct *st, FILE *fp)
+{
+	fprintf(fp, "struct %s\n", st->name);
+	fprintf(fp, "{\n");
+	for (size_t j = 0; j < st->members_nb; ++j)
+	{
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(st->members[j].type), st->members[j].name);
+	}
+	fprintf(fp, "};\n\n");
+}
+
+static bool print_gl3_vs(const struct shader *shader, FILE *fp)
+{
+	fprintf(fp, "#version 330\n\n");
+	print_glsl_defines(fp);
+	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "layout(location = %u) in %s vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
+	}
+	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "layout(location = %u) out %s%s fs_%s;\n", output->bind, output->type == VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
+	}
+	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_gl3_struct(&shader->structs[i], fp);
+	for (size_t i = 0; i < shader->constants_nb; ++i)
+		print_gl3_constant(&shader->constants[i], fp);
+	fprintf(fp, "struct vs_input\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\tint vertex_id;\n");
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
+	}
+	fprintf(fp, "};\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "struct vs_output\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\tvec4 gfx_position;\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
+	}
+	fprintf(fp, "};\n");
+	fprintf(fp, "\n");
+	fprintf(fp, shader->code);
+	fprintf(fp, "\n");
+	fprintf(fp, "void main()\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\tvs_input gfx_in;\n");
+	fprintf(fp, "\tgfx_in.vertex_id = gl_VertexID;\n");
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "\tgfx_in.%s = vs_%s;\n", input->name, input->name);
+	}
+	fprintf(fp, "\tvs_output gfx_out = gfx_main(gfx_in);\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "\tfs_%s = gfx_out.%s;\n", output->name, output->name);
+	}
+	fprintf(fp, "\tgl_Position = gfx_out.gfx_position;\n");
+	fprintf(fp, "}\n");
+	return true;
+}
+
+static bool print_gl3_fs(const struct shader *shader, FILE *fp)
+{
+	fprintf(fp, "#version 330\n\n");
+	print_glsl_defines(fp);
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "layout(location = %u) in %s%s vs_%s;\n", input->bind, input->type == VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
+	}
+	if (shader->inputs_nb)
+		fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "layout(location = %u) out %s fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
+	}
+	fprintf(fp, "\n");
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+		print_gl3_struct(&shader->structs[i], fp);
+	for (size_t i = 0; i < shader->constants_nb; ++i)
+		print_gl3_constant(&shader->constants[i], fp);
+	for (size_t i = 0; i < shader->samplers_nb; ++i)
+	{
+		const struct shader_sampler *sampler = &shader->samplers[i];
+		fprintf(fp, "uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
+	}
+	if (shader->samplers_nb)
+		fprintf(fp, "\n");
+	fprintf(fp, "struct fs_input\n");
+	fprintf(fp, "{\n");
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
+	}
+	fprintf(fp, "\tint dummy; /* don't make empty fs_input */\n");
+	fprintf(fp, "};\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "struct fs_output\n");
+	fprintf(fp, "{\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
+	}
+	fprintf(fp, "};\n");
+	fprintf(fp, "\n");
+	fprintf(fp, shader->code);
+	fprintf(fp, "\n");
+	fprintf(fp, "void main()\n");
+	fprintf(fp, "{\n");
+	fprintf(fp, "\tfs_input gfx_in;\n");
+	for (size_t i = 0; i < shader->inputs_nb; ++i)
+	{
+		const struct shader_input *input = &shader->inputs[i];
+		fprintf(fp, "\tgfx_in.%s = vs_%s;\n", input->name, input->name);
+	}
+	fprintf(fp, "\tfs_output gfx_out = gfx_main(gfx_in);\n");
+	for (size_t i = 0; i < shader->outputs_nb; ++i)
+	{
+		const struct shader_output *output = &shader->outputs[i];
+		fprintf(fp, "\tfs_%s = gfx_out.%s;\n", output->name, output->name);
+	}
+	fprintf(fp, "}\n");
+	return true;
+}
+
 static void print_gl4_constant(const struct shader_constant *constant, FILE *fp)
 {
 	fprintf(fp, "layout(binding = %u, std140) uniform %s\n", constant->bind, constant->name);
@@ -1078,6 +1230,18 @@ static bool print_shader(struct shader *shader, FILE *fp, enum shader_api api)
 {
 	switch (api)
 	{
+		case SHADER_GL3:
+			switch (shader->type)
+			{
+				case SHADER_VERTEX:
+					return print_gl3_vs(shader, fp);
+				case SHADER_FRAGMENT:
+					return print_gl3_fs(shader, fp);
+				default:
+					fprintf(stderr, "unknown shader type");
+					return false;
+			}
+			break;
 		case SHADER_GL4:
 			switch (shader->type)
 			{
