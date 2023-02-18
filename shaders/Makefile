@@ -63,15 +63,15 @@ endif
 
 ifeq ($(WITH_D3D9), YES)
 
-OUT_SHADERS+= $(addprefix d3d9/, $(addsuffix .vs.glsl, $(SHADERS)))
-OUT_SHADERS+= $(addprefix d3d9/, $(addsuffix .fs.glsl, $(SHADERS)))
+OUT_SHADERS+= $(addprefix d3d9/, $(addsuffix .vs.hlsl, $(SHADERS)))
+OUT_SHADERS+= $(addprefix d3d9/, $(addsuffix .fs.hlsl, $(SHADERS)))
 
 endif
 
 ifeq ($(WITH_D3D11), YES)
 
-OUT_SHADERS+= $(addprefix d3d11/, $(addsuffix .vs.glsl, $(SHADERS)))
-OUT_SHADERS+= $(addprefix d3d11/, $(addsuffix .fs.glsl, $(SHADERS)))
+OUT_SHADERS+= $(addprefix d3d11/, $(addsuffix .vs.hlsl, $(SHADERS)))
+OUT_SHADERS+= $(addprefix d3d11/, $(addsuffix .fs.hlsl, $(SHADERS)))
 
 endif
 
@@ -125,22 +125,22 @@ vk/%.fs.glsl: %.fs.gfx compile
 	@echo "compile vk $<"
 	@./compile -t fs -x vk -i "$<" -o "$@"
 
-d3d9/%.vs.glsl: %.vs.gfx compile
+d3d9/%.vs.hlsl: %.vs.gfx compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d9 $<"
 	@./compile -t vs -x d3d9 -i "$<" -o "$@"
 
-d3d9/%.fs.glsl: %.fs.gfx compile
+d3d9/%.fs.hlsl: %.fs.gfx compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d9 $<"
 	@./compile -t fs -x d3d9 -i "$<" -o "$@"
 
-d3d11/%.vs.glsl: %.vs.gfx compile
+d3d11/%.vs.hlsl: %.vs.gfx compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d11 $<"
 	@./compile -t vs -x d3d11 -i "$<" -o "$@"
 
-d3d11/%.fs.glsl: %.fs.gfx compile
+d3d11/%.fs.hlsl: %.fs.gfx compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d11 $<"
 	@./compile -t fs -x d3d11 -i "$<" -o "$@"
