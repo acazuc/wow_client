@@ -107,7 +107,7 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			break;
 		case GFX_DEVICE_VK:
 			dir_str = "vk";
-			ext_str = "glsl.spv";
+			ext_str = "spv";
 			break;
 		case GFX_DEVICE_GLES3:
 			dir_str = "gles3";
