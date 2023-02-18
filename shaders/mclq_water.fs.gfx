@@ -9,10 +9,10 @@ out 0 vec4 color
 out 1 vec4 normal
 out 2 vec4 position
 
-sampler 0 2d position_tex
-sampler 1 2d normal_tex
-sampler 2 2d color_tex
-sampler 3 2d tex
+sampler 3 2d position_tex
+sampler 2 2d normal_tex
+sampler 1 2d color_tex
+sampler 0 2d tex
 
 constant 1 model_block
 {
