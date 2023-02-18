@@ -2,7 +2,7 @@ in 0 vec2 uv
 
 out 0 vec4 color
 
-sampler 0 color_tex
+sampler 0 2d color_tex
 
 constant 1 model_block
 {
@@ -13,11 +13,11 @@ constant 1 model_block
 fs_output gfx_main(fs_input gfx_input)
 {
 	fs_output gfx_output;
-	vec3 texture_color = gfx_sampler(color_tex, gfx_input.uv).xyz;
+	vec3 texture_color = gfx_sample(color_tex, gfx_input.uv).xyz;
 	float brightness = dot(texture_color, vec3(0.2126, 0.7152, 0.0722));
 	if (brightness >= threshold)
-		fragcolor = vec4(texture_color, 1);
+		gfx_output.color = vec4(texture_color, 1);
 	else
-		fragcolor = vec4(0);
+		gfx_output.color = vec4(0, 0, 0, 0);
 	return gfx_output;
 }
