@@ -37,6 +37,7 @@ struct shader_wmo_portals_mesh_block
 struct shader_bloom_blur_model_block
 {
 	struct mat4f mvp;
+	struct vec2f screen_size;
 	int32_t horizontal;
 };
 

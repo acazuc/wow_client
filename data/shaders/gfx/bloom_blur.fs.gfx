@@ -1,0 +1,49 @@
+in 0 vec2 uv
+
+out 0 vec4 color
+
+sampler 0 2d color_tex
+
+constant 1 model_block
+{
+	mat4 mvp
+	vec2 screen_size
+	int horizontal
+}
+
+#define WEIGHTS_NB 21
+
+#ifdef GFX_GLSL
+const float weights[WEIGHTS_NB] = float[] (
+#else
+static float weights[WEIGHTS_NB] = {
+#endif
+0.079, 0.079, 0.078, 0.076, 0.073, 0.07, 0.066, 0.062, 0.058, 0.053, 0.048, 0.043, 0.038, 0.034, 0.029, 0.025, 0.022, 0.018, 0.015, 0.013, 0.01
+#ifdef GFX_GLSL
+); 
+#else
+};
+#endif
+
+fs_output gfx_main(fs_input gfx_input)
+{
+	fs_output gfx_output;
+	vec2 tex_offset = 1. / screen_size;
+	vec3 result = gfx_sample(color_tex, gfx_input.uv).xyz * weights[0];
+	vec2 offset;
+	if (horizontal != 0)
+	{
+		offset = vec2(tex_offset.x, 0);
+	}
+	else
+	{
+		offset = vec2(0, tex_offset.y);
+	}
+	for (int i = 1; i < WEIGHTS_NB; ++i)
+	{
+		result += gfx_sample(color_tex, gfx_input.uv - offset * i).xyz * weights[i];
+		result += gfx_sample(color_tex, gfx_input.uv + offset * i).xyz * weights[i];
+	}
+	gfx_output.color = vec4(result, 1);
+	return gfx_output;
+}

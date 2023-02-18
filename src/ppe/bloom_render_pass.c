@@ -214,6 +214,7 @@ static void render_vblur(struct render_pass *render_pass)
 	{
 		struct shader_bloom_blur_model_block model_block;
 		MAT4_ORTHO(float, model_block.mvp, 0, 1, 0, 1, -2, 2);
+		VEC2_SET(model_block.screen_size, g_wow->render_width, g_wow->render_height);
 		model_block.horizontal = 0;
 		gfx_set_buffer_data(&bloom->vblur_uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 		gfx_bind_constant(g_wow->device, 1, &bloom->vblur_uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
@@ -237,6 +238,7 @@ static void render_hblur(struct render_pass *render_pass)
 	{
 		struct shader_bloom_blur_model_block model_block;
 		MAT4_ORTHO(float, model_block.mvp, 0, 1, 0, 1, -2, 2);
+		VEC2_SET(model_block.screen_size, g_wow->render_width, g_wow->render_height);
 		model_block.horizontal = 1;
 		gfx_set_buffer_data(&bloom->hblur_uniform_buffers[g_wow->draw_frame_id], &model_block, sizeof(model_block), 0);
 		gfx_bind_constant(g_wow->device, 1, &bloom->hblur_uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
