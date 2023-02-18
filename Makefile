@@ -446,6 +446,6 @@ lib:
 	@cd lib/jkl && SL_LIBS="$(JKL_LIBS)" CFLAGS="$(CFLAGS)" sh build.sh -dxb -t "$(JKL_TARGET)" -m static -o "$(PWD)/$(LIB_DIR)" -j6
 
 shaders:
-	@cd data/shaders/gfx && sh compile.sh
+	@cd shaders && API="gl4 d3d11" sh compile.sh
 
-.PHONY: clean size objsize lib
+.PHONY: clean size objsize lib shaders

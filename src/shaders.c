@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#define SHADERS_DIR "data/shaders"
+#define SHADERS_DIR "shaders"
 
 static uint8_t *read_file(const char *path, uint32_t *len)
 {
@@ -114,7 +114,7 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			ext_str = "glsl";
 			break;
 	}
-	if (snprintf(fn, sizeof(fn), "%s/gfx/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
+	if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
 	{
 		LOG_ERROR("shader path is too long");
 		return 0;
@@ -122,21 +122,8 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 	data = read_file(fn, &data_len);
 	if (!data)
 	{
-		if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
-		{
-			LOG_ERROR("shader path is too long");
-			return 0;
-		}
-		data = read_file(fn, &data_len);
-		if (!data)
-		{
-			ret = -1;
-			goto cleanup;
-		}
-	}
-	else
-	{
-		LOG_DEBUG("using %s", fn);
+		ret = -1;
+		goto cleanup;
 	}
 	if (!gfx_create_shader(g_wow->device, shader, type, data, data_len))
 	{

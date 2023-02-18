@@ -43,12 +43,21 @@ vs_output gfx_main(vs_input gfx_input)
 	vec4 normal_fixed = vec4(gfx_input.normal.xyz, 0);
 	gfx_output.gfx_position = mul(position_fixed, mvp);
 	gfx_output.position = mul(position_fixed, mv).xyz;
-	gfx_output.uv1 = gfx_input.uv;
+	switch (combiners.x)
+	{
+		case 0:
+			gfx_output.uv1 = gfx_input.uv;
+			break;
+		case 1:
+			break;
+		case 2:
+			break;
+	}
 	if (settings.x != 0)
 		gfx_output.color = gfx_input.color.bgra;
 	else
 		gfx_output.color = vec4(1, 1, 1, 1);
-	gfx_output.normal = normalize(mul(normal_fixed, mvp).xyz);
+	gfx_output.normal = normalize(mul(normal_fixed, mv).xyz);
 	if (settings.y == 0)
 	{
 		gfx_output.light_dir = normalize(mul(-light_direction, mv).xyz);

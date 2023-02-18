@@ -1770,7 +1770,7 @@ int main(int ac, char **av)
 #endif
 	g_wow->wow_opt |= WOW_OPT_RENDER_INTERFACE;
 	g_wow->wow_opt |= WOW_OPT_AABB_OPTIMIZE;
-	//g_wow->wow_opt |= WOW_OPT_RENDER_GUI;
+	g_wow->wow_opt |= WOW_OPT_RENDER_GUI;
 #if defined (_WIN32)
 	{
 		LARGE_INTEGER frequency;
