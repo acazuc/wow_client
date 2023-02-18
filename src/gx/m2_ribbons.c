@@ -304,7 +304,7 @@ static void initialize(struct gx_m2_ribbons *ribbons)
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, color)},
 				{&emitter->vertexes_buffers[j], sizeof(struct shader_ribbon_input), offsetof(struct shader_ribbon_input, uv)},
 			};
-			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ribbon_input) * MAX_RIBBONS * 2, GFX_BUFFER_STREAM);
+			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_ribbon_input) * MAX_RIBBONS * 2, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_ribbon_model_block), GFX_BUFFER_STREAM);
 			gfx_create_attributes_state(g_wow->device, &emitter->attributes_states[j], binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 		}
