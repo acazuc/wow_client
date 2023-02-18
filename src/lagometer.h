@@ -17,7 +17,6 @@ struct lagometer
 	struct shader_gui_input *vertexes_data;
 	gfx_input_layout_t input_layout;
 	gfx_blend_state_t blend_state;
-	gfx_texture_t white_pixel;
 	gfx_attributes_state_t attributes_state;
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t vertexes_buffer;

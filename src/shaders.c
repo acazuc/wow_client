@@ -742,7 +742,7 @@ static bool build_mcnk(gfx_shader_state_t *shader_state)
 	};
 	static const struct gfx_shader_sampler samplers[] =
 	{
-		/*{"texture0", 1},
+		{"texture0", 1},
 		{"texture1", 2},
 		{"texture2", 3},
 		{"texture3", 4},
@@ -750,7 +750,7 @@ static bool build_mcnk(gfx_shader_state_t *shader_state)
 		{"texture5", 6},
 		{"texture6", 7},
 		{"texture7", 8},
-		{"alpha_map", 0},*/
+		{"alpha_map", 0},
 		{NULL, 0}
 	};
 	return load_shader_state(shader_state, "mcnk", attributes, constants, samplers);
@@ -783,7 +783,6 @@ static bool build_gui(gfx_shader_state_t *shader_state)
 	{
 		{"vs_position", 0},
 		{"vs_color", 1},
-		{"vs_uv", 2},
 		{NULL, 0}
 	};
 	static const struct gfx_shader_constant constants[] =

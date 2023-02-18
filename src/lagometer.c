@@ -18,7 +18,6 @@ static const struct gfx_input_layout_bind g_binds[] =
 
 struct lagometer *lagometer_new(void)
 {
-	static const uint8_t data[4] = {0xff, 0xff, 0xff, 0xff};
 	struct lagometer *lagometer = mem_zalloc(MEM_GENERIC, sizeof(*lagometer));
 	if (!lagometer)
 		return NULL;
@@ -45,9 +44,6 @@ struct lagometer *lagometer_new(void)
 	};
 	gfx_create_attributes_state(g_wow->device, &lagometer->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 	gfx_create_input_layout(g_wow->device, &lagometer->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->gui);
-	lagometer->white_pixel = GFX_TEXTURE_INIT();
-	gfx_create_texture(g_wow->device, &lagometer->white_pixel, GFX_TEXTURE_2D, GFX_B8G8R8A8, 1, 1, 1, 0);
-	gfx_set_texture_data(&lagometer->white_pixel, 0, 0, 1, 1, 0, 4, data);
 	lagometer->blend_state = GFX_BLEND_STATE_INIT();
 	lagometer->depth_stencil_state = GFX_DEPTH_STENCIL_STATE_INIT();
 	lagometer->rasterizer_state = GFX_RASTERIZER_STATE_INIT();
@@ -73,7 +69,6 @@ void lagometer_delete(struct lagometer *lagometer)
 	gfx_delete_input_layout(g_wow->device, &lagometer->input_layout);
 	gfx_delete_attributes_state(g_wow->device, &lagometer->attributes_state);
 	gfx_delete_pipeline_state(g_wow->device, &lagometer->pipeline_state);
-	gfx_delete_texture(g_wow->device, &lagometer->white_pixel);
 	gfx_delete_buffer(g_wow->device, &lagometer->vertexes_buffer);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 		gfx_delete_buffer(g_wow->device, &lagometer->uniform_buffers[i]);
@@ -144,8 +139,6 @@ void lagometer_draw(struct lagometer *lagometer)
 	gfx_bind_attributes_state(g_wow->device, &lagometer->attributes_state, &lagometer->input_layout);
 	gfx_bind_pipeline_state(g_wow->device, &lagometer->pipeline_state);
 	gfx_bind_constant(g_wow->device, 1, &lagometer->uniform_buffers[g_wow->draw_frame_id], sizeof(model_block), 0);
-	const gfx_texture_t *tex = &lagometer->white_pixel;
-	gfx_bind_samplers(g_wow->device, 0, 1, &tex);
 	gfx_set_line_width(g_wow->device, 1);
 	gfx_draw(g_wow->device, WIDTH * 8, 0);
 }
