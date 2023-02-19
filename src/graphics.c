@@ -112,6 +112,7 @@ static const struct gfx_input_layout_bind g_skybox_binds[] =
 	{GFX_ATTR_R32_FLOAT      , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[2])},
 	{GFX_ATTR_R32_FLOAT      , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[3])},
 	{GFX_ATTR_R32_FLOAT      , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[4])},
+	{GFX_ATTR_R32G32_FLOAT   , sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, uv)},
 };
 
 static const struct gfx_input_layout_bind g_mcnk_binds[] =

@@ -769,7 +769,9 @@ void gx_skybox_render(struct gx_skybox *skybox)
 		VEC3_CPY(model_block.sky_colors[i], skybox->int_values[SKYBOX_INT_SKY0 + i]);
 		model_block.sky_colors[i].w = 1;
 	}
-	VEC3_CPY(model_block.clouds_colors[0], skybox->int_values[SKYBOX_INT_SUN]);
+	VEC3_CPY(model_block.clouds_sun_color, skybox->int_values[SKYBOX_INT_SUN]);
+	model_block.clouds_sun_color.w = 1;
+	VEC3_CPY(model_block.clouds_colors[0], skybox->int_values[SKYBOX_INT_CLOUD1]);
 	model_block.clouds_colors[0].w = 1;
 	VEC3_CPY(model_block.clouds_colors[1], skybox->int_values[SKYBOX_INT_CLOUD2]);
 	model_block.clouds_colors[1].w = 1;

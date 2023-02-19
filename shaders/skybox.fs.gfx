@@ -6,14 +6,9 @@ out 0 vec4 color
 constant 1 model_block
 {
 	mat4 mvp
-	vec4 sky_colors0
-	vec4 sky_colors1
-	vec4 sky_colors2
-	vec4 sky_colors3
-	vec4 sky_colors4
-	vec4 sky_colors5
-	vec4 clouds_colors0
-	vec4 clouds_colors1
+	vec4 sky_colors[6]
+	vec4 clouds_sun_color
+	vec4 clouds_colors[2]
 	vec2 clouds_factors
 	float clouds_blend
 	float clouds_drift
@@ -28,6 +23,6 @@ fs_output gfx_main(fs_input gfx_input)
 	float clouds_alpha1 = gfx_sample(clouds1, gfx_input.uv + vec2(clouds_drift, 0.0)).r;
 	float clouds_alpha2 = gfx_sample(clouds2, gfx_input.uv + vec2(clouds_drift, 0.0)).r;
 	float clouds_alpha = mix(clouds_alpha1, clouds_alpha2, clouds_blend);
-	gfx_output.color = mix(gfx_input.color, clouds_colors0, clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0.0, 1.0));
+	gfx_output.color = mix(gfx_input.color, clouds_sun_color, clamp((clouds_alpha - clouds_factors.x) / (clouds_factors.y - clouds_factors.x), 0.0, 1.0));
 	return gfx_output;
 }

@@ -205,6 +205,7 @@ struct shader_skybox_model_block
 {
 	struct mat4f mvp;
 	struct vec4f sky_colors[6];
+	struct vec4f clouds_sun_color;
 	struct vec4f clouds_colors[2];
 	struct vec2f clouds_factors;
 	float clouds_blend;
