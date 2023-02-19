@@ -24,15 +24,14 @@ struct ssao_render_pass
 	gfx_texture_t texture;
 	gfx_buffer_t denoiser_uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
-	gfx_buffer_t positions_buffer;
+	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
-	gfx_buffer_t uv_buffer;
 };
 
 static const struct gfx_input_layout_bind g_binds[] =
 {
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, position)},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, uv)},
 };
 
 static void ctr(struct render_pass *render_pass)
@@ -47,9 +46,8 @@ static void ctr(struct render_pass *render_pass)
 	ssao->render_target = GFX_RENDER_TARGET_INIT();
 	ssao->input_layout = GFX_INPUT_LAYOUT_INIT();
 	ssao->blend_state = GFX_BLEND_STATE_INIT();
-	ssao->positions_buffer = GFX_BUFFER_INIT();
+	ssao->vertexes_buffer = GFX_BUFFER_INIT();
 	ssao->indices_buffer = GFX_BUFFER_INIT();
-	ssao->uv_buffer = GFX_BUFFER_INIT();
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		ssao->uniform_buffers[i] = GFX_BUFFER_INIT();
@@ -62,18 +60,21 @@ static void ctr(struct render_pass *render_pass)
 	uint32_t draw_buffer = GFX_RENDERTARGET_ATTACHMENT_COLOR0;
 	gfx_set_render_target_draw_buffers(&ssao->render_target, &draw_buffer, 1);
 	gfx_bind_render_target(g_wow->device, NULL);
-
-	struct vec2f positions[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-	struct vec2f uvs[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+	struct shader_ppe_input vertexes[4] =
+	{
+		{{0, 0}, {0, 0}},
+		{{1, 0}, {1, 0}},
+		{{1, 1}, {1, 1}},
+		{{0, 1}, {0, 1}},
+	};
 	uint16_t indices[6] = {0, 1, 3, 3, 1, 2};
-	gfx_create_buffer(g_wow->device, &ssao->positions_buffer, GFX_BUFFER_VERTEXES, positions, sizeof(positions), GFX_BUFFER_IMMUTABLE);
+	gfx_create_buffer(g_wow->device, &ssao->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &ssao->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &ssao->uv_buffer, GFX_BUFFER_VERTEXES, uvs, sizeof(uvs), GFX_BUFFER_IMMUTABLE);
 	gfx_create_input_layout(g_wow->device, &ssao->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->ssao);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&ssao->positions_buffer},
-		{&ssao->uv_buffer},
+		{&ssao->vertexes_buffer},
+		{&ssao->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &ssao->attributes_state, binds, sizeof(binds) / sizeof(*binds), &ssao->indices_buffer, GFX_INDEX_UINT16);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
@@ -110,9 +111,8 @@ static void dtr(struct render_pass *render_pass)
 		gfx_delete_buffer(g_wow->device, &ssao->denoiser_uniform_buffers[i]);
 		gfx_delete_buffer(g_wow->device, &ssao->uniform_buffers[i]);
 	}
-	gfx_delete_buffer(g_wow->device, &ssao->positions_buffer);
+	gfx_delete_buffer(g_wow->device, &ssao->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &ssao->indices_buffer);
-	gfx_delete_buffer(g_wow->device, &ssao->uv_buffer);
 	gfx_delete_pipeline_state(g_wow->device, &ssao->pipeline_state);
 	gfx_delete_pipeline_state(g_wow->device, &ssao->denoiser_pipeline_state);
 	gfx_delete_attributes_state(g_wow->device, &ssao->attributes_state);

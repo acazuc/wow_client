@@ -410,6 +410,12 @@ struct shader_wmo_input
 	struct vec2f uv;
 };
 
+struct shader_ppe_input
+{
+	struct vec2f position;
+	struct vec2f uv;
+};
+
 struct shader_ui_input
 {
 	struct vec2f position;

@@ -33,15 +33,14 @@ struct bloom_render_pass
 	gfx_buffer_t vblur_uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t hblur_uniform_buffers[RENDER_FRAMES_COUNT];
 	gfx_buffer_t bloom_uniform_buffers[RENDER_FRAMES_COUNT];
-	gfx_buffer_t positions_buffer;
+	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
-	gfx_buffer_t uv_buffer;
 };
 
 static const struct gfx_input_layout_bind g_binds[] =
 {
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, position)},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, uv)},
 };
 
 static void ctr(struct render_pass *render_pass)
@@ -59,9 +58,8 @@ static void ctr(struct render_pass *render_pass)
 	bloom->blend_state = GFX_BLEND_STATE_INIT();
 	bloom->attributes_state = GFX_ATTRIBUTES_STATE_INIT();
 	bloom->input_layout = GFX_INPUT_LAYOUT_INIT();
-	bloom->positions_buffer = GFX_BUFFER_INIT();
+	bloom->vertexes_buffer = GFX_BUFFER_INIT();
 	bloom->indices_buffer = GFX_BUFFER_INIT();
-	bloom->uv_buffer = GFX_BUFFER_INIT();
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		bloom->bloom_uniform_buffers[i] = GFX_BUFFER_INIT();
@@ -80,12 +78,16 @@ static void ctr(struct render_pass *render_pass)
 	gfx_set_render_target_draw_buffers(&bloom->vblur_render_target, &draw_buffer, 1);
 	gfx_set_render_target_draw_buffers(&bloom->hblur_render_target, &draw_buffer, 1);
 	gfx_bind_render_target(g_wow->device, NULL);
-	struct vec2f positions[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-	struct vec2f uvs[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+	struct shader_ppe_input vertexes[4] =
+	{
+		{{0, 0}, {0, 0}},
+		{{1, 0}, {1, 0}},
+		{{1, 1}, {1, 1}},
+		{{0, 1}, {0, 1}},
+	};
 	uint16_t indices[6] = {0, 1, 3, 3, 1, 2};
-	gfx_create_buffer(g_wow->device, &bloom->positions_buffer, GFX_BUFFER_VERTEXES, positions, sizeof(positions), GFX_BUFFER_IMMUTABLE);
+	gfx_create_buffer(g_wow->device, &bloom->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &bloom->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &bloom->uv_buffer, GFX_BUFFER_VERTEXES, uvs, sizeof(uvs), GFX_BUFFER_IMMUTABLE);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 	{
 		gfx_create_buffer(g_wow->device, &bloom->bloom_uniform_buffers[i], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_bloom_model_block), GFX_BUFFER_STREAM);
@@ -96,8 +98,8 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_input_layout(g_wow->device, &bloom->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->bloom);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&bloom->positions_buffer},
-		{&bloom->uv_buffer},
+		{&bloom->vertexes_buffer},
+		{&bloom->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &bloom->attributes_state, binds, sizeof(binds) / sizeof(*binds), &bloom->indices_buffer, GFX_INDEX_UINT16);
 	gfx_create_rasterizer_state(g_wow->device, &bloom->rasterizer_state, GFX_FILL_SOLID, GFX_CULL_NONE, GFX_FRONT_CCW, false);
@@ -139,9 +141,8 @@ static void dtr(struct render_pass *render_pass)
 		gfx_delete_buffer(g_wow->device, &bloom->hblur_uniform_buffers[i]);
 		gfx_delete_buffer(g_wow->device, &bloom->bloom_uniform_buffers[i]);
 	}
-	gfx_delete_buffer(g_wow->device, &bloom->positions_buffer);
+	gfx_delete_buffer(g_wow->device, &bloom->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &bloom->indices_buffer);
-	gfx_delete_buffer(g_wow->device, &bloom->uv_buffer);
 	gfx_delete_render_target(g_wow->device, &bloom->bloom_render_target);
 	gfx_delete_render_target(g_wow->device, &bloom->hblur_render_target);
 	gfx_delete_render_target(g_wow->device, &bloom->vblur_render_target);

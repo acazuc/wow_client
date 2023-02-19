@@ -24,17 +24,16 @@ struct filter_render_pass
 	gfx_input_layout_t input_layout;
 	gfx_blend_state_t blend_state;
 	gfx_buffer_t uniform_buffers[RENDER_FRAMES_COUNT];
-	gfx_buffer_t positions_buffer;
+	gfx_buffer_t vertexes_buffer;
 	gfx_buffer_t indices_buffer;
-	gfx_buffer_t uv_buffer;
 };
 
 static const struct render_pass_vtable filter_render_pass_vtable;
 
 static const struct gfx_input_layout_bind g_binds[] =
 {
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
-	{GFX_ATTR_R32G32_FLOAT, sizeof(struct vec2f), 0},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, position)},
+	{GFX_ATTR_R32G32_FLOAT, sizeof(struct shader_ppe_input), offsetof(struct shader_ppe_input, uv)},
 };
 
 static void create_uniform_buffers(struct filter_render_pass *filter_render_pass, size_t size)
@@ -55,20 +54,23 @@ static void ctr(struct render_pass *render_pass)
 	filter->blend_state = GFX_BLEND_STATE_INIT();
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 		filter->uniform_buffers[i] = GFX_BUFFER_INIT();
-	filter->positions_buffer = GFX_BUFFER_INIT();
+	filter->vertexes_buffer = GFX_BUFFER_INIT();
 	filter->indices_buffer = GFX_BUFFER_INIT();
-	filter->uv_buffer = GFX_BUFFER_INIT();
-	struct vec2f positions[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-	struct vec2f uvs[4] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+	struct shader_ppe_input vertexes[4] =
+	{
+		{{0, 0}, {0, 0}},
+		{{1, 0}, {1, 0}},
+		{{1, 1}, {1, 1}},
+		{{0, 1}, {0, 1}},
+	};
 	uint16_t indices[6] = {0, 1, 3, 3, 1, 2};
-	gfx_create_buffer(g_wow->device, &filter->positions_buffer, GFX_BUFFER_VERTEXES, positions, sizeof(positions), GFX_BUFFER_IMMUTABLE);
+	gfx_create_buffer(g_wow->device, &filter->vertexes_buffer, GFX_BUFFER_VERTEXES, vertexes, sizeof(vertexes), GFX_BUFFER_IMMUTABLE);
 	gfx_create_buffer(g_wow->device, &filter->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
-	gfx_create_buffer(g_wow->device, &filter->uv_buffer, GFX_BUFFER_VERTEXES, uvs, sizeof(uvs), GFX_BUFFER_IMMUTABLE);
 	gfx_create_input_layout(g_wow->device, &filter->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), filter->shader_state);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&filter->positions_buffer},
-		{&filter->uv_buffer},
+		{&filter->vertexes_buffer},
+		{&filter->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &filter->attributes_state, binds, sizeof(binds) / sizeof(*binds), &filter->indices_buffer, GFX_INDEX_UINT16);
 	gfx_create_rasterizer_state(g_wow->device, &filter->rasterizer_state, GFX_FILL_SOLID, GFX_CULL_NONE, GFX_FRONT_CCW, false);
@@ -89,9 +91,8 @@ static void dtr(struct render_pass *render_pass)
 	struct filter_render_pass *filter = (struct filter_render_pass*)render_pass;
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)
 		gfx_delete_buffer(g_wow->device, &filter->uniform_buffers[i]);
-	gfx_delete_buffer(g_wow->device, &filter->positions_buffer);
+	gfx_delete_buffer(g_wow->device, &filter->vertexes_buffer);
 	gfx_delete_buffer(g_wow->device, &filter->indices_buffer);
-	gfx_delete_buffer(g_wow->device, &filter->uv_buffer);
 	gfx_delete_attributes_state(g_wow->device, &filter->attributes_state);
 	gfx_delete_pipeline_state(g_wow->device, &filter->pipeline_state);
 	gfx_delete_input_layout(g_wow->device, &filter->input_layout);
