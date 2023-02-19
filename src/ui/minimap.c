@@ -95,9 +95,9 @@ static void render(struct ui_object *object)
 		gfx_create_buffer(g_wow->device, &minimap->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 		const struct gfx_attribute_bind binds[] =
 		{
-			{&minimap->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
-			{&minimap->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
-			{&minimap->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
+			{&minimap->vertexes_buffer},
+			{&minimap->vertexes_buffer},
+			{&minimap->vertexes_buffer},
 		};
 		gfx_create_attributes_state(g_wow->device, &minimap->attributes_state, binds, sizeof(binds) / sizeof(*binds), &minimap->indices_buffer, GFX_INDEX_UINT16);
 		for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)

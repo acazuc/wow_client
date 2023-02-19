@@ -39,8 +39,8 @@ struct lagometer *lagometer_new(void)
 	}
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&lagometer->vertexes_buffer, sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, position)},
-		{&lagometer->vertexes_buffer, sizeof(struct shader_gui_input), offsetof(struct shader_gui_input, color)},
+		{&lagometer->vertexes_buffer},
+		{&lagometer->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &lagometer->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 	gfx_create_input_layout(g_wow->device, &lagometer->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->gui);

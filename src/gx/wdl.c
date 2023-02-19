@@ -195,7 +195,7 @@ static void initialize(struct gx_wdl *wdl)
 	wdl->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&wdl->vertex_buffer, sizeof(struct vec3f), 0},
+		{&wdl->vertex_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &wdl->attributes_state, binds, sizeof(binds) / sizeof(*binds), &wdl->indices_buffer, GFX_INDEX_UINT32);
 }

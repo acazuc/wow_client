@@ -96,8 +96,8 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_input_layout(g_wow->device, &bloom->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->bloom);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&bloom->positions_buffer, sizeof(struct vec2f), 0},
-		{&bloom->uv_buffer       , sizeof(struct vec2f), 0},
+		{&bloom->positions_buffer},
+		{&bloom->uv_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &bloom->attributes_state, binds, sizeof(binds) / sizeof(*binds), &bloom->indices_buffer, GFX_INDEX_UINT16);
 	gfx_create_rasterizer_state(g_wow->device, &bloom->rasterizer_state, GFX_FILL_SOLID, GFX_CULL_NONE, GFX_FRONT_CCW, false);

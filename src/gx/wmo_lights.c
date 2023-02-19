@@ -82,8 +82,8 @@ void gx_wmo_lights_initialize(struct gx_wmo_lights *lights)
 	lights->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&lights->vertexes_buffer, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, position)},
-		{&lights->vertexes_buffer, sizeof(struct shader_basic_input), offsetof(struct shader_basic_input, color)},
+		{&lights->vertexes_buffer},
+		{&lights->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &lights->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 }

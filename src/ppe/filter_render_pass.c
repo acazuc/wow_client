@@ -67,8 +67,8 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_input_layout(g_wow->device, &filter->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), filter->shader_state);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&filter->positions_buffer, sizeof(struct vec2f), 0},
-		{&filter->uv_buffer       , sizeof(struct vec2f), 0},
+		{&filter->positions_buffer},
+		{&filter->uv_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &filter->attributes_state, binds, sizeof(binds) / sizeof(*binds), &filter->indices_buffer, GFX_INDEX_UINT16);
 	gfx_create_rasterizer_state(g_wow->device, &filter->rasterizer_state, GFX_FILL_SOLID, GFX_CULL_NONE, GFX_FRONT_CCW, false);

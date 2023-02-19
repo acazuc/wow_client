@@ -523,9 +523,9 @@ static void update_overlay(struct ui_edit_box *edit_box)
 	gfx_create_buffer(g_wow->device, &edit_box->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_IMMUTABLE);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&edit_box->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
-		{&edit_box->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
-		{&edit_box->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
+		{&edit_box->vertexes_buffer},
+		{&edit_box->vertexes_buffer},
+		{&edit_box->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &edit_box->attributes_state, binds, sizeof(binds) / sizeof(*binds), &edit_box->indices_buffer, GFX_INDEX_UINT16);
 	jks_array_destroy(&vertexes);

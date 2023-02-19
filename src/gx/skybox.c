@@ -363,13 +363,13 @@ struct gx_skybox *gx_skybox_new(uint32_t mapid)
 	}
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, position)},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[0])},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[1])},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[2])},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[3])},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, colors[4])},
-		{&skybox->vertexes_buffer, sizeof(struct shader_skybox_input), offsetof(struct shader_skybox_input, uv)},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
+		{&skybox->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &skybox->attributes_state, binds, sizeof(binds) / sizeof(*binds), &skybox->indices_buffer, GFX_INDEX_UINT16);
 	return skybox;

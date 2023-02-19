@@ -1138,10 +1138,10 @@ int gx_mcnk_initialize(struct gx_mcnk *mcnk)
 	mcnk->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&mcnk->vertexes_buffer           , sizeof(struct shader_mcnk_input), offsetof(struct shader_mcnk_input, norm)},
-		{&g_wow->map->mcnk_vertexes_buffer, sizeof(struct vec2f) * 2        , sizeof(struct vec2f) * 0},
-		{&g_wow->map->mcnk_vertexes_buffer, sizeof(struct vec2f) * 2        , sizeof(struct vec2f) * 1},
-		{&mcnk->vertexes_buffer           , sizeof(struct shader_mcnk_input), offsetof(struct shader_mcnk_input, y)},
+		{&mcnk->vertexes_buffer},
+		{&g_wow->map->mcnk_vertexes_buffer},
+		{&g_wow->map->mcnk_vertexes_buffer},
+		{&mcnk->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &mcnk->attributes_state, binds, sizeof(binds) / sizeof(*binds), mcnk->holes ? &mcnk->indices_buffer : &g_wow->map->mcnk_indices_buffer, GFX_INDEX_UINT16);
 	mcnk->initialized = true;

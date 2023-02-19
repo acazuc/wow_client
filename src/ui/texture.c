@@ -155,9 +155,9 @@ static void render(struct ui_object *object)
 		update_vertexes_buffer(texture);
 		const struct gfx_attribute_bind binds[] =
 		{
-			{&texture->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
-			{&texture->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
-			{&texture->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
+			{&texture->vertexes_buffer},
+			{&texture->vertexes_buffer},
+			{&texture->vertexes_buffer},
 		};
 		gfx_create_attributes_state(g_wow->device, &texture->attributes_state, binds, sizeof(binds) / sizeof(*binds), &texture->indices_buffer, GFX_INDEX_UINT16);
 		for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)

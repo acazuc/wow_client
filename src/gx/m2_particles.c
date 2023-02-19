@@ -547,9 +547,9 @@ static void initialize(struct gx_m2_particles *particles)
 		{
 			const struct gfx_attribute_bind binds[] =
 			{
-				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, position)},
-				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, color)},
-				{&emitter->vertexes_buffers[j], sizeof(struct shader_particle_input), offsetof(struct shader_particle_input, uv)},
+				{&emitter->vertexes_buffers[j]},
+				{&emitter->vertexes_buffers[j]},
+				{&emitter->vertexes_buffers[j]},
 			};
 			gfx_create_buffer(g_wow->device, &emitter->vertexes_buffers[j], GFX_BUFFER_VERTEXES, NULL, sizeof(struct shader_particle_input) * MAX_PARTICLES * 4, GFX_BUFFER_STREAM);
 			gfx_create_buffer(g_wow->device, &emitter->uniform_buffers[j], GFX_BUFFER_UNIFORM, NULL, sizeof(struct shader_particle_model_block), GFX_BUFFER_STREAM);

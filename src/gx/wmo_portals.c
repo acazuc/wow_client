@@ -174,8 +174,8 @@ void gx_wmo_portals_initialize(struct gx_wmo_portals *portals)
 	portals->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&portals->vertexes_buffer, sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, position)},
-		{&portals->vertexes_buffer, sizeof(struct shader_wmo_portals_input), offsetof(struct shader_wmo_portals_input, color)},
+		{&portals->vertexes_buffer},
+		{&portals->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &portals->attributes_state, binds, sizeof(binds) / sizeof(*binds), &portals->indices_buffer, GFX_INDEX_UINT16);
 	for (size_t i = 0; i < portals->portals.size; ++i)

@@ -72,8 +72,8 @@ static void ctr(struct render_pass *render_pass)
 	gfx_create_input_layout(g_wow->device, &ssao->input_layout, g_binds, sizeof(g_binds) / sizeof(*g_binds), &g_wow->shaders->ssao);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&ssao->positions_buffer, sizeof(struct vec2f), 0},
-		{&ssao->uv_buffer       , sizeof(struct vec2f), 0},
+		{&ssao->positions_buffer},
+		{&ssao->uv_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &ssao->attributes_state, binds, sizeof(binds) / sizeof(*binds), &ssao->indices_buffer, GFX_INDEX_UINT16);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)

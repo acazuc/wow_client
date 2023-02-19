@@ -195,8 +195,8 @@ void gx_wmo_mliq_initialize(struct gx_wmo_mliq *mliq)
 	mliq->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&mliq->vertexes_buffer, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, position)},
-		{&mliq->vertexes_buffer, sizeof(struct shader_mliq_input), offsetof(struct shader_mliq_input, uv)},
+		{&mliq->vertexes_buffer},
+		{&mliq->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &mliq->attributes_state, binds, sizeof(binds) / sizeof(*binds), &mliq->indices_buffer, GFX_INDEX_UINT16);
 }

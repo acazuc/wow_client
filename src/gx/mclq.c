@@ -552,9 +552,9 @@ int gx_mclq_initialize(struct gx_mclq *mclq)
 		{
 			const struct gfx_attribute_bind binds[] =
 			{
-				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
-				{&liquid->depths_buffer  , sizeof(uint8_t)                 , 0},
-				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, uv)},
+				{&liquid->vertexes_buffer},
+				{&liquid->depths_buffer},
+				{&liquid->vertexes_buffer},
 			};
 			gfx_create_attributes_state(g_wow->device, &liquid->attributes_state, binds, sizeof(binds) / sizeof(*binds), &liquid->indices_buffer, GFX_INDEX_UINT16);
 		}
@@ -562,8 +562,8 @@ int gx_mclq_initialize(struct gx_mclq *mclq)
 		{
 			const struct gfx_attribute_bind binds[] =
 			{
-				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, position)},
-				{&liquid->vertexes_buffer, sizeof(struct shader_mclq_input), offsetof(struct shader_mclq_input, uv)},
+				{&liquid->vertexes_buffer},
+				{&liquid->vertexes_buffer},
 			};
 			gfx_create_attributes_state(g_wow->device, &liquid->attributes_state, binds, sizeof(binds) / sizeof(*binds), &liquid->indices_buffer, GFX_INDEX_UINT16);
 		}

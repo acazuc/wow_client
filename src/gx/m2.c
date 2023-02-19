@@ -1573,12 +1573,12 @@ int gx_m2_initialize(struct gx_m2 *m2)
 	jks_array_shrink(&m2->indices);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, bone_weights)},
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, pos)},
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, normal)},
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, bone_indices)},
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, tex_coords[0])},
-		{&m2->vertexes_buffer, sizeof(struct wow_m2_vertex), offsetof(struct wow_m2_vertex, tex_coords[1])},
+		{&m2->vertexes_buffer},
+		{&m2->vertexes_buffer},
+		{&m2->vertexes_buffer},
+		{&m2->vertexes_buffer},
+		{&m2->vertexes_buffer},
+		{&m2->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &m2->attributes_state, binds, sizeof(binds) / sizeof(*binds), &m2->indices_buffer, GFX_INDEX_UINT16);
 #ifdef WITH_DEBUG_RENDERING

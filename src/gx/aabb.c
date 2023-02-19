@@ -59,7 +59,7 @@ static void initialize(struct gx_aabb *aabb)
 	gfx_create_buffer(g_wow->device, &aabb->indices_buffer, GFX_BUFFER_INDICES, indices, sizeof(indices), GFX_BUFFER_IMMUTABLE);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&aabb->positions_buffer, sizeof(struct vec3f), 0},
+		{&aabb->positions_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &aabb->attributes_state, binds, sizeof(binds) / sizeof(*binds), &aabb->indices_buffer, GFX_INDEX_UINT16);
 	for (size_t i = 0; i < RENDER_FRAMES_COUNT; ++i)

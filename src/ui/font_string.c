@@ -772,9 +772,9 @@ text_end:
 		gfx_create_buffer(g_wow->device, &font_string->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_STATIC);
 		const struct gfx_attribute_bind binds[] =
 		{
-			{&font_string->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, position)},
-			{&font_string->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, color)},
-			{&font_string->vertexes_buffer, sizeof(struct shader_ui_input), offsetof(struct shader_ui_input, uv)},
+			{&font_string->vertexes_buffer},
+			{&font_string->vertexes_buffer},
+			{&font_string->vertexes_buffer},
 		};
 		gfx_create_attributes_state(g_wow->device, &font_string->attributes_state, binds, sizeof(binds) / sizeof(*binds), &font_string->indices_buffer, GFX_INDEX_UINT16);
 	}

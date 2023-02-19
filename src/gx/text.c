@@ -153,8 +153,8 @@ static void rebuild_buffers(struct gx_text *text)
 	gfx_create_buffer(g_wow->device, &text->indices_buffer, GFX_BUFFER_INDICES, indices.data, indices.size * sizeof(uint16_t), GFX_BUFFER_STATIC);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&text->vertexes_buffer, sizeof(struct shader_text_input), offsetof(struct shader_text_input, position)},
-		{&text->vertexes_buffer, sizeof(struct shader_text_input), offsetof(struct shader_text_input, uv)},
+		{&text->vertexes_buffer},
+		{&text->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &text->attributes_state, binds, sizeof(binds) / sizeof(*binds), &text->indices_buffer, GFX_INDEX_UINT16);
 err:

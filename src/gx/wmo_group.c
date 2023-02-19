@@ -495,10 +495,10 @@ int gx_wmo_group_initialize(struct gx_wmo_group *group)
 	group->init_data = NULL;
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&group->vertexes_buffer                         , sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, position)},
-		{&group->vertexes_buffer                         , sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, norm)},
-		{&group->vertexes_buffer                         , sizeof(struct shader_wmo_input), offsetof(struct shader_wmo_input, uv)},
-		{group->has_colors ? &group->colors_buffer : NULL, sizeof(uint8_t) * 4            , 0},
+		{&group->vertexes_buffer},
+		{&group->vertexes_buffer},
+		{&group->vertexes_buffer},
+		{group->has_colors ? &group->colors_buffer : NULL},
 	};
 	gfx_create_attributes_state(g_wow->device, &group->attributes_state, binds, sizeof(binds) / sizeof(*binds), &group->indices_buffer, GFX_INDEX_UINT16);
 	if (group->gx_mliq)

@@ -53,7 +53,7 @@ void gx_collisions_update(struct gx_collisions *collisions, struct collision_tri
 	mem_free(MEM_GX, points);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&collisions->positions_buffer, sizeof(struct vec3f), 0},
+		{&collisions->positions_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &collisions->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, GFX_INDEX_UINT16);
 	collisions->triangles_nb = triangles_nb;

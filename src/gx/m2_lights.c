@@ -78,9 +78,9 @@ void gx_m2_lights_initialize(struct gx_m2_lights *lights)
 	gfx_create_buffer(g_wow->device, &lights->vertexes_buffer, GFX_BUFFER_VERTEXES, lights->init_data->vertexes, lights->lights_nb * sizeof(*lights->init_data->vertexes), GFX_BUFFER_IMMUTABLE);
 	const struct gfx_attribute_bind binds[] =
 	{
-		{&lights->vertexes_buffer, sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, position)},
-		{&lights->vertexes_buffer, sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, color)},
-		{&lights->vertexes_buffer, sizeof(struct shader_m2_lights_input), offsetof(struct shader_m2_lights_input, bone)},
+		{&lights->vertexes_buffer},
+		{&lights->vertexes_buffer},
+		{&lights->vertexes_buffer},
 	};
 	gfx_create_attributes_state(g_wow->device, &lights->attributes_state, binds, sizeof(binds) / sizeof(*binds), NULL, 0);
 	clear_init_data(lights->init_data);
