@@ -581,7 +581,7 @@ void gx_wmo_instance_load_doodad_set(struct gx_wmo_instance *instance)
 	{
 		struct wow_modd_data *modd = jks_array_get(&instance->parent->modd, i);
 		char filename[512];
-		snprintf(filename, sizeof(filename), "%s", (char*)jks_array_get(&instance->parent->modn, modd->name_index));
+		snprintf(filename, sizeof(filename), "%s", (char*)jks_array_get(&instance->parent->modn, modd->name_flags & WOW_MODD_NAME_MASK));
 		if (!filename[0])
 			continue;
 		normalize_m2_filename(filename, sizeof(filename));
