@@ -25,12 +25,12 @@
 
 struct map_tile *map_tile_new(const char *filename, int32_t x, int32_t z)
 {
-	struct map_tile *tile = mem_zalloc(MEM_GX, sizeof(*tile));
+	struct map_tile *tile = mem_zalloc(MEM_MAP, sizeof(*tile));
 	if (!tile)
 		return NULL;
 	tile->x = x;
 	tile->z = z;
-	tile->filename = mem_strdup(MEM_GX, filename);
+	tile->filename = mem_strdup(MEM_MAP, filename);
 	VEC3_SET(tile->pos, -(z - 32) * CHUNK_WIDTH * 16 - 500, 0, (x - 32) * CHUNK_WIDTH * 16 + 500);
 	if (!tile->filename)
 		goto err;
@@ -45,10 +45,16 @@ void map_tile_delete(struct map_tile *tile)
 {
 	if (!tile)
 		return;
+	for (size_t i = 0; i < 256; ++i)
+	{
+		struct map_chunk *chunk = &tile->chunks[i];
+		mem_free(MEM_GX, chunk->doodads);
+		mem_free(MEM_GX, chunk->wmos);
+	}
 	gx_mclq_delete(tile->gx_mclq);
 	gx_mcnk_delete(tile->gx_mcnk);
-	mem_free(MEM_GX, tile->filename);
-	mem_free(MEM_GX, tile);
+	mem_free(MEM_MAP, tile->filename);
+	mem_free(MEM_MAP, tile);
 }
 
 void map_tile_ask_load(struct map_tile *tile)
@@ -79,6 +85,83 @@ bool map_tile_load(struct map_tile *tile, struct wow_adt_file *file)
 {
 	if (!(tile->flags & MAP_TILE_LOADING) || (tile->flags & MAP_TILE_LOADED))
 		return true;
+	float tile_min_y = +9999;
+	float tile_max_y = -9999;
+	tile->pos = (struct vec3f){file->mcnk[0].header.position.x, 0, -file->mcnk[0].header.position.y};
+	for (size_t i = 0; i < 256; ++i)
+	{
+		struct wow_mcnk *wow_mcnk = &file->mcnk[i];
+		struct map_chunk *chunk = &tile->chunks[i];
+		VEC3_SETV(chunk->doodads_aabb.p0, -INFINITY);
+		VEC3_SETV(chunk->doodads_aabb.p1, -INFINITY);
+		VEC3_SETV(chunk->wmos_aabb.p0, -INFINITY);
+		VEC3_SETV(chunk->wmos_aabb.p1, -INFINITY);
+		chunk->holes = wow_mcnk->header.holes;
+		chunk->doodads_nb = wow_mcnk->mcrf.doodads_nb;
+		if (chunk->doodads_nb)
+		{
+			chunk->doodads = mem_malloc(MEM_GX, sizeof(*chunk->doodads) * chunk->doodads_nb);
+			if (!chunk->doodads)
+				return false;
+			memcpy(chunk->doodads, wow_mcnk->mcrf.doodads, sizeof(*chunk->doodads) * chunk->doodads_nb);
+		}
+		chunk->wmos_nb = wow_mcnk->mcrf.wmos_nb;
+		if (chunk->wmos_nb)
+		{
+			chunk->wmos = mem_malloc(MEM_GX, sizeof(*chunk->wmos) * chunk->wmos_nb);
+			if (!chunk->wmos)
+				return false;
+			memcpy(chunk->wmos, wow_mcnk->mcrf.wmos, sizeof(*chunk->wmos) * chunk->wmos_nb);
+		}
+		float min_y = +999999;
+		float max_y = -999999;
+		for (size_t j = 0; j < 9 * 9 + 8 * 8; ++j)
+		{
+			float y = wow_mcnk->mcvt.height[j] + wow_mcnk->header.position.z;
+			if (y > max_y)
+				max_y = y;
+			if (y < min_y)
+				min_y = y;
+			chunk->height[j] = y;
+			chunk->norm[j * 3 + 0] =  wow_mcnk->mcnr.normal[j * 3 + 0];
+			chunk->norm[j * 3 + 1] =  wow_mcnk->mcnr.normal[j * 3 + 2];
+			chunk->norm[j * 3 + 2] = -wow_mcnk->mcnr.normal[j * 3 + 1];
+		}
+		if (max_y > tile_max_y)
+			tile_max_y= max_y;
+		if (min_y < tile_min_y)
+			tile_min_y = min_y;
+		float base_x = -CHUNK_WIDTH * (i / 16);
+		float base_z = +CHUNK_WIDTH * (i % 16);
+		struct vec3f p0;
+		struct vec3f p1;
+		VEC3_SET(p0, base_x, min_y, base_z);
+		VEC3_ADD(p0, p0, tile->pos);
+		VEC3_SET(p1, base_x - CHUNK_WIDTH, max_y, base_z + CHUNK_WIDTH);
+		VEC3_ADD(p1, p1, tile->pos);
+		VEC3_MIN(chunk->aabb.p0, p0, p1);
+		VEC3_MAX(chunk->aabb.p1, p0, p1);
+		VEC3_ADD(chunk->center, chunk->aabb.p0, chunk->aabb.p1);
+		VEC3_MULV(chunk->center, chunk->center, .5f);
+		p0.y = -999999;
+		p1.y = +999999;
+		VEC3_MIN(chunk->objects_aabb.p0, p0, p1);
+		VEC3_MAX(chunk->objects_aabb.p1, p0, p1);
+	}
+	struct vec3f p0;
+	struct vec3f p1;
+	VEC3_SET(p0, 0, tile_min_y, 0);
+	VEC3_ADD(p0, p0, tile->pos);
+	VEC3_SET(p1, -CHUNK_WIDTH * 16, tile_max_y, CHUNK_WIDTH * 16);
+	VEC3_ADD(p1, p1, tile->pos);
+	VEC3_MIN(tile->aabb.p0, p0, p1);
+	VEC3_MAX(tile->aabb.p1, p0, p1);
+	p0.y = -9999;
+	p1.y = +9999;
+	VEC3_MIN(tile->objects_aabb.p0, p0, p1);
+	VEC3_MAX(tile->objects_aabb.p1, p0, p1);
+	VEC3_ADD(tile->center, tile->aabb.p0, tile->aabb.p1);
+	VEC3_MULV(tile->center, tile->center, .5);
 	tile->gx_mcnk = gx_mcnk_new(tile, file);
 	if (!tile->gx_mcnk)
 	{
@@ -262,7 +345,7 @@ void map_tile_cull(struct map_tile *tile)
 		gx_mclq_cull(tile->gx_mclq);
 }
 
-static void add_point(struct map_tile *tile, struct gx_mcnk_batch *batch, struct vec3f *p, uint16_t idx)
+static void add_point(struct map_tile *tile, struct map_chunk *chunk, uint8_t chunk_id, uint16_t idx, struct vec3f *p)
 {
 	size_t y = idx % 17;
 	float z = idx / 17 * 2;
@@ -276,15 +359,15 @@ static void add_point(struct map_tile *tile, struct gx_mcnk_batch *batch, struct
 		z++;
 		x = (y - 9) * 2 + 1;
 	}
-	p->x = tile->gx_mcnk->pos.x + (-1 - (ssize_t)batch->x + (16 - z) / 16.f) * CHUNK_WIDTH;
-	p->z = tile->gx_mcnk->pos.z + ((1 + batch->z - (16 - x) / 16.f) * CHUNK_WIDTH);
-	p->y = batch->height[idx];
+	p->x = tile->pos.x + (-1 - (ssize_t)(chunk_id / 16) + (16 - z) / 16.f) * CHUNK_WIDTH;
+	p->z = tile->pos.z + ((1 + (ssize_t)(chunk_id % 16) - (16 - x) / 16.f) * CHUNK_WIDTH);
+	p->y = chunk->height[idx];
 }
 
-static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const struct collision_params *params, struct jks_array *triangles)
+static void add_chunk(struct map_tile *tile, struct map_chunk *chunk, uint8_t chunk_id, const struct collision_params *params, struct jks_array *triangles)
 {
 #if 1
-	float xmin = tile->gx_mcnk->pos.x - (1 + (ssize_t)batch->x) * CHUNK_WIDTH;
+	float xmin = tile->pos.x - (1 + (ssize_t)(chunk_id / 16)) * CHUNK_WIDTH;
 	ssize_t z_end = floorf((params->aabb.p0.x - xmin) / (CHUNK_WIDTH / 8));
 	z_end = 8 - z_end;
 	if (z_end > 8)
@@ -299,7 +382,7 @@ static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const 
 		z_start--;
 	if (z_start >= z_end)
 		return;
-	float zmin = tile->gx_mcnk->pos.z + batch->z * CHUNK_WIDTH;
+	float zmin = tile->pos.z + (chunk_id % 16) * CHUNK_WIDTH;
 	ssize_t x_end = ceilf((params->aabb.p1.z - zmin) / (CHUNK_WIDTH / 8));
 	if (x_end > 8)
 		x_end = 8;
@@ -330,7 +413,7 @@ static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const 
 	{
 		for (ssize_t x = x_start; x < x_end; ++x)
 		{
-			if (batch->holes & (1 << (z / 2 * 4 + x / 2)))
+			if (chunk->holes & (1 << (z / 2 * 4 + x / 2)))
 				continue;
 			n++;
 			uint16_t idx = 9 + z * 17 + x;
@@ -338,24 +421,24 @@ static void add_chunk(struct map_tile *tile, struct gx_mcnk_batch *batch, const 
 			uint16_t p2 = idx - 8;
 			uint16_t p3 = idx + 9;
 			uint16_t p4 = idx + 8;
-			add_point(tile, batch, &tmp->points[0], p2);
-			add_point(tile, batch, &tmp->points[1], p1);
-			add_point(tile, batch, &tmp->points[2], idx);
+			add_point(tile, chunk, chunk_id, p2, &tmp->points[0]);
+			add_point(tile, chunk, chunk_id, p1, &tmp->points[1]);
+			add_point(tile, chunk, chunk_id, idx, &tmp->points[2]);
 			tmp->touched = false;
 			tmp++;
-			add_point(tile, batch, &tmp->points[0], p3);
-			add_point(tile, batch, &tmp->points[1], p2);
-			add_point(tile, batch, &tmp->points[2], idx);
+			add_point(tile, chunk, chunk_id, p3, &tmp->points[0]);
+			add_point(tile, chunk, chunk_id, p2, &tmp->points[1]);
+			add_point(tile, chunk, chunk_id, idx, &tmp->points[2]);
 			tmp->touched = false;
 			tmp++;
-			add_point(tile, batch, &tmp->points[0], p4);
-			add_point(tile, batch, &tmp->points[1], p3);
-			add_point(tile, batch, &tmp->points[2], idx);
+			add_point(tile, chunk, chunk_id, p4, &tmp->points[0]);
+			add_point(tile, chunk, chunk_id, p3, &tmp->points[1]);
+			add_point(tile, chunk, chunk_id, idx, &tmp->points[2]);
 			tmp->touched = false;
 			tmp++;
-			add_point(tile, batch, &tmp->points[0], p1);
-			add_point(tile, batch, &tmp->points[1], p4);
-			add_point(tile, batch, &tmp->points[2], idx);
+			add_point(tile, chunk, chunk_id, p1, &tmp->points[0]);
+			add_point(tile, chunk, chunk_id, p4, &tmp->points[1]);
+			add_point(tile, chunk, chunk_id, idx, &tmp->points[2]);
 			tmp->touched = false;
 			tmp++;
 		}
@@ -393,11 +476,11 @@ static void add_object(struct gx_m2_instance *m2, struct jks_array *triangles)
 	}
 }
 
-static void add_objects(struct map_tile *tile, struct gx_mcnk_batch *batch, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+static void add_objects(struct map_tile *tile, struct map_chunk *chunk, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
 {
-	for (size_t i = 0; i < batch->doodads_nb; ++i)
+	for (size_t i = 0; i < chunk->doodads_nb; ++i)
 	{
-		struct map_m2 *m2 = tile->m2[batch->doodads[i]];
+		struct map_m2 *m2 = tile->m2[chunk->doodads[i]];
 		if (!m2->instance->parent->loaded)
 			continue;
 		for (size_t j = 0; j < state->m2.size; ++j)
@@ -568,11 +651,11 @@ static void add_wmo(struct gx_wmo_instance *wmo, const struct collision_params *
 	jks_array_destroy(&triangles_tracker);
 }
 
-static void add_wmos(struct map_tile *tile, struct gx_mcnk_batch *batch, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
+static void add_wmos(struct map_tile *tile, struct map_chunk *chunk, const struct collision_params *params, struct collision_state *state, struct jks_array *triangles)
 {
-	for (size_t i = 0; i < batch->wmos_nb; ++i)
+	for (size_t i = 0; i < chunk->wmos_nb; ++i)
 	{
-		struct map_wmo *wmo = tile->wmo[batch->wmos[i]];
+		struct map_wmo *wmo = tile->wmo[chunk->wmos[i]];
 		if (!wmo->instance->parent->loaded)
 			continue;
 		for (size_t j = 0; j < state->wmo.size; ++j)
@@ -628,39 +711,42 @@ void map_tile_collect_collision_triangles(struct map_tile *tile, const struct co
 	ssize_t z_start = 0;
 	ssize_t z_end = 16;
 #endif
-	if (aabb_intersect_aabb(&tile->gx_mcnk->aabb, &params->aabb))
+	if (aabb_intersect_aabb(&tile->aabb, &params->aabb))
 	{
 		for (ssize_t x = x_start; x < x_end; ++x)
 		{
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
-				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (aabb_intersect_aabb(&batch->aabb, &params->aabb))
-					add_chunk(tile, batch, params, triangles);
+				uint8_t chunk_id = z * 16 + x;
+				struct map_chunk *chunk = &tile->chunks[chunk_id];
+				if (aabb_intersect_aabb(&chunk->aabb, &params->aabb))
+					add_chunk(tile, chunk, chunk_id, params, triangles);
 			}
 		}
 	}
-	if (aabb_intersect_aabb(&tile->gx_mcnk->objects_aabb, &params->aabb))
+	if (aabb_intersect_aabb(&tile->objects_aabb, &params->aabb))
 	{
 		for (ssize_t x = x_start; x < x_end; ++x)
 		{
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
-				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (batch->doodads_nb && aabb_intersect_aabb(&batch->objects_aabb, &params->aabb))
-					add_objects(tile, batch, params, state, triangles);
+				uint8_t chunk_id = z * 16 + x;
+				struct map_chunk *chunk = &tile->chunks[chunk_id];
+				if (chunk->doodads_nb && aabb_intersect_aabb(&chunk->objects_aabb, &params->aabb))
+					add_objects(tile, chunk, params, state, triangles);
 			}
 		}
 	}
-	if (aabb_intersect_aabb(&tile->gx_mcnk->wmos_aabb, &params->aabb))
+	if (aabb_intersect_aabb(&tile->wmos_aabb, &params->aabb))
 	{
 		for (ssize_t x = x_start; x < x_end; ++x)
 		{
 			for (ssize_t z = z_start; z < z_end; ++z)
 			{
-				struct gx_mcnk_batch *batch = &tile->gx_mcnk->batches[z * 16 + x];
-				if (batch->wmos_nb && aabb_intersect_aabb(&batch->wmos_aabb, &params->aabb))
-					add_wmos(tile, batch, params, state, triangles);
+				uint8_t chunk_id = z * 16 + x;
+				struct map_chunk *chunk = &tile->chunks[chunk_id];
+				if (chunk->wmos_nb && aabb_intersect_aabb(&chunk->wmos_aabb, &params->aabb))
+					add_wmos(tile, chunk, params, state, triangles);
 			}
 		}
 	}
@@ -711,3 +797,124 @@ void map_m2_load(struct map_m2 *handle, const char *filename)
 		return;
 	handle->instance = gx_m2_instance_new_filename(filename);
 }
+
+void map_chunk_get_interp_points(float px, float pz, uint8_t *points)
+{
+	float pxf = fmod(px, 1);
+	float pzf = fmod(pz, 1);
+	if (pxf < .5)
+	{
+		if (pzf < .5)
+		{
+			if (pxf > pzf) /* bottom */
+			{
+				points[0] = 0;
+				points[1] = 4;
+				points[2] = 1;
+			}
+			else /* left */
+			{
+				points[0] = 0;
+				points[1] = 4;
+				points[2] = 2;
+			}
+		}
+		else
+		{
+			if (pxf > 1 - pzf) /* top */
+			{
+				points[0] = 2;
+				points[1] = 4;
+				points[2] = 3;
+			}
+			else /* left */
+			{
+				points[0] = 0;
+				points[1] = 4;
+				points[2] = 2;
+			}
+		}
+	}
+	else
+	{
+		if (pzf < .5)
+		{
+			if (1 - pxf > pzf) /* bottom */
+			{
+				points[0] = 0;
+				points[1] = 4;
+				points[2] = 1;
+			}
+			else /* right */
+			{
+				points[0] = 1;
+				points[1] = 4;
+				points[2] = 3;
+			}
+		}
+		else
+		{
+			if (pxf > pzf) /* right */
+			{
+				points[0] = 1;
+				points[1] = 4;
+				points[2] = 3;
+			}
+			else /* top */
+			{
+				points[0] = 2;
+				points[1] = 4;
+				points[2] = 3;
+			}
+		}
+	}
+}
+
+void map_chunk_get_interp_factors(float px, float pz, uint8_t *points, float *factors)
+{
+	float pxf = fmod(px, 1);
+	float pzf = fmod(pz, 1);
+	static const struct vec2f pos[5] =
+	{
+		{0, 0},
+		{1, 0},
+		{0, 1},
+		{1, 1},
+		{.5, .5},
+	};
+	const struct vec2f *p1 = &pos[points[0]];
+	const struct vec2f *p2 = &pos[points[1]];
+	const struct vec2f *p3 = &pos[points[2]];
+	float f0n = (p2->y - p3->y) * (pxf - p3->x) + (p3->x - p2->x) * (pzf - p3->y);
+	float f0d = (p2->y - p3->y) * (p1->x - p3->x) + (p3->x - p2->x) * (p1->y - p3->y);
+	float f1n = (p3->y - p1->y) * (pxf - p3->x) + (p1->x - p3->x) * (pzf - p3->y);
+	float f1d = (p2->y - p3->y) * (p1->x - p3->x) + (p3->x - p2->x) * (p1->y - p3->y);
+	factors[0] = f0n / f0d;
+	factors[1] = f1n / f1d;
+	factors[2] = 1 - factors[0] - factors[1];
+}
+
+void map_chunk_get_y(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, float *y)
+{
+	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
+	uint8_t base = (9 + 8) * (int)pz + (int)px;
+	float y0 = chunk->height[base + pos[points[0]]];
+	float y1 = chunk->height[base + pos[points[1]]];
+	float y2 = chunk->height[base + pos[points[2]]];
+	*y = y0 * factors[0] + y1 * factors[1] + y2 * factors[2];
+}
+
+void map_chunk_get_n(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, int8_t *n)
+{
+	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
+	uint8_t base = (9 + 8) * (int)pz + (int)px;
+	int8_t n0[3];
+	int8_t n1[3];
+	int8_t n2[3];
+	memcpy(n0, &chunk->norm[base + pos[points[0]]], 3);
+	memcpy(n1, &chunk->norm[base + pos[points[1]]], 3);
+	memcpy(n2, &chunk->norm[base + pos[points[2]]], 3);
+	for (int i = 0; i < 3; ++i)
+		n[i] = n0[i] * factors[0] + n1[i] * factors[1] + n2[i] * factors[2];
+}
+

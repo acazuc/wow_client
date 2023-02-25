@@ -31,8 +31,27 @@ struct map_m2
 	struct gx_m2_instance *instance;
 };
 
+struct map_chunk
+{
+	float height[145];
+	int8_t norm[145 * 3];
+	struct gx_m2_instance **doodads_instances;
+	uint32_t *doodads;
+	uint32_t *wmos;
+	uint32_t doodads_instances_nb;
+	uint32_t doodads_nb;
+	uint32_t wmos_nb;
+	uint16_t holes;
+	struct aabb objects_aabb;
+	struct aabb doodads_aabb;
+	struct aabb wmos_aabb;
+	struct vec3f center;
+	struct aabb aabb;
+};
+
 struct map_tile
 {
+	struct map_chunk chunks[256];
 	struct map_wmo **wmo;
 	uint32_t wmo_nb;
 	struct map_m2 **m2;
@@ -42,7 +61,11 @@ struct map_tile
 	uint8_t flags;
 	char *filename;
 	struct vec3f pos;
-	struct mat4f mvp;
+	struct aabb objects_aabb;
+	struct aabb doodads_aabb;
+	struct aabb wmos_aabb;
+	struct vec3f center;
+	struct aabb aabb;
 	int32_t x;
 	int32_t z;
 };
@@ -64,5 +87,10 @@ void map_wmo_load(struct map_wmo *handle, const char *filename);
 struct map_m2 *map_m2_new(void);
 void map_m2_delete(struct map_m2 *handle);
 void map_m2_load(struct map_m2 *handle, const char *filename);
+
+void map_chunk_get_interp_points(float px, float pz, uint8_t *points);
+void map_chunk_get_interp_factors(float px, float pz, uint8_t *points, float *factors);
+void map_chunk_get_y(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, float *y);
+void map_chunk_get_n(struct map_chunk *chunk, float px, float pz, uint8_t *points, float *factors, int8_t *n);
 
 #endif

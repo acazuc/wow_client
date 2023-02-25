@@ -29,6 +29,7 @@ static const char *g_memory_str[MEM_LAST] =
 	"MEM_LIBWOW",
 	"MEM_PPE",
 	"MEM_SND",
+	"MEM_MAP",
 };
 
 static struct

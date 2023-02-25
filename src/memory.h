@@ -18,6 +18,7 @@ enum memory_type
 	MEM_LIBWOW,
 	MEM_PPE,
 	MEM_SND,
+	MEM_MAP,
 	MEM_LAST
 };
 

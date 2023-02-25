@@ -32,19 +32,10 @@ struct gx_mcnk_batch_frame
 struct gx_mcnk_batch
 {
 	struct gx_mcnk_batch_frame render_frames[RENDER_FRAMES_COUNT];
-	struct gx_m2_instance **doodads_instances;
-	uint32_t doodads_instances_nb;
 	uint32_t indices_offsets[3];
 	uint16_t indices_nbs[3];
-	float height[145];
-	int8_t norm[145 * 3];
-	uint16_t holes;
 	struct jks_array doodads_to_aabb; /* uint32_t */
 	struct jks_array wmos_to_aabb; /* uint32_t */
-	uint32_t *doodads;
-	uint32_t doodads_nb;
-	uint32_t *wmos;
-	uint32_t wmos_nb;
 	struct gx_mcnk_ground_effect *ground_effect;
 	uint16_t textures[4];
 	struct vec2f layers_animations[4];
@@ -53,16 +44,9 @@ struct gx_mcnk_batch
 	struct gx_aabb wmos_gx_aabb;
 	struct gx_aabb gx_aabb;
 #endif
-	struct aabb objects_aabb;
-	struct aabb doodads_aabb;
-	struct aabb wmos_aabb;
-	struct vec3f center;
-	struct aabb aabb;
 	enum frustum_result doodads_frustum_result;
 	enum frustum_result wmos_frustum_result;
 	enum frustum_result frustum_result;
-	uint8_t x;
-	uint8_t z;
 };
 
 struct gx_mcnk_frame
@@ -94,12 +78,6 @@ struct gx_mcnk
 	struct gx_aabb wmos_gx_aabb;
 	struct gx_aabb gx_aabb;
 #endif
-	struct aabb objects_aabb;
-	struct aabb doodads_aabb;
-	struct aabb wmos_aabb;
-	struct vec3f center;
-	struct aabb aabb;
-	struct vec3f pos;
 	struct mat4f m;
 	enum frustum_result doodads_frustum_result;
 	enum frustum_result wmos_frustum_result;
@@ -117,7 +95,6 @@ struct gx_mcnk
 struct gx_mcnk *gx_mcnk_new(struct map_tile *parent, struct wow_adt_file *file);
 void gx_mcnk_delete(struct gx_mcnk *mcnk);
 int gx_mcnk_initialize(struct gx_mcnk *mcnk);
-bool gx_mcnk_link_objects(struct gx_mcnk *mcnk);
 void gx_mcnk_cull(struct gx_mcnk *mcnk);
 void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk);
 void gx_mcnk_render(struct gx_mcnk *mcnk);

@@ -49,7 +49,7 @@ MEMORY_DECL(GENERIC);
 
 struct map *map_new(void)
 {
-	struct map *map = mem_zalloc(MEM_GX, sizeof(*map));
+	struct map *map = mem_zalloc(MEM_MAP, sizeof(*map));
 	if (!map)
 		return NULL;
 	map->id = -1;
@@ -135,7 +135,7 @@ void map_delete(struct map *map)
 	for (uint32_t i = 0; i < sizeof(map->fasta_textures) / sizeof(*map->fasta_textures); ++i)
 		cache_unref_by_ref_blp(g_wow->cache, map->fasta_textures[i]);
 	gx_wmo_instance_gc(map->wmo);
-	mem_free(MEM_GX, map->name);
+	mem_free(MEM_MAP, map->name);
 	gx_skybox_delete(map->gx_skybox);
 	gx_wdl_delete(map->gx_wdl);
 	gfx_delete_texture(g_wow->device, &map->minimap.texture);
@@ -143,7 +143,7 @@ void map_delete(struct map *map)
 	gx_taxi_delete(map->gx_taxi);
 #endif
 	pthread_mutex_destroy(&map->minimap.mutex);
-	mem_free(MEM_GX, map);
+	mem_free(MEM_MAP, map);
 }
 
 static bool load_tile(struct map *map, int32_t x, int32_t z)
@@ -832,7 +832,7 @@ bool map_setid(struct map *map, uint32_t id)
 		if (wow_dbc_get_u32(&row, 0) == id)
 		{
 			mem_free(MEM_GX, map->name);
-			map->name = mem_strdup(MEM_GX, wow_dbc_get_str(&row, 4));
+			map->name = mem_strdup(MEM_MAP, wow_dbc_get_str(&row, 4));
 			if (!map->name)
 			{
 				LOG_ERROR("failed to allocate map name");
@@ -843,7 +843,7 @@ bool map_setid(struct map *map, uint32_t id)
 	}
 	LOG_ERROR("invalid mapid: %u", id);
 	map->id = -1;
-	mem_free(MEM_GX, map->name);
+	mem_free(MEM_MAP, map->name);
 	map->name = NULL;
 	return true;
 map_found:

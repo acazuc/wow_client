@@ -299,59 +299,43 @@ static bool init_ground_effects(struct wow_mcnk *mcnk, struct gx_mcnk_batch *mcn
 	return true;
 }
 
-static bool init_batch(struct gx_mcnk *mcnk, uint32_t batch, struct wow_mcnk *wow_mcnk, struct gx_mcnk_batch *mcnk_batch, uint32_t *indices_pos)
+static bool init_batch(struct gx_mcnk *mcnk, uint32_t batch_id, struct wow_mcnk *wow_mcnk, struct gx_mcnk_batch *batch, uint32_t *indices_pos)
 {
-	if (!init_ground_effects(wow_mcnk, mcnk_batch))
+	if (!init_ground_effects(wow_mcnk, batch))
 		return false;
 #ifdef WITH_DEBUG_RENDERING
-	gx_aabb_init(&mcnk_batch->doodads_gx_aabb, (struct vec4f){1, 1, 1, 1}, 1);
-	gx_aabb_init(&mcnk_batch->wmos_gx_aabb, (struct vec4f){.5, .5, 1, 1}, 1);
-	gx_aabb_init(&mcnk_batch->gx_aabb, (struct vec4f){0, 1, 1, 1}, 1);
+	gx_aabb_init(&batch->doodads_gx_aabb, (struct vec4f){1, 1, 1, 1}, 1);
+	gx_aabb_init(&batch->wmos_gx_aabb, (struct vec4f){.5, .5, 1, 1}, 1);
+	gx_aabb_init(&batch->gx_aabb, (struct vec4f){0, 1, 1, 1}, 1);
 #endif
-	mcnk_batch->x = batch / 16;
-	mcnk_batch->z = batch % 16;
-	mcnk_batch->holes = wow_mcnk->header.holes;
-	mcnk_batch->doodads_nb = wow_mcnk->mcrf.doodads_nb;
-	if (mcnk_batch->doodads_nb)
+	struct map_chunk *chunk = &mcnk->parent->chunks[batch_id];
+	if (chunk->doodads_nb)
 	{
-		mcnk_batch->doodads = mem_malloc(MEM_GX, sizeof(*mcnk_batch->doodads) * mcnk_batch->doodads_nb);
-		if (!mcnk_batch->doodads)
-			return false;
-		memcpy(mcnk_batch->doodads, wow_mcnk->mcrf.doodads, sizeof(*mcnk_batch->doodads) * mcnk_batch->doodads_nb);
-		jks_array_init(&mcnk_batch->doodads_to_aabb, sizeof(uint32_t), NULL, &jks_array_memory_fn_GX);
-		uint32_t *doodads_to_aabb = jks_array_grow(&mcnk_batch->doodads_to_aabb, mcnk_batch->doodads_nb);
+		jks_array_init(&batch->doodads_to_aabb, sizeof(uint32_t), NULL, &jks_array_memory_fn_GX);
+		uint32_t *doodads_to_aabb = jks_array_grow(&batch->doodads_to_aabb, chunk->doodads_nb);
 		if (!doodads_to_aabb)
 			return false;
-		memcpy(doodads_to_aabb, wow_mcnk->mcrf.doodads, sizeof(*mcnk_batch->doodads) * mcnk_batch->doodads_nb);
+		memcpy(doodads_to_aabb, wow_mcnk->mcrf.doodads, sizeof(*chunk->doodads) * chunk->doodads_nb);
 	}
-	mcnk_batch->wmos_nb = wow_mcnk->mcrf.wmos_nb;
-	if (mcnk_batch->wmos_nb)
+	if (chunk->wmos_nb)
 	{
-		mcnk_batch->wmos = mem_malloc(MEM_GX, sizeof(*mcnk_batch->wmos) * mcnk_batch->wmos_nb);
-		if (!mcnk_batch->wmos)
-			return false;
-		memcpy(mcnk_batch->wmos, wow_mcnk->mcrf.wmos, sizeof(*mcnk_batch->wmos) * mcnk_batch->wmos_nb);
-		jks_array_init(&mcnk_batch->wmos_to_aabb, sizeof(uint32_t), NULL, &jks_array_memory_fn_GX);
-		uint32_t *wmos_to_aabb = jks_array_grow(&mcnk_batch->wmos_to_aabb, mcnk_batch->wmos_nb);
+		jks_array_init(&batch->wmos_to_aabb, sizeof(uint32_t), NULL, &jks_array_memory_fn_GX);
+		uint32_t *wmos_to_aabb = jks_array_grow(&batch->wmos_to_aabb, chunk->wmos_nb);
 		if (!wmos_to_aabb)
 			return false;
-		memcpy(wmos_to_aabb, wow_mcnk->mcrf.wmos, sizeof(*mcnk_batch->wmos) * mcnk_batch->wmos_nb);
+		memcpy(wmos_to_aabb, wow_mcnk->mcrf.wmos, sizeof(*chunk->wmos) * chunk->wmos_nb);
 	}
-	VEC3_SETV(mcnk_batch->doodads_aabb.p0, -INFINITY);
-	VEC3_SETV(mcnk_batch->doodads_aabb.p1, -INFINITY);
-	VEC3_SETV(mcnk_batch->wmos_aabb.p0, -INFINITY);
-	VEC3_SETV(mcnk_batch->wmos_aabb.p1, -INFINITY);
 	if (!mcnk->holes)
 	{
-		mcnk_batch->indices_offsets[0] = (8 * 8 * 4 * 3 + 8 * 8 * 2 * 3 + 48 * 3) * batch;
-		mcnk_batch->indices_offsets[1] = mcnk_batch->indices_offsets[0] + 8 * 8 * 4 * 3;
-		mcnk_batch->indices_offsets[2] = mcnk_batch->indices_offsets[1] + 8 * 8 * 2 * 3;
-		mcnk_batch->indices_nbs[0] = 8 * 8 * 4 * 3;
-		mcnk_batch->indices_nbs[1] = 8 * 8 * 2 * 3;
-		mcnk_batch->indices_nbs[2] = 48 * 3;
+		batch->indices_offsets[0] = (8 * 8 * 4 * 3 + 8 * 8 * 2 * 3 + 48 * 3) * batch_id;
+		batch->indices_offsets[1] = batch->indices_offsets[0] + 8 * 8 * 4 * 3;
+		batch->indices_offsets[2] = batch->indices_offsets[1] + 8 * 8 * 2 * 3;
+		batch->indices_nbs[0] = 8 * 8 * 4 * 3;
+		batch->indices_nbs[1] = 8 * 8 * 2 * 3;
+		batch->indices_nbs[2] = 48 * 3;
 		return true;
 	}
-	init_indices(wow_mcnk, mcnk_batch, batch, mcnk->init_data, indices_pos);
+	init_indices(wow_mcnk, batch, batch_id, mcnk->init_data, indices_pos);
 	return true;
 }
 
@@ -393,57 +377,29 @@ next_texture:
 	}
 }
 
-static void init_batch_vertices(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, struct gx_mcnk_batch *mcnk_batch, uint32_t batch, float *min_max_y)
+static void init_batch_vertices(struct gx_mcnk *mcnk, struct map_chunk *chunk, struct gx_mcnk_batch *mcnk_batch, uint32_t batch)
 {
-	float mcnk_min_y = +999999;
-	float mcnk_max_y = -999999;
 	struct shader_mcnk_input *iter = mcnk->init_data->vertexes + (9 * 9 + 8 * 8) * batch;
 	for (size_t i = 0; i < 9 * 9 + 8 * 8; ++i)
 	{
-		float y = wow_mcnk->mcvt.height[i] + wow_mcnk->header.position.z;
-		mcnk_batch->height[i] = y;
-		if (y > mcnk_max_y)
-			mcnk_max_y = y;
-		if (y < mcnk_min_y)
-			mcnk_min_y = y;
+		float y = chunk->height[i];
 		(iter++)->y = y;
 	}
-	if (mcnk_max_y > min_max_y[1])
-		min_max_y[1] = mcnk_max_y;
-	if (mcnk_min_y < min_max_y[0])
-		min_max_y[0] = mcnk_min_y;
-	float base_x = -CHUNK_WIDTH * mcnk_batch->x;
-	float base_z = +CHUNK_WIDTH * mcnk_batch->z;
-	struct vec3f p0 = {base_x, mcnk_min_y, base_z};
-	VEC3_ADD(p0, p0, mcnk->pos);
-	struct vec3f p1 = {base_x - CHUNK_WIDTH, mcnk_max_y, base_z + CHUNK_WIDTH};
-	VEC3_ADD(p1, p1, mcnk->pos);
-	VEC3_MIN(mcnk_batch->aabb.p0, p0, p1);
-	VEC3_MAX(mcnk_batch->aabb.p1, p0, p1);
 #ifdef WITH_DEBUG_RENDERING
-	mcnk_batch->gx_aabb.aabb = mcnk_batch->aabb;
+	mcnk_batch->gx_aabb.aabb = chunk->aabb;
 	mcnk_batch->gx_aabb.flags |= GX_AABB_DIRTY;
 #endif
-	VEC3_ADD(mcnk_batch->center, mcnk_batch->aabb.p0, mcnk_batch->aabb.p1);
-	VEC3_MULV(mcnk_batch->center, mcnk_batch->center, .5f);
-	p0.y = -999999;
-	p1.y = +999999;
-	VEC3_MIN(mcnk_batch->objects_aabb.p0, p0, p1);
-	VEC3_MAX(mcnk_batch->objects_aabb.p1, p0, p1);
 }
 
-static void init_batch_normals(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, struct gx_mcnk_batch *mcnk_batch, uint32_t batch)
+static void init_batch_normals(struct gx_mcnk *mcnk, struct map_chunk *chunk, uint32_t batch)
 {
 	struct shader_mcnk_input *iter = mcnk->init_data->vertexes + (9 * 9 + 8 * 8) * batch;
 	size_t j = 0;
 	for (size_t i = 0; i < 9 * 9 + 8 * 8; ++i)
 	{
-		iter->norm.x =  wow_mcnk->mcnr.normal[j + 0];
-		iter->norm.y =  wow_mcnk->mcnr.normal[j + 2];
-		iter->norm.z = -wow_mcnk->mcnr.normal[j + 1];
-		mcnk_batch->norm[j + 0] = iter->norm.x;
-		mcnk_batch->norm[j + 1] = iter->norm.y;
-		mcnk_batch->norm[j + 2] = iter->norm.z;
+		iter->norm.x = chunk->norm[j + 0];
+		iter->norm.y = chunk->norm[j + 1];
+		iter->norm.z = chunk->norm[j + 2];
 		iter++;
 		j += 3;
 	}
@@ -705,21 +661,18 @@ static void init_batch_shadow(struct gx_mcnk *mcnk, struct wow_mcnk *wow_mcnk, u
 	}
 }
 
-struct gx_mcnk *gx_mcnk_new(struct map_tile *parent, struct wow_adt_file *file)
+struct gx_mcnk *gx_mcnk_new(struct map_tile *tile, struct wow_adt_file *file)
 {
 	uint8_t tmp_mcal[4096];
 	uint32_t textures[16 * 16 * 4];
 	size_t textures_nb = 0;
-	float min_max_y[2];
 	size_t alpha_bpp;
-	struct vec3f p0;
-	struct vec3f p1;
 	struct mat4f m;
 	MAT4_IDENTITY(m);
 	struct gx_mcnk *mcnk = mem_zalloc(MEM_GX, sizeof(*mcnk));
 	if (!mcnk)
 		return NULL;
-	mcnk->parent = parent;
+	mcnk->parent = tile;
 	mcnk->init_data = mem_zalloc(MEM_GX, sizeof(*mcnk->init_data));
 	if (!mcnk->init_data)
 		goto err1;
@@ -728,15 +681,12 @@ struct gx_mcnk *gx_mcnk_new(struct map_tile *parent, struct wow_adt_file *file)
 	gx_aabb_init(&mcnk->wmos_gx_aabb, (struct vec4f){1, .25, .25, 1}, 3);
 	gx_aabb_init(&mcnk->gx_aabb, (struct vec4f){1, .4, 0, 1}, 3);
 #endif
-	mcnk->pos = (struct vec3f){file->mcnk[0].header.position.x, 0, -file->mcnk[0].header.position.y};
-	MAT4_TRANSLATE(mcnk->m, m, mcnk->pos);
+	MAT4_TRANSLATE(mcnk->m, m, tile->pos);
 	init_holes(mcnk, file);
 	if (!init_init_data(mcnk, file))
 		goto err2;
 	if (!init_batches(mcnk, file))
 		goto err2;
-	min_max_y[0] = +9999;
-	min_max_y[1] = -9999;
 	alpha_bpp = (g_wow->map->flags & WOW_MPHD_FLAG_BIG_ALPHA) ? 4 : 2;
 	for (size_t batch = 0; batch < GX_MCNK_BATCHES_NB; ++batch)
 	{
@@ -756,26 +706,14 @@ struct gx_mcnk *gx_mcnk_new(struct map_tile *parent, struct wow_adt_file *file)
 #endif
 			init_batch_shadow(mcnk, wow_mcnk, batch);
 		}
-		init_batch_normals(mcnk, wow_mcnk, mcnk_batch, batch);
-		init_batch_vertices(mcnk, wow_mcnk, mcnk_batch, batch, min_max_y);
+		init_batch_normals(mcnk, &tile->chunks[batch], batch);
+		init_batch_vertices(mcnk, &tile->chunks[batch], mcnk_batch, batch);
 		init_batch_textures(wow_mcnk, mcnk_batch, textures, &textures_nb);
 	}
-	VEC3_SET(p0, 0, min_max_y[0], 0);
-	VEC3_ADD(p0, p0, mcnk->pos);
-	VEC3_SET(p1, -CHUNK_WIDTH * 16, min_max_y[1], CHUNK_WIDTH * 16);
-	VEC3_ADD(p1, p1, mcnk->pos);
-	VEC3_MIN(mcnk->aabb.p0, p0, p1);
-	VEC3_MAX(mcnk->aabb.p1, p0, p1);
 #ifdef WITH_DEBUG_RENDERING
-	mcnk->gx_aabb.aabb = mcnk->aabb;
+	mcnk->gx_aabb.aabb = tile->aabb;
 	mcnk->gx_aabb.flags |= GX_AABB_DIRTY;
 #endif
-	p0.y = -9999;
-	p1.y = +9999;
-	VEC3_MIN(mcnk->objects_aabb.p0, p0, p1);
-	VEC3_MAX(mcnk->objects_aabb.p1, p0, p1);
-	VEC3_ADD(mcnk->center, mcnk->aabb.p0, mcnk->aabb.p1);
-	VEC3_MULV(mcnk->center, mcnk->center, .5);
 	if (!init_textures(mcnk, file, textures, textures_nb))
 		goto err2;
 	mcnk->alpha_texture = GFX_TEXTURE_INIT();
@@ -810,17 +748,16 @@ void gx_mcnk_delete(struct gx_mcnk *mcnk)
 	for (uint32_t i = 0; i < GX_MCNK_BATCHES_NB; ++i)
 	{
 		struct gx_mcnk_batch *batch = &mcnk->batches[i];
+		struct map_chunk *chunk = &mcnk->parent->chunks[i];
 #ifdef WITH_DEBUG_RENDERING
 		gx_aabb_destroy(&batch->doodads_gx_aabb);
 		gx_aabb_destroy(&batch->wmos_gx_aabb);
 		gx_aabb_destroy(&batch->gx_aabb);
 #endif
-		if (batch->doodads_nb && batch->doodads_to_aabb.size)
+		if (chunk->doodads_nb && batch->doodads_to_aabb.size)
 			jks_array_destroy(&batch->doodads_to_aabb);
-		if (batch->wmos_nb && batch->wmos_to_aabb.size)
+		if (chunk->wmos_nb && batch->wmos_to_aabb.size)
 			jks_array_destroy(&batch->wmos_to_aabb);
-		mem_free(MEM_GX, batch->doodads);
-		mem_free(MEM_GX, batch->wmos);
 		if (batch->ground_effect)
 		{
 			for (uint32_t j = 0; j < batch->ground_effect->doodads.size; ++j)
@@ -845,127 +782,7 @@ void gx_mcnk_delete(struct gx_mcnk *mcnk)
 	mem_free(MEM_GX, mcnk);
 }
 
-static void get_interp_points(float px, float pz, uint8_t *points)
-{
-	float pxf = fmod(px, 1);
-	float pzf = fmod(pz, 1);
-	if (pxf < .5)
-	{
-		if (pzf < .5)
-		{
-			if (pxf > pzf) /* bottom */
-			{
-				points[0] = 0;
-				points[1] = 4;
-				points[2] = 1;
-			}
-			else /* left */
-			{
-				points[0] = 0;
-				points[1] = 4;
-				points[2] = 2;
-			}
-		}
-		else
-		{
-			if (pxf > 1 - pzf) /* top */
-			{
-				points[0] = 2;
-				points[1] = 4;
-				points[2] = 3;
-			}
-			else /* left */
-			{
-				points[0] = 0;
-				points[1] = 4;
-				points[2] = 2;
-			}
-		}
-	}
-	else
-	{
-		if (pzf < .5)
-		{
-			if (1 - pxf > pzf) /* bottom */
-			{
-				points[0] = 0;
-				points[1] = 4;
-				points[2] = 1;
-			}
-			else /* right */
-			{
-				points[0] = 1;
-				points[1] = 4;
-				points[2] = 3;
-			}
-		}
-		else
-		{
-			if (pxf > pzf) /* right */
-			{
-				points[0] = 1;
-				points[1] = 4;
-				points[2] = 3;
-			}
-			else /* top */
-			{
-				points[0] = 2;
-				points[1] = 4;
-				points[2] = 3;
-			}
-		}
-	}
-}
-
-static void get_interp_factors(float px, float pz, uint8_t *points, float *factors)
-{
-	float pxf = fmod(px, 1);
-	float pzf = fmod(pz, 1);
-	static const struct vec2f pos[5] =
-	{
-		{0, 0},
-		{1, 0},
-		{0, 1},
-		{1, 1},
-		{.5, .5},
-	};
-	const struct vec2f *p1 = &pos[points[0]];
-	const struct vec2f *p2 = &pos[points[1]];
-	const struct vec2f *p3 = &pos[points[2]];
-	float f0n = (p2->y - p3->y) * (pxf - p3->x) + (p3->x - p2->x) * (pzf - p3->y);
-	float f0d = (p2->y - p3->y) * (p1->x - p3->x) + (p3->x - p2->x) * (p1->y - p3->y);
-	float f1n = (p3->y - p1->y) * (pxf - p3->x) + (p1->x - p3->x) * (pzf - p3->y);
-	float f1d = (p2->y - p3->y) * (p1->x - p3->x) + (p3->x - p2->x) * (p1->y - p3->y);
-	factors[0] = f0n / f0d;
-	factors[1] = f1n / f1d;
-	factors[2] = 1 - factors[0] - factors[1];
-}
-
-static void get_interp_y(struct gx_mcnk_batch *batch, float px, float pz, uint8_t *points, float *factors, float *y)
-{
-	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
-	uint8_t base = (9 + 8) * (int)pz + (int)px;
-	float y0 = batch->height[base + pos[points[0]]];
-	float y1 = batch->height[base + pos[points[1]]];
-	float y2 = batch->height[base + pos[points[2]]];
-	*y = y0 * factors[0] + y1 * factors[1] + y2 * factors[2];
-}
-
-static void get_interp_n(struct gx_mcnk_batch *batch, float px, float pz, uint8_t *points, float *factors, int8_t *n)
-{
-	static const uint8_t pos[5] = {0, 1, 17, 18, 9};
-	uint8_t base = (9 + 8) * (int)pz + (int)px;
-	int8_t n0[3];
-	int8_t n1[3];
-	int8_t n2[3];
-	memcpy(n0, &batch->norm[base + pos[points[0]]], 3);
-	memcpy(n1, &batch->norm[base + pos[points[1]]], 3);
-	memcpy(n2, &batch->norm[base + pos[points[2]]], 3);
-	for (int i = 0; i < 3; ++i)
-		n[i] = n0[i] * factors[0] + n1[i] * factors[1] + n2[i] * factors[2];
-}
-
-static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batch *batch)
+static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batch *batch, uint32_t batch_id)
 {
 	struct gx_mcnk_ground_effect *ground_effect = batch->ground_effect;
 	if (!ground_effect)
@@ -976,8 +793,8 @@ static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batc
 	if (ground_effect->no_effect_doodads == (uint64_t)-1)
 		return true;
 	uint32_t random_generator = rand();
-	float chunk_x = +CHUNK_WIDTH - CHUNK_WIDTH * batch->x;
-	float chunk_z = -CHUNK_WIDTH + CHUNK_WIDTH * batch->z;
+	float chunk_x = +CHUNK_WIDTH - CHUNK_WIDTH * (batch_id / 16);
+	float chunk_z = -CHUNK_WIDTH + CHUNK_WIDTH * (batch_id % 16);
 	for (size_t z = 0; z < 8; ++z)
 	{
 		for (size_t x = 0; x < 8; ++x)
@@ -987,7 +804,7 @@ static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batc
 				continue;
 			if ((ground_effect->no_effect_doodad[z] >> x) & 1)
 				continue;
-			if (batch->holes & (1 << (z / 2 * 4 + x / 2)))
+			if (mcnk->parent->chunks[batch_id].holes & (1 << (z / 2 * 4 + x / 2)))
 				continue;
 			struct wow_dbc_row row; /* XXX: use cache for dbc_row of ground_effect_texture & ground_effect_doodad to lower CPU usage */
 			if (!dbc_get_row_indexed(g_wow->dbc.ground_effect_texture, &row, effect_id))
@@ -1020,12 +837,12 @@ static bool load_ground_effect_doodads(struct gx_mcnk *mcnk, struct gx_mcnk_batc
 					float factors[3];
 					int8_t no[3];
 					float y;
-					get_interp_points(px, pz, points);
-					get_interp_factors(px, pz, points, factors);
-					get_interp_y(batch, px, pz, points, factors, &y);
-					get_interp_n(batch, px, pz, points, factors, no);
+					map_chunk_get_interp_points(px, pz, points);
+					map_chunk_get_interp_factors(px, pz, points, factors);
+					map_chunk_get_y(&mcnk->parent->chunks[batch_id], px, pz, points, factors, &y);
+					map_chunk_get_n(&mcnk->parent->chunks[batch_id], px, pz, points, factors, no);
 					struct vec3f pos = {base_x, y, base_z};
-					VEC3_ADD(pos, pos, mcnk->pos);
+					VEC3_ADD(pos, pos, mcnk->parent->pos);
 					struct mat4f mat;
 					struct mat4f m;
 					MAT4_IDENTITY(mat);
@@ -1073,20 +890,6 @@ static void unload_ground_effect_doodads(struct gx_mcnk_batch *batch)
 		gx_m2_instance_gc(*JKS_ARRAY_GET(&ground_effect->doodads, i, struct gx_m2_instance*));
 	jks_array_resize(&ground_effect->doodads, 0);
 	ground_effect->loaded = false;
-}
-
-bool gx_mcnk_link_objects(struct gx_mcnk *mcnk)
-{
-	for (uint32_t i = 0; i < GX_MCNK_BATCHES_NB; ++i)
-	{
-		struct gx_mcnk_batch *batch = &mcnk->batches[i];
-		batch->doodads_instances = mem_malloc(MEM_GX, sizeof(*batch->doodads_instances) * batch->doodads_nb);
-		if (!batch->doodads_instances)
-			return false;
-		for (uint32_t j = 0; j < batch->doodads_nb; ++j)
-			batch->doodads_instances[j] = mcnk->parent->m2[batch->doodads[j]]->instance;
-	}
-	return true;
 }
 
 int gx_mcnk_initialize(struct gx_mcnk *mcnk)
@@ -1153,15 +956,15 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 	if (!mcnk->initialized)
 		return;
 	struct vec3f delta;
-	VEC3_SUB(delta, mcnk->center, g_wow->cull_frame->cull_pos);
+	VEC3_SUB(delta, mcnk->parent->center, g_wow->cull_frame->cull_pos);
 	mcnk->distance_to_camera = sqrt(delta.x * delta.x + delta.z * delta.z);
 	if (mcnk->distance_to_camera > g_wow->cull_frame->view_distance * 1.4142) /* sqrt(2) is the worst case of frustum plane */
 		return;
-	if (!frustum_check_fast(&g_wow->cull_frame->frustum, &mcnk->objects_aabb))
+	if (!frustum_check_fast(&g_wow->cull_frame->frustum, &mcnk->parent->objects_aabb))
 		return;
 	render_add_mcnk_objects(mcnk);
-	enum frustum_result result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->aabb);
-	MAT4_TRANSLATE(mcnk->render_frames[g_wow->cull_frame_id].mv, g_wow->cull_frame->view_v, mcnk->pos);
+	enum frustum_result result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->parent->aabb);
+	MAT4_TRANSLATE(mcnk->render_frames[g_wow->cull_frame_id].mv, g_wow->cull_frame->view_v, mcnk->parent->pos);
 	MAT4_MUL(mcnk->render_frames[g_wow->cull_frame_id].mvp, g_wow->cull_frame->view_p, mcnk->render_frames[g_wow->cull_frame_id].mv);
 	render_add_mcnk(mcnk);
 	mcnk->render_frames[g_wow->cull_frame_id].to_render_nb = 0;
@@ -1172,7 +975,8 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 	for (size_t i = 0; i < GX_MCNK_BATCHES_NB; ++i)
 	{
 		struct gx_mcnk_batch *batch = &mcnk->batches[i];
-		VEC3_SUB(delta, batch->center, g_wow->cull_frame->cull_pos);
+		struct map_chunk *chunk = &mcnk->parent->chunks[i];
+		VEC3_SUB(delta, chunk->center, g_wow->cull_frame->cull_pos);
 		batch->render_frames[g_wow->cull_frame_id].distance_to_camera = sqrt(delta.x * delta.x + delta.z * delta.z);
 		if (batch->render_frames[g_wow->cull_frame_id].distance_to_camera > g_wow->cull_frame->view_distance * 1.4142)
 		{
@@ -1186,24 +990,24 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 				struct gx_m2_instance *m2 = mcnk->parent->m2[*(uint32_t*)jks_array_get(&batch->doodads_to_aabb, j)]->instance;
 				if (!m2->parent->loaded)
 					continue;
-				if (batch->doodads_to_aabb.size == batch->doodads_nb)
-					aabb_set_min_max(&batch->doodads_aabb, &m2->aabb);
+				if (batch->doodads_to_aabb.size == chunk->doodads_nb)
+					aabb_set_min_max(&chunk->doodads_aabb, &m2->aabb);
 				else
-					aabb_add_min_max(&batch->doodads_aabb, &m2->aabb);
-				aabb_sub_min_max(&batch->doodads_aabb, &batch->objects_aabb); /* avoid aabb from going outside of chunk */
+					aabb_add_min_max(&chunk->doodads_aabb, &m2->aabb);
+				aabb_sub_min_max(&chunk->doodads_aabb, &chunk->objects_aabb); /* avoid aabb from going outside of chunk */
 				if (!mcnk->has_doodads_aabb)
 				{
-					aabb_set_min_max(&mcnk->doodads_aabb, &batch->doodads_aabb);
+					aabb_set_min_max(&mcnk->parent->doodads_aabb, &chunk->doodads_aabb);
 					mcnk->has_doodads_aabb = true;
 				}
 				else
 				{
-					aabb_add_min_max(&mcnk->doodads_aabb, &batch->doodads_aabb);
+					aabb_add_min_max(&mcnk->parent->doodads_aabb, &chunk->doodads_aabb);
 				}
 #ifdef WITH_DEBUG_RENDERING
-				mcnk->doodads_gx_aabb.aabb = mcnk->doodads_aabb;
+				mcnk->doodads_gx_aabb.aabb = mcnk->parent->doodads_aabb;
 				mcnk->doodads_gx_aabb.flags |= GX_AABB_DIRTY;
-				batch->doodads_gx_aabb.aabb = batch->doodads_aabb;
+				batch->doodads_gx_aabb.aabb = chunk->doodads_aabb;
 				batch->doodads_gx_aabb.flags |= GX_AABB_DIRTY;
 #endif
 				jks_array_erase(&batch->doodads_to_aabb, j);
@@ -1216,24 +1020,24 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 				struct gx_wmo_instance *wmo = mcnk->parent->wmo[*(uint32_t*)jks_array_get(&batch->wmos_to_aabb, j)]->instance;
 				if (!wmo->parent->loaded)
 					continue;
-				if (batch->wmos_to_aabb.size == batch->wmos_nb)
-					aabb_set_min_max(&batch->wmos_aabb, &wmo->aabb);
+				if (batch->wmos_to_aabb.size == chunk->wmos_nb)
+					aabb_set_min_max(&chunk->wmos_aabb, &wmo->aabb);
 				else
-					aabb_add_min_max(&batch->wmos_aabb, &wmo->aabb);
-				aabb_sub_min_max(&batch->wmos_aabb, &batch->objects_aabb); /* avoid aabb from going outside of chunk */
+					aabb_add_min_max(&chunk->wmos_aabb, &wmo->aabb);
+				aabb_sub_min_max(&chunk->wmos_aabb, &chunk->objects_aabb); /* avoid aabb from going outside of chunk */
 				if (!mcnk->has_wmos_aabb)
 				{
-					aabb_set_min_max(&mcnk->wmos_aabb, &batch->wmos_aabb);
+					aabb_set_min_max(&mcnk->parent->wmos_aabb, &chunk->wmos_aabb);
 					mcnk->has_wmos_aabb = true;
 				}
 				else
 				{
-					aabb_add_min_max(&mcnk->wmos_aabb, &batch->wmos_aabb);
+					aabb_add_min_max(&mcnk->parent->wmos_aabb, &chunk->wmos_aabb);
 				}
 #ifdef WITH_DEBUG_RENDERING
-				mcnk->wmos_gx_aabb.aabb = mcnk->wmos_aabb;
+				mcnk->wmos_gx_aabb.aabb = mcnk->parent->wmos_aabb;
 				mcnk->wmos_gx_aabb.flags |= GX_AABB_DIRTY;
-				batch->wmos_gx_aabb.aabb = batch->wmos_aabb;
+				batch->wmos_gx_aabb.aabb = chunk->wmos_aabb;
 				batch->wmos_gx_aabb.flags |= GX_AABB_DIRTY;
 #endif
 				jks_array_erase(&batch->wmos_to_aabb, j);
@@ -1241,15 +1045,15 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 				if (!batch->wmos_to_aabb.size)
 					jks_array_destroy(&batch->wmos_to_aabb);
 			}
-			if (batch->doodads_to_aabb.size == batch->doodads_nb)
+			if (batch->doodads_to_aabb.size == chunk->doodads_nb)
 				batch->doodads_frustum_result = FRUSTUM_OUTSIDE;
-			else if (batch->doodads_nb < 3) /* threshold where multiplying frustums harms */
+			else if (chunk->doodads_nb < 3) /* threshold where multiplying frustums harms */
 				batch->doodads_frustum_result = FRUSTUM_COLLIDE;
 			else
 				doodads_batches[doodads_batches_count++] = i;
-			if (batch->wmos_to_aabb.size == batch->wmos_nb)
+			if (batch->wmos_to_aabb.size == chunk->wmos_nb)
 				batch->wmos_frustum_result = FRUSTUM_OUTSIDE;
-			else if (batch->wmos_nb < 3) /* threshold where multiplying frustums harms */
+			else if (chunk->wmos_nb < 3) /* threshold where multiplying frustums harms */
 				batch->wmos_frustum_result = FRUSTUM_COLLIDE;
 			else
 				wmos_batches[wmos_batches_count++] = i;
@@ -1265,7 +1069,7 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 				batch->render_frames[g_wow->cull_frame_id].culled = true;
 				break;
 			case FRUSTUM_COLLIDE:
-				batch->frustum_result = frustum_check(&g_wow->cull_frame->frustum, &batch->aabb);
+				batch->frustum_result = frustum_check(&g_wow->cull_frame->frustum, &chunk->aabb);
 				if (!(batch->render_frames[g_wow->cull_frame_id].culled = !batch->frustum_result))
 					mcnk->render_frames[g_wow->cull_frame_id].to_render[mcnk->render_frames[g_wow->cull_frame_id].to_render_nb++] = i;
 				break;
@@ -1275,13 +1079,13 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 	{
 		if (mcnk->has_doodads_aabb)
 		{
-			mcnk->doodads_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->doodads_aabb);
+			mcnk->doodads_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->parent->doodads_aabb);
 			if (mcnk->doodads_frustum_result == FRUSTUM_COLLIDE)
 			{
 				for (size_t i = 0; i < doodads_batches_count; ++i)
 				{
 					struct gx_mcnk_batch *batch = &mcnk->batches[doodads_batches[i]];
-					batch->doodads_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &batch->doodads_aabb);
+					batch->doodads_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->parent->chunks[doodads_batches[i]].doodads_aabb);
 				}
 			}
 		}
@@ -1291,13 +1095,13 @@ void gx_mcnk_cull(struct gx_mcnk *mcnk)
 		}
 		if (mcnk->has_wmos_aabb)
 		{
-			mcnk->wmos_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->wmos_aabb);
+			mcnk->wmos_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->parent->wmos_aabb);
 			if (mcnk->wmos_frustum_result == FRUSTUM_COLLIDE)
 			{
 				for (size_t i = 0; i < wmos_batches_count; ++i)
 				{
 					struct gx_mcnk_batch *batch = &mcnk->batches[wmos_batches[i]];
-					batch->wmos_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &batch->wmos_aabb);
+					batch->wmos_frustum_result = frustum_check(&g_wow->cull_frame->frustum, &mcnk->parent->chunks[wmos_batches[i]].wmos_aabb);
 				}
 			}
 		}
@@ -1315,11 +1119,12 @@ void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk)
 	for (uint32_t i = 0; i < GX_MCNK_BATCHES_NB; ++i)
 	{
 		struct gx_mcnk_batch *batch = &mcnk->batches[i];
+		struct map_chunk *chunk = &mcnk->parent->chunks[i];
 		if (batch->render_frames[g_wow->cull_frame_id].distance_to_camera > GROUND_DOODADS_RANGE_MAX)
 			unload_ground_effect_doodads(batch);
 		if (batch->render_frames[g_wow->cull_frame_id].distance_to_camera < GROUND_DOODADS_RANGE_MIN)
 		{
-			if (!load_ground_effect_doodads(mcnk, batch))
+			if (!load_ground_effect_doodads(mcnk, batch, i))
 				LOG_ERROR("failed to load ground doodads");
 		}
 		if (batch->render_frames[g_wow->cull_frame_id].distance_to_camera > g_wow->cull_frame->view_distance + (CHUNK_WIDTH * 1.4142))
@@ -1337,35 +1142,35 @@ void gx_mcnk_add_objects_to_render(struct gx_mcnk *mcnk)
 		}
 		if (g_wow->wow_opt & WOW_OPT_AABB_OPTIMIZE)
 		{
-			if (batch->doodads_nb && mcnk->doodads_frustum_result != FRUSTUM_OUTSIDE)
+			if (chunk->doodads_nb && mcnk->doodads_frustum_result != FRUSTUM_OUTSIDE)
 			{
 				if (mcnk->doodads_frustum_result == FRUSTUM_INSIDE || batch->doodads_frustum_result != FRUSTUM_OUTSIDE)
 				{
 					PERFORMANCE_BEGIN(M2_CULL);
 					bool bypass = mcnk->doodads_frustum_result == FRUSTUM_INSIDE || batch->doodads_frustum_result == FRUSTUM_INSIDE;
-					for (uint32_t doodad = 0; doodad < batch->doodads_nb; ++doodad)
-						gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, bypass, &g_wow->cull_frame->m2_params);
+					for (uint32_t doodad = 0; doodad < chunk->doodads_nb; ++doodad)
+						gx_m2_instance_add_to_render(mcnk->parent->m2[chunk->doodads[doodad]]->instance, bypass, &g_wow->cull_frame->m2_params);
 					PERFORMANCE_END(M2_CULL);
 				}
 			}
-			if (batch->wmos_nb && mcnk->wmos_frustum_result != FRUSTUM_OUTSIDE)
+			if (chunk->wmos_nb && mcnk->wmos_frustum_result != FRUSTUM_OUTSIDE)
 			{
 				if (mcnk->wmos_frustum_result == FRUSTUM_INSIDE || batch->wmos_frustum_result != FRUSTUM_OUTSIDE)
 				{
 					PERFORMANCE_BEGIN(WMO_CULL);
 					bool bypass = mcnk->wmos_frustum_result == FRUSTUM_INSIDE || batch->wmos_frustum_result == FRUSTUM_INSIDE;
-					for (uint32_t wmo = 0; wmo < batch->wmos_nb; ++wmo)
-						gx_wmo_instance_add_to_render(mcnk->parent->wmo[batch->wmos[wmo]]->instance, bypass);
+					for (uint32_t wmo = 0; wmo < chunk->wmos_nb; ++wmo)
+						gx_wmo_instance_add_to_render(mcnk->parent->wmo[chunk->wmos[wmo]]->instance, bypass);
 					PERFORMANCE_END(WMO_CULL);
 				}
 			}
 		}
 		else
 		{
-			for (uint32_t doodad = 0; doodad < batch->doodads_nb; ++doodad)
-				gx_m2_instance_add_to_render(mcnk->parent->m2[batch->doodads[doodad]]->instance, false, &g_wow->cull_frame->m2_params);
-			for (uint32_t wmo = 0; wmo < batch->wmos_nb; ++wmo)
-				gx_wmo_instance_add_to_render(mcnk->parent->wmo[batch->wmos[wmo]]->instance, false);
+			for (uint32_t doodad = 0; doodad < chunk->doodads_nb; ++doodad)
+				gx_m2_instance_add_to_render(mcnk->parent->m2[chunk->doodads[doodad]]->instance, false, &g_wow->cull_frame->m2_params);
+			for (uint32_t wmo = 0; wmo < chunk->wmos_nb; ++wmo)
+				gx_wmo_instance_add_to_render(mcnk->parent->wmo[chunk->wmos[wmo]]->instance, false);
 		}
 	}
 }
@@ -1467,7 +1272,8 @@ void gx_mcnk_render_aabb(struct gx_mcnk *mcnk)
 	for (uint32_t i = 0; i < GX_MCNK_BATCHES_NB; ++i)
 	{
 		struct gx_mcnk_batch *batch = &mcnk->batches[i];
-		if (batch->doodads_to_aabb.size != batch->doodads_nb)
+		struct map_chunk *chunk = &mcnk->parent->chunks[i];
+		if (batch->doodads_to_aabb.size != chunk->doodads_nb)
 		{
 			switch (batch->doodads_frustum_result)
 			{
@@ -1484,7 +1290,7 @@ void gx_mcnk_render_aabb(struct gx_mcnk *mcnk)
 			gx_aabb_update(&batch->doodads_gx_aabb, &g_wow->draw_frame->view_vp);
 			gx_aabb_render(&batch->doodads_gx_aabb);
 		}
-		if (batch->wmos_to_aabb.size != batch->wmos_nb)
+		if (batch->wmos_to_aabb.size != chunk->wmos_nb)
 		{
 			gx_aabb_update(&batch->wmos_gx_aabb, &g_wow->draw_frame->view_vp);
 			gx_aabb_render(&batch->wmos_gx_aabb);
