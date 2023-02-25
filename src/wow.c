@@ -870,6 +870,8 @@ static int wow_main(int ac, char **av)
 		windowing = "wayland";
 	else if (gfx_has_window_backend(GFX_WINDOW_GLFW))
 		windowing = "glfw";
+	else if (gfx_has_window_backend(GFX_WINDOW_SDL))
+		windowing = "sdl";
 
 	if (!windowing)
 	{
@@ -908,6 +910,8 @@ static int wow_main(int ac, char **av)
 					printf("\twayland: Native wayland\n");
 				if (gfx_has_window_backend(GFX_WINDOW_GLFW))
 					printf("\tglfw: glfw library\n");
+				if (gfx_has_window_backend(GFX_WINDOW_SDL))
+					printf("\tsdl: sdl library\n");
 				printf("-l: set the locale (frFR, enUS, ..)\n");
 				printf("-s: set the boot screen (FrameXML, GlueXML)\n");
 				return EXIT_SUCCESS;
@@ -950,13 +954,25 @@ static int wow_main(int ac, char **av)
 		return EXIT_FAILURE;
 	}
 	if (gfx_has_window_backend(GFX_WINDOW_X11) && !strcmp(windowing, "x11"))
+	{
 		window_backend = GFX_WINDOW_X11;
+	}
 	else if (gfx_has_window_backend(GFX_WINDOW_WIN32) && !strcmp(windowing, "win32"))
+	{
 		window_backend = GFX_WINDOW_WIN32;
+	}
 	else if (gfx_has_window_backend(GFX_WINDOW_WAYLAND) && !strcmp(windowing, "wayland"))
+	{
 		window_backend = GFX_WINDOW_WAYLAND;
+	}
 	else if (gfx_has_window_backend(GFX_WINDOW_GLFW) && !strcmp(windowing, "glfw"))
+	{
 		window_backend = GFX_WINDOW_GLFW;
+	}
+	else if (gfx_has_window_backend(GFX_WINDOW_GLFW) && !strcmp(windowing, "sdl"))
+	{
+		window_backend = GFX_WINDOW_SDL;
+	}
 	else
 	{
 		LOG_ERROR("unknown window backend: %s", windowing);

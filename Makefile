@@ -399,6 +399,7 @@ LIBRARY+= -lGL
 LIBRARY+= -lX11 -lXcursor -lXi
 LIBRARY+= -lvulkan
 LIBRARY+= -lasound
+LIBRARY+= -lSDL2
 
 endif
 
