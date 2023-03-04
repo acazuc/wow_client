@@ -1,5 +1,7 @@
+#include "./compile.h"
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
@@ -9,115 +11,66 @@
 #include <ctype.h>
 #include <errno.h>
 
-enum gfx_shader_type
+struct shader_ctx
 {
-	GFX_SHADER_VERTEX,
-	GFX_SHADER_FRAGMENT,
-};
-
-enum gfx_shader_api
-{
-	GFX_API_GL3,
-	GFX_API_GL4,
-	GFX_API_GLES3,
-	GFX_API_VK,
-	GFX_API_D3D9,
-	GFX_API_D3D11,
-};
-
-enum gfx_variable_type
-{
-	GFX_VARIABLE_FLOAT,
-	GFX_VARIABLE_VEC1,
-	GFX_VARIABLE_VEC2,
-	GFX_VARIABLE_VEC3,
-	GFX_VARIABLE_VEC4,
-	GFX_VARIABLE_MAT1,
-	GFX_VARIABLE_MAT2,
-	GFX_VARIABLE_MAT3,
-	GFX_VARIABLE_MAT4,
-	GFX_VARIABLE_INT,
-	GFX_VARIABLE_IVEC1,
-	GFX_VARIABLE_IVEC2,
-	GFX_VARIABLE_IVEC3,
-	GFX_VARIABLE_IVEC4,
-	GFX_VARIABLE_STRUCT,
-};
-
-enum gfx_sampler_type
-{
-	GFX_SAMPLER_2D,
-	GFX_SAMPLER_2D_ARRAY,
-	GFX_SAMPLER_3D,
-};
-
-struct gfx_shader_constant_member
-{
-	char struct_name[64];
-	char name[64];
-	uint16_t array_size;
-	enum gfx_variable_type type;
-};
-
-struct gfx_shader_constant
-{
-	char name[64];
-	struct gfx_shader_constant_member members[64];
-	uint32_t members_nb;
-	uint8_t bind;
-};
-
-struct gfx_shader_sampler
-{
-	char name[64];
-	enum gfx_sampler_type type;
-	uint8_t bind;
-};
-
-struct gfx_shader_output
-{
-	char name[64];
-	enum gfx_variable_type type;
-	uint8_t bind;
-};
-
-struct gfx_shader_input
-{
-	char name[64];
-	enum gfx_variable_type type;
-	uint8_t bind;
-};
-
-struct gfx_shader_struct_member
-{
-	char name[64];
-	uint16_t array_size;
-	enum gfx_variable_type type;
-};
-
-struct gfx_shader_struct
-{
-	char name[64];
-	struct gfx_shader_struct_member members[64];
-	uint32_t members_nb;
-};
-
-struct gfx_shader
-{
-	struct gfx_shader_constant constants[16];
-	struct gfx_shader_sampler samplers[16];
-	struct gfx_shader_struct structs[16];
-	struct gfx_shader_output outputs[16];
-	struct gfx_shader_input inputs[16];
+	struct gfx_shader_constant_def constants[16];
+	struct gfx_shader_sampler_def samplers[16];
+	struct gfx_shader_struct_def structs[16];
+	struct gfx_shader_output_def outputs[16];
+	struct gfx_shader_input_def inputs[16];
 	uint8_t constants_nb;
 	uint8_t samplers_nb;
 	uint8_t structs_nb;
 	uint8_t outputs_nb;
 	uint8_t inputs_nb;
 	uint8_t type;
-	uint16_t code_size;
+	size_t code_size;
 	char *code;
 };
+
+struct membuf
+{
+	char *data;
+	size_t size;
+};
+
+static void membuf_printf(struct membuf *membuf, char *fmt, ...)
+{
+	va_list va_arg;
+	va_list va_arg2;
+	va_start(va_arg, fmt);
+	va_copy(va_arg2, va_arg);
+	size_t n = vsnprintf(NULL, 0, fmt, va_arg);
+	char *data = realloc(membuf->data, membuf->size + n + 1);
+	vsnprintf(data + membuf->size, n + 1, fmt, va_arg2);
+	membuf->data = data;
+	membuf->size += n;
+	va_end(va_arg2);
+	va_end(va_arg);
+}
+
+static bool membuf_read_file(struct membuf *membuf, int fd)
+{
+	while (1)
+	{
+		char *data = realloc(membuf->data, membuf->size + 4096);
+		if (!data)
+		{
+			fprintf(stderr, "allocation failed\n");
+			return false;
+		}
+		membuf->data = data;
+		int ret = read(fd, &data[membuf->size], 4096);
+		if (!ret)
+			return true;
+		if (ret < 0)
+		{
+			fprintf(stderr, "failed to read file\n");
+			return false;
+		}
+		membuf->size += ret;
+	}
+}
 
 static bool shader_type_from_string(const char *str, enum gfx_shader_type *type)
 {
@@ -137,26 +90,46 @@ static bool shader_type_from_string(const char *str, enum gfx_shader_type *type)
 	return false;
 }
 
-static bool shader_api_from_string(const char *str, enum gfx_shader_api *api)
+static bool shader_backend_from_string(const char *str, enum gfx_device_backend *backend)
 {
 	static const char *strings[] =
 	{
-		[GFX_API_GL3] = "gl3",
-		[GFX_API_GL4] = "gl4",
-		[GFX_API_GLES3] = "gles3",
-		[GFX_API_VK] = "vk",
-		[GFX_API_D3D9] = "d3d9",
-		[GFX_API_D3D11] = "d3d11",
+		[GFX_DEVICE_GL3] = "gl3",
+		[GFX_DEVICE_GL4] = "gl4",
+		[GFX_DEVICE_GLES3] = "gles3",
+		[GFX_DEVICE_VK] = "vk",
+		[GFX_DEVICE_D3D9] = "d3d9",
+		[GFX_DEVICE_D3D11] = "d3d11",
 	};
 	for (size_t i = 0; i < sizeof(strings) / sizeof(*strings); ++i)
 	{
 		if (!strcmp(strings[i], str))
 		{
-			*api = i;
+			*backend = i;
 			return true;
 		}
 	}
 	return false;
+}
+
+static bool shader_backend_mask_from_string(const char *str, uint32_t *mask)
+{
+	char tmp[8];
+	enum gfx_device_backend backend;
+	char *coma;
+	while ((coma = strchr(str, ',')))
+	{
+		if (snprintf(tmp, sizeof(tmp), "%.*s", coma - str, str) >= sizeof(tmp))
+			return false;
+		if (!shader_backend_from_string(tmp, &backend))
+			return false;
+		*mask |= (1 << backend);
+		str = coma + 1;
+	}
+	if (!shader_backend_from_string(tmp, &backend))
+		return false;
+	*mask |= (1 << backend);
+	return true;
 }
 
 static bool variable_type_from_string(const char *str, size_t len, enum gfx_variable_type *type)
@@ -187,12 +160,12 @@ static bool variable_type_from_string(const char *str, size_t len, enum gfx_vari
 #undef TEST
 }
 
-static bool sampler_type_from_string(const char *str, size_t len, enum gfx_sampler_type *type)
+static bool sampler_type_from_string(const char *str, size_t len, enum gfx_texture_type *type)
 {
 #define TEST(name, val) \
 	if (!strncmp(str, #name, len)) \
 	{ \
-		*type = GFX_SAMPLER_##val; \
+		*type = GFX_TEXTURE_##val; \
 		return true; \
 	}
 
@@ -226,13 +199,13 @@ static const char *variable_type_to_string(enum gfx_variable_type type)
 	return strings[type];
 }
 
-static const char *sampler_type_to_string(enum gfx_sampler_type type)
+static const char *sampler_type_to_string(enum gfx_texture_type type)
 {
 	static const char *strings[] =
 	{
-		[GFX_SAMPLER_2D] = "sampler2D",
-		[GFX_SAMPLER_2D_ARRAY] = "sampler2DArray",
-		[GFX_SAMPLER_3D] = "sampler3D",
+		[GFX_TEXTURE_2D] = "sampler2D",
+		[GFX_TEXTURE_2D_ARRAY] = "sampler2DArray",
+		[GFX_TEXTURE_3D] = "sampler3D",
 	};
 	return strings[type];
 }
@@ -322,7 +295,7 @@ static bool parse_variable_name(const char **line, char *name, size_t size)
 	return true;
 }
 
-static bool parse_sampler_type(const char **line, enum gfx_sampler_type *type)
+static bool parse_texture_type(const char **line, enum gfx_texture_type *type)
 {
 	const char *str = *line;
 	if (!**line)
@@ -378,23 +351,25 @@ static bool parse_array_size(const char **line, uint16_t *array_sizep)
 	return true;
 }
 
-static bool parse_in(struct gfx_shader *shader, const char *line)
+static bool parse_in(struct shader_ctx *shader, const char *line)
 {
 	if (shader->inputs_nb >= sizeof(shader->inputs) / sizeof(*shader->inputs))
 	{
 		fprintf(stderr, "too much input\n");
 		return false;
 	}
-	struct gfx_shader_input *input = &shader->inputs[shader->inputs_nb];
+	struct gfx_shader_input_def *input = &shader->inputs[shader->inputs_nb];
 	skip_spaces((const char**)&line);
 	if (!parse_bind(&line, &input->bind))
 		return false;
 	skip_spaces(&line);
-	if (!parse_variable_type(&line, &input->type))
+	enum gfx_variable_type type;
+	if (!parse_variable_type(&line, &type))
 	{
 		fprintf(stderr, "invalid input type\n");
 		return false;
 	}
+	input->type = type;
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, input->name, sizeof(input->name)))
 		return false;
@@ -407,23 +382,25 @@ static bool parse_in(struct gfx_shader *shader, const char *line)
 	return true;
 }
 
-static bool parse_out(struct gfx_shader *shader, const char *line)
+static bool parse_out(struct shader_ctx *shader, const char *line)
 {
 	if (shader->outputs_nb >= sizeof(shader->outputs) / sizeof(*shader->outputs))
 	{
 		fprintf(stderr, "too much output\n");
 		return false;
 	}
-	struct gfx_shader_output *output = &shader->outputs[shader->outputs_nb];
+	struct gfx_shader_output_def *output = &shader->outputs[shader->outputs_nb];
 	skip_spaces((const char**)&line);
 	if (!parse_bind(&line, &output->bind))
 		return false;
 	skip_spaces(&line);
-	if (!parse_variable_type(&line, &output->type))
+	enum gfx_variable_type type;
+	if (!parse_variable_type(&line, &type))
 	{
 		fprintf(stderr, "invalid output type\n");
 		return false;
 	}
+	output->type = type;
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, output->name, sizeof(output->name)))
 		return false;
@@ -436,23 +413,37 @@ static bool parse_out(struct gfx_shader *shader, const char *line)
 	return true;
 }
 
-static bool parse_constant_member_type(const char **line, struct gfx_shader_constant_member *member)
+static bool parse_constant_member_type(struct shader_ctx *shader, const char **line, struct gfx_shader_constant_member_def *member)
 {
 	const char *ptr = *line;
-	if (parse_variable_type(line, &member->type))
+	enum gfx_variable_type type;
+	if (parse_variable_type(line, &type))
+	{
+		member->type = type;
 		return true;
-	if (*line - ptr >= sizeof(member->struct_name))
+	}
+	char name[64];
+	if (*line - ptr >= sizeof(name))
 	{
 		fprintf(stderr, "invalid constant: member type too long\n");
 		return false;
 	}
-	memcpy(member->struct_name, ptr, *line - ptr);
+	memcpy(name, ptr, *line - ptr);
 	member->type = GFX_VARIABLE_STRUCT;
-	member->struct_name[*line - ptr] = '\0';
-	return true;
+	name[*line - ptr] = '\0';
+	for (size_t i = 0; i < shader->structs_nb; ++i)
+	{
+		struct gfx_shader_struct_def *st = &shader->structs[i];
+		if (!strcmp(name, st->name))
+		{
+			member->struct_id = i;
+			return true;
+		}
+	}
+	return false;
 }
 
-static bool parse_constant_members(struct gfx_shader_constant *constant, FILE *fp)
+static bool parse_constant_members(struct shader_ctx *shader, struct gfx_shader_constant_def *constant, FILE *fp)
 {
 	char *lineptr = NULL;
 	size_t len = 0;
@@ -472,14 +463,14 @@ static bool parse_constant_members(struct gfx_shader_constant *constant, FILE *f
 		const char *line = lineptr;
 		if (!strcmp(line, "}\n"))
 			break;
-		struct gfx_shader_constant_member *member = &constant->members[constant->members_nb];
+		struct gfx_shader_constant_member_def *member = &constant->members[constant->members_nb];
 		if (constant->members_nb >= sizeof(constant->members) / sizeof(*constant->members))
 		{
 			fprintf(stderr, "invalid constant: too much members\n");
 			return false;
 		}
 		skip_spaces(&line);
-		if (!parse_constant_member_type(&line, member))
+		if (!parse_constant_member_type(shader, &line, member))
 			return false;
 		skip_spaces(&line);
 		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
@@ -503,14 +494,14 @@ static bool parse_constant_members(struct gfx_shader_constant *constant, FILE *f
 	return true;
 }
 
-static bool parse_constant(struct gfx_shader *shader, const char *line, FILE *fp)
+static bool parse_constant(struct shader_ctx *shader, const char *line, FILE *fp)
 {
 	if (shader->constants_nb >= sizeof(shader->constants) / sizeof(*shader->constants))
 	{
 		fprintf(stderr, "too much constant\n");
 		return false;
 	}
-	struct gfx_shader_constant *constant = &shader->constants[shader->constants_nb];
+	struct gfx_shader_constant_def *constant = &shader->constants[shader->constants_nb];
 	skip_spaces(&line);
 	if (!parse_bind(&line, &constant->bind))
 		return false;
@@ -522,13 +513,13 @@ static bool parse_constant(struct gfx_shader *shader, const char *line, FILE *fp
 		fprintf(stderr, "invalid constant: trailling char\n");
 		return false;
 	}
-	if (!parse_constant_members(constant, fp))
+	if (!parse_constant_members(shader, constant, fp))
 		return false;
 	shader->constants_nb++;
 	return true;
 }
 
-static bool parse_struct_members(struct gfx_shader_struct *st, FILE *fp)
+static bool parse_struct_members(struct gfx_shader_struct_def *st, FILE *fp)
 {
 	char *lineptr = NULL;
 	size_t len = 0;
@@ -548,18 +539,20 @@ static bool parse_struct_members(struct gfx_shader_struct *st, FILE *fp)
 		const char *line = lineptr;
 		if (!strcmp(line, "}\n"))
 			break;
-		struct gfx_shader_struct_member *member = &st->members[st->members_nb];
+		struct gfx_shader_struct_member_def *member = &st->members[st->members_nb];
 		if (st->members_nb >= sizeof(st->members) / sizeof(*st->members))
 		{
 			fprintf(stderr, "invalid struct: too much members\n");
 			return false;
 		}
 		skip_spaces(&line);
-		if (!parse_variable_type(&line, &member->type))
+		enum gfx_variable_type type;
+		if (!parse_variable_type(&line, &type))
 		{
 			fprintf(stderr, "invalid struct: unknown member type\n");
 			return false;
 		}
+		member->type = type;
 		skip_spaces(&line);
 		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
 			return false;
@@ -582,20 +575,22 @@ static bool parse_struct_members(struct gfx_shader_struct *st, FILE *fp)
 	return true;
 }
 
-static bool parse_sampler(struct gfx_shader *shader, const char *line)
+static bool parse_sampler(struct shader_ctx *shader, const char *line)
 {
 	if (shader->samplers_nb >= sizeof(shader->samplers) / sizeof(*shader->samplers))
 	{
 		fprintf(stderr, "too much sampler\n");
 		return false;
 	}
-	struct gfx_shader_sampler *sampler = &shader->samplers[shader->samplers_nb];
+	struct gfx_shader_sampler_def *sampler = &shader->samplers[shader->samplers_nb];
 	skip_spaces(&line);
 	if (!parse_bind(&line, &sampler->bind))
 		return false;
 	skip_spaces(&line);
-	if (!parse_sampler_type(&line, &sampler->type))
+	enum gfx_texture_type type;
+	if (!parse_texture_type(&line, &type))
 		return false;
+	sampler->type = type;
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, sampler->name, sizeof(sampler->name)))
 		return false;
@@ -608,14 +603,14 @@ static bool parse_sampler(struct gfx_shader *shader, const char *line)
 	return true;
 }
 
-static bool parse_struct(struct gfx_shader *shader, const char *line, FILE *fp)
+static bool parse_struct(struct shader_ctx *shader, const char *line, FILE *fp)
 {
 	if (shader->structs_nb >= sizeof(shader->structs) / sizeof(*shader->structs))
 	{
 		fprintf(stderr, "too much struct\n");
 		return false;
 	}
-	struct gfx_shader_struct *st = &shader->structs[shader->structs_nb];
+	struct gfx_shader_struct_def *st = &shader->structs[shader->structs_nb];
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, st->name, sizeof(st->name)))
 		return false;
@@ -630,7 +625,7 @@ static bool parse_struct(struct gfx_shader *shader, const char *line, FILE *fp)
 	return true;
 }
 
-static bool parse_code(struct gfx_shader *shader, char **line, size_t *len, FILE *fp)
+static bool parse_code(struct shader_ctx *shader, char **line, size_t *len, FILE *fp)
 {
 	do
 	{
@@ -648,7 +643,7 @@ static bool parse_code(struct gfx_shader *shader, char **line, size_t *len, FILE
 	return true;
 }
 
-static bool parse_shader(struct gfx_shader *shader, FILE *fp, enum gfx_shader_type type)
+static bool parse_shader(struct shader_ctx *shader, FILE *fp, enum gfx_shader_type type)
 {
 	memset(shader, 0, sizeof(*shader));
 	shader->type = type;
@@ -698,447 +693,584 @@ end:
 	return ret;
 }
 
-static void print_glsl_defines(FILE *fp, enum gfx_shader_api api)
+static void print_glsl_defines(struct membuf *membuf, enum gfx_device_backend backend)
 {
-	fprintf(fp, "#define GFX_GLSL\n");
-	fprintf(fp, "#define mul(a, b) (b * a)\n");
-	fprintf(fp, "#define gfx_sample(t, u) texture(t, u)\n");
-	fprintf(fp, "#define gfx_sample_offset(t, u, o) textureOffset(t, u, o)\n");
-	fprintf(fp, "\n");
-	if (api == GFX_API_GLES3)
+	membuf_printf(membuf, "#define GFX_GLSL\n");
+	membuf_printf(membuf, "#define mul(a, b) (b * a)\n");
+	membuf_printf(membuf, "#define gfx_sample(t, u) texture(t, u)\n");
+	membuf_printf(membuf, "#define gfx_sample_offset(t, u, o) textureOffset(t, u, o)\n");
+	membuf_printf(membuf, "\n");
+	if (backend == GFX_DEVICE_GLES3)
 	{
-		fprintf(fp, "precision highp float;\n");
-		fprintf(fp, "precision highp int;\n");
-		fprintf(fp, "precision highp sampler2D;\n");
-		fprintf(fp, "precision highp sampler2DArray;\n");
-		fprintf(fp, "\n");
+		membuf_printf(membuf, "precision highp float;\n");
+		membuf_printf(membuf, "precision highp int;\n");
+		membuf_printf(membuf, "precision highp sampler2D;\n");
+		membuf_printf(membuf, "precision highp sampler2DArray;\n");
+		membuf_printf(membuf, "\n");
 	}
 }
 
-static void print_glsl_constant(const struct gfx_shader_constant *constant, FILE *fp, enum gfx_shader_api api)
+static void print_glsl_constant(struct membuf *membuf, const struct shader_ctx *shader, const struct gfx_shader_constant_def *constant, enum gfx_device_backend backend)
 {
-	switch (api)
+	switch (backend)
 	{
-		case GFX_API_VK:
-			fprintf(fp, "layout(set = 0, binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
+		case GFX_DEVICE_VK:
+			membuf_printf(membuf, "layout(set = 0, binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
 			break;
-		case GFX_API_GL4:
-		case GFX_API_GLES3:
-			fprintf(fp, "layout(binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
+		case GFX_DEVICE_GL4:
+		case GFX_DEVICE_GLES3:
+			membuf_printf(membuf, "layout(binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
 			break;
-		case GFX_API_GL3:
-			fprintf(fp, "layout(std140) uniform %s\n", constant->name);
+		case GFX_DEVICE_GL3:
+			membuf_printf(membuf, "layout(std140) uniform %s\n", constant->name);
 			break;
 		default:
-			assert(!"unknown api\n");
+			assert(!"unknown backend\n");
 	}
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < constant->members_nb; ++i)
 	{
-		const struct gfx_shader_constant_member *member = &constant->members[i];
+		const struct gfx_shader_constant_member_def *member = &constant->members[i];
 		const char *type_str;
 		if (member->type == GFX_VARIABLE_STRUCT)
-			type_str = member->struct_name;
+			type_str = shader->structs[member->struct_id].name;
 		else
 			type_str = variable_type_to_string(member->type);
-		fprintf(fp, "\t%s %s", type_str, member->name);
+		membuf_printf(membuf, "\t%s %s", type_str, member->name);
 		if (member->array_size)
-			fprintf(fp, "[%" PRIu32 "]", member->array_size);
-		fprintf(fp, ";\n");
+			membuf_printf(membuf, "[%" PRIu32 "]", member->array_size);
+		membuf_printf(membuf, ";\n");
 	}
-	fprintf(fp, "};\n\n");
+	membuf_printf(membuf, "};\n\n");
 }
 
-static void print_glsl_struct(const struct gfx_shader_struct *st, FILE *fp)
+static void print_glsl_struct(struct membuf *membuf, const struct gfx_shader_struct_def *st)
 {
-	fprintf(fp, "struct %s\n", st->name);
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "struct %s\n", st->name);
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < st->members_nb; ++i)
 	{
-		const struct gfx_shader_struct_member *member = &st->members[i];
-		fprintf(fp, "\t%s %s", variable_type_to_string(member->type), member->name);
+		const struct gfx_shader_struct_member_def *member = &st->members[i];
+		membuf_printf(membuf, "\t%s %s", variable_type_to_string(member->type), member->name);
 		if (member->array_size)
-			fprintf(fp, "[%" PRIu32 "]", member->array_size);
-		fprintf(fp, ";\n");
+			membuf_printf(membuf, "[%" PRIu32 "]", member->array_size);
+		membuf_printf(membuf, ";\n");
 	}
-	fprintf(fp, "};\n\n");
+	membuf_printf(membuf, "};\n\n");
 }
 
-static void print_glsl_sampler(const struct gfx_shader_sampler *sampler, FILE *fp, enum gfx_shader_api api)
+static void print_glsl_sampler(struct membuf *membuf, const struct gfx_shader_sampler_def *sampler, enum gfx_device_backend backend)
 {
-	switch (api)
+	switch (backend)
 	{
-		case GFX_API_VK:
-			fprintf(fp, "layout(set = 1, binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
+		case GFX_DEVICE_VK:
+			membuf_printf(membuf, "layout(set = 1, binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
-		case GFX_API_GL4:
-		case GFX_API_GLES3:
-			fprintf(fp, "layout(binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
+		case GFX_DEVICE_GL4:
+		case GFX_DEVICE_GLES3:
+			membuf_printf(membuf, "layout(binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
-		case GFX_API_GL3:
-			fprintf(fp, "uniform %s %s;\n", sampler_type_to_string(sampler->type), sampler->name);
+		case GFX_DEVICE_GL3:
+			membuf_printf(membuf, "uniform %s %s;\n", sampler_type_to_string(sampler->type), sampler->name);
 			break;
 		default:
-			assert(!"unknown api\n");
+			assert(!"unknown backend\n");
 	}
 }
 
-static void print_glsl_version(FILE *fp, enum gfx_shader_api api)
+static void print_glsl_version(struct membuf *membuf, enum gfx_device_backend backend)
 {
-	switch (api)
+	switch (backend)
 	{
-		case GFX_API_VK:
-		case GFX_API_GL4:
-			fprintf(fp, "#version 450 core\n\n");
+		case GFX_DEVICE_VK:
+		case GFX_DEVICE_GL4:
+			membuf_printf(membuf, "#version 450 core\n\n");
 			break;
-		case GFX_API_GL3:
-			fprintf(fp, "#version 330 core\n\n");
+		case GFX_DEVICE_GL3:
+			membuf_printf(membuf, "#version 330 core\n\n");
 			break;
-		case GFX_API_GLES3:
-			fprintf(fp, "#version 320 es\n\n");
+		case GFX_DEVICE_GLES3:
+			membuf_printf(membuf, "#version 320 es\n\n");
 			break;
 		default:
-			assert(!"unknown api\n");
+			assert(!"unknown backend\n");
 	}
 }
 
-static bool print_glsl_vs(const struct gfx_shader *shader, FILE *fp, enum gfx_shader_api api)
+static bool print_glsl_vs(struct membuf *membuf, const struct shader_ctx *shader, enum gfx_device_backend backend)
 {
-	print_glsl_version(fp, api);
-	print_glsl_defines(fp, api);
-	fprintf(fp, "\n");
+	print_glsl_version(membuf, backend);
+	print_glsl_defines(membuf, backend);
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "layout(location = %" PRIu8 ") in %s gfx_in_vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "layout(location = %" PRIu8 ") in %s gfx_in_vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
 	}
-	fprintf(fp, "\n");
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		switch (api)
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		switch (backend)
 		{
-			case GFX_API_GL3:
-				fprintf(fp, "%sout %s gfx_in_fs_%s;\n", output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
+			case GFX_DEVICE_GL3:
+				membuf_printf(membuf, "%sout %s gfx_in_fs_%s;\n", output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
 				break;
-			case GFX_API_GL4:
-			case GFX_API_VK:
-			case GFX_API_GLES3:
-				fprintf(fp, "layout(location = %" PRIu8 ") %sout %s gfx_in_fs_%s;\n", output->bind, output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
+			case GFX_DEVICE_GL4:
+			case GFX_DEVICE_VK:
+			case GFX_DEVICE_GLES3:
+				membuf_printf(membuf, "layout(location = %" PRIu8 ") %sout %s gfx_in_fs_%s;\n", output->bind, output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
 				break;
 			default:
-				assert(!"unknown api\n");
+				assert(!"unknown backend\n");
 		}
 	}
-	fprintf(fp, "\n");
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->structs_nb; ++i)
-		print_glsl_struct(&shader->structs[i], fp);
+		print_glsl_struct(membuf, &shader->structs[i]);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
-		print_glsl_constant(&shader->constants[i], fp, api);
-	fprintf(fp, "struct vs_input\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tint vertex_id;\n");
+		print_glsl_constant(membuf, shader, &shader->constants[i], backend);
+	membuf_printf(membuf, "struct vs_input\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tint vertex_id;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "struct vs_output\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tvec4 gfx_position;\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct vs_output\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tvec4 gfx_position;\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, shader->code);
-	fprintf(fp, "\n");
-	fprintf(fp, "void main()\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tvs_input gfx_in;\n");
-	switch (api)
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, shader->code);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "void main()\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tvs_input gfx_in;\n");
+	switch (backend)
 	{
-		case GFX_API_GL3:
-		case GFX_API_GL4:
-		case GFX_API_GLES3:
-			fprintf(fp, "\tgfx_in.vertex_id = gl_VertexID;\n");
+		case GFX_DEVICE_GL3:
+		case GFX_DEVICE_GL4:
+		case GFX_DEVICE_GLES3:
+			membuf_printf(membuf, "\tgfx_in.vertex_id = gl_VertexID;\n");
 			break;
-		case GFX_API_VK:
-			fprintf(fp, "\tgfx_in.vertex_id = gl_VertexIndex;\n");
+		case GFX_DEVICE_VK:
+			membuf_printf(membuf, "\tgfx_in.vertex_id = gl_VertexIndex;\n");
 			break;
 		default:
-			assert(!"unknown api\n");
+			assert(!"unknown backend\n");
 	}
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\tgfx_in.%s = gfx_in_vs_%s;\n", input->name, input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\tgfx_in.%s = gfx_in_vs_%s;\n", input->name, input->name);
 	}
-	fprintf(fp, "\tvs_output gfx_out = gfx_main(gfx_in);\n");
+	membuf_printf(membuf, "\tvs_output gfx_out = gfx_main(gfx_in);\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\tgfx_in_fs_%s = gfx_out.%s;\n", output->name, output->name);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\tgfx_in_fs_%s = gfx_out.%s;\n", output->name, output->name);
 	}
-	fprintf(fp, "\tgl_Position = gfx_out.gfx_position;\n");
-	fprintf(fp, "}\n");
+	membuf_printf(membuf, "\tgl_Position = gfx_out.gfx_position;\n");
+	membuf_printf(membuf, "}\n");
 	return true;
 }
 
-static bool print_glsl_fs(const struct gfx_shader *shader, FILE *fp, enum gfx_shader_api api)
+static bool print_glsl_fs(struct membuf *membuf, const struct shader_ctx *shader, enum gfx_device_backend backend)
 {
-	print_glsl_version(fp, api);
-	print_glsl_defines(fp, api);
+	print_glsl_version(membuf, backend);
+	print_glsl_defines(membuf, backend);
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		if (api == GFX_API_GL3)
-			fprintf(fp, "%sin %s gfx_in_fs_%s;\n", input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		if (backend == GFX_DEVICE_GL3)
+			membuf_printf(membuf, "%sin %s gfx_in_fs_%s;\n", input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
 		else
-			fprintf(fp, "layout(location = %" PRIu8 ") in %s%s gfx_in_fs_%s;\n", input->bind, input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
+			membuf_printf(membuf, "layout(location = %" PRIu8 ") in %s%s gfx_in_fs_%s;\n", input->bind, input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
 	}
 	if (shader->inputs_nb)
-		fprintf(fp, "\n");
+		membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "layout(location = %" PRIu8 ") out %s gfx_out_fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "layout(location = %" PRIu8 ") out %s gfx_out_fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
 	}
-	fprintf(fp, "\n");
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->structs_nb; ++i)
-		print_glsl_struct(&shader->structs[i], fp);
+		print_glsl_struct(membuf, &shader->structs[i]);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
-		print_glsl_constant(&shader->constants[i], fp, api);
+		print_glsl_constant(membuf, shader, &shader->constants[i], backend);
 	for (size_t i = 0; i < shader->samplers_nb; ++i)
-		print_glsl_sampler(&shader->samplers[i], fp, api);
+		print_glsl_sampler(membuf, &shader->samplers[i], backend);
 	if (shader->samplers_nb)
-		fprintf(fp, "\n");
-	fprintf(fp, "struct fs_input\n");
-	fprintf(fp, "{\n");
+		membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct fs_input\n");
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\t%s %s;\n", variable_type_to_string(input->type), input->name);
 	}
-	fprintf(fp, "\tint dummy; /* don't make empty fs_input */\n");
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "struct fs_output\n");
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "\tint dummy; /* don't make empty fs_input */\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct fs_output\n");
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\t%s %s;\n", variable_type_to_string(output->type), output->name);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, shader->code);
-	fprintf(fp, "\n");
-	fprintf(fp, "void main()\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tfs_input gfx_in;\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, shader->code);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "void main()\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tfs_input gfx_in;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\tgfx_in.%s = gfx_in_fs_%s;\n", input->name, input->name);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\tgfx_in.%s = gfx_in_fs_%s;\n", input->name, input->name);
 	}
-	fprintf(fp, "\tfs_output gfx_out = gfx_main(gfx_in);\n");
+	membuf_printf(membuf, "\tfs_output gfx_out = gfx_main(gfx_in);\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\tgfx_out_fs_%s = gfx_out.%s;\n", output->name, output->name);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\tgfx_out_fs_%s = gfx_out.%s;\n", output->name, output->name);
 	}
-	fprintf(fp, "}\n");
+	membuf_printf(membuf, "}\n");
 	return true;
 }
 
-static void print_hlsl_defines(FILE *fp)
+static void print_hlsl_defines(struct membuf *membuf)
 {
-	fprintf(fp, "#define GFX_HLSL\n");
-	fprintf(fp, "#define vec1 float1\n");
-	fprintf(fp, "#define vec2 float2\n");
-	fprintf(fp, "#define vec3 float3\n");
-	fprintf(fp, "#define vec4 float4\n");
-	fprintf(fp, "#define ivec1 int1\n");
-	fprintf(fp, "#define ivec2 int2\n");
-	fprintf(fp, "#define ivec3 int3\n");
-	fprintf(fp, "#define ivec4 int4\n");
-	fprintf(fp, "#define mat1 float1x1\n");
-	fprintf(fp, "#define mat2 float2x2\n");
-	fprintf(fp, "#define mat3 float3x3\n");
-	fprintf(fp, "#define mat4 float4x4\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "#define sampler2D Texture2D\n");
-	fprintf(fp, "#define sampler2DArray Texture2DArray\n");
-	fprintf(fp, "#define sampler3D Texture3D\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "#define gfx_sample(name, uv) name.Sample(name##_sampler, uv)\n");
-	fprintf(fp, "#define gfx_sample_offset(name, uv, offset) name.Sample(name##_sampler, uv, offset)\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "#define mix(a, b, v) lerp(a, b, v)\n");
-	fprintf(fp, "#define mod(a, b) fmod(a, b)\n");
+	membuf_printf(membuf, "#define GFX_HLSL\n");
+	membuf_printf(membuf, "#define vec1 float1\n");
+	membuf_printf(membuf, "#define vec2 float2\n");
+	membuf_printf(membuf, "#define vec3 float3\n");
+	membuf_printf(membuf, "#define vec4 float4\n");
+	membuf_printf(membuf, "#define ivec1 int1\n");
+	membuf_printf(membuf, "#define ivec2 int2\n");
+	membuf_printf(membuf, "#define ivec3 int3\n");
+	membuf_printf(membuf, "#define ivec4 int4\n");
+	membuf_printf(membuf, "#define mat1 float1x1\n");
+	membuf_printf(membuf, "#define mat2 float2x2\n");
+	membuf_printf(membuf, "#define mat3 float3x3\n");
+	membuf_printf(membuf, "#define mat4 float4x4\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "#define sampler2D Texture2D\n");
+	membuf_printf(membuf, "#define sampler2DArray Texture2DArray\n");
+	membuf_printf(membuf, "#define sampler3D Texture3D\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "#define gfx_sample(name, uv) name.Sample(name##_sampler, uv)\n");
+	membuf_printf(membuf, "#define gfx_sample_offset(name, uv, offset) name.Sample(name##_sampler, uv, offset)\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "#define mix(a, b, v) lerp(a, b, v)\n");
+	membuf_printf(membuf, "#define mod(a, b) fmod(a, b)\n");
 }
 
-static void print_d3d11_constant(const struct gfx_shader_constant *constant, FILE *fp)
+static void print_d3d11_constant(struct membuf *membuf, const struct shader_ctx *shader, const struct gfx_shader_constant_def *constant)
 {
-	fprintf(fp, "cbuffer %s : register(b%" PRIu8 ")\n", constant->name, constant->bind);
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "cbuffer %s : register(b%" PRIu8 ")\n", constant->name, constant->bind);
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < constant->members_nb; ++i)
 	{
-		const struct gfx_shader_constant_member *member = &constant->members[i];
-		fprintf(fp, "\t%s %s", member->type == GFX_VARIABLE_STRUCT ? member->struct_name : variable_type_to_string(member->type), member->name);
+		const struct gfx_shader_constant_member_def *member = &constant->members[i];
+		const char *type_str;
+		if (member->type == GFX_VARIABLE_STRUCT)
+			type_str = shader->structs[member->struct_id].name;
+		else
+			type_str = variable_type_to_string(member->type);
+		membuf_printf(membuf, "\t%s %s", type_str, member->name);
 		if (member->array_size)
-			fprintf(fp, "[%" PRIu32 "]", member->array_size);
-		fprintf(fp, ";\n");
+			membuf_printf(membuf, "[%" PRIu32 "]", member->array_size);
+		membuf_printf(membuf, ";\n");
 	}
-	fprintf(fp, "};\n\n");
+	membuf_printf(membuf, "};\n\n");
 }
 
-static void print_d3d11_sampler(const struct gfx_shader_sampler *sampler, FILE *fp)
+static void print_d3d11_sampler(struct membuf *membuf, const struct gfx_shader_sampler_def *sampler)
 {
-	fprintf(fp, "%s %s : register(t%" PRIu8 ");\n", sampler_type_to_string(sampler->type), sampler->name, sampler->bind);
-	fprintf(fp, "SamplerState %s_sampler : register(s%" PRIu8 ");\n", sampler->name, sampler->bind);
+	membuf_printf(membuf, "%s %s : register(t%" PRIu8 ");\n", sampler_type_to_string(sampler->type), sampler->name, sampler->bind);
+	membuf_printf(membuf, "SamplerState %s_sampler : register(s%" PRIu8 ");\n", sampler->name, sampler->bind);
 }
 
-static void print_d3d11_struct(const struct gfx_shader_struct *st, FILE *fp)
+static void print_d3d11_struct(struct membuf *membuf, const struct gfx_shader_struct_def *st)
 {
-	fprintf(fp, "struct %s\n", st->name);
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "struct %s\n", st->name);
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < st->members_nb; ++i)
 	{
-		const struct gfx_shader_struct_member *member = &st->members[i];
-		fprintf(fp, "\t%s %s", variable_type_to_string(member->type), member->name);
+		const struct gfx_shader_struct_member_def *member = &st->members[i];
+		membuf_printf(membuf, "\t%s %s", variable_type_to_string(member->type), member->name);
 		if (member->array_size)
-			fprintf(fp, "[%" PRIu32 "]", member->array_size);
-		fprintf(fp, ";\n");
+			membuf_printf(membuf, "[%" PRIu32 "]", member->array_size);
+		membuf_printf(membuf, ";\n");
 	}
-	fprintf(fp, "};\n\n");
+	membuf_printf(membuf, "};\n\n");
 }
 
-static bool print_d3d11_vs(const struct gfx_shader *shader, FILE *fp)
+static bool print_d3d11_vs(struct membuf *membuf, const struct shader_ctx *shader)
 {
-	print_hlsl_defines(fp);
-	fprintf(fp, "\n");
-	fprintf(fp, "struct vs_input\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tuint vertex_id : SV_VertexID;\n");
+	print_hlsl_defines(membuf);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct vs_input\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tuint vertex_id : SV_VertexID;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s %s : VS_INPUT%" PRIu8 ";\n", variable_type_to_string(input->type), input->name, input->bind);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\t%s %s : VS_INPUT%" PRIu8 ";\n", variable_type_to_string(input->type), input->name, input->bind);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "struct vs_output\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tvec4 gfx_position : SV_POSITION;\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct vs_output\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tvec4 gfx_position : SV_POSITION;\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", output->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(output->type), output->name, output->bind);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", output->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(output->type), output->name, output->bind);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->structs_nb; ++i)
-		print_d3d11_struct(&shader->structs[i], fp);
+		print_d3d11_struct(membuf, &shader->structs[i]);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
-		print_d3d11_constant(&shader->constants[i], fp);
-	fprintf(fp, shader->code);
-	fprintf(fp, "\n");
-	fprintf(fp, "vs_output main(vs_input input)\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\treturn gfx_main(input);\n");
-	fprintf(fp, "}\n");
+		print_d3d11_constant(membuf, shader, &shader->constants[i]);
+	membuf_printf(membuf, shader->code);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "vs_output main(vs_input input)\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\treturn gfx_main(input);\n");
+	membuf_printf(membuf, "}\n");
 	return true;
 }
 
-static bool print_d3d11_fs(const struct gfx_shader *shader, FILE *fp)
+static bool print_d3d11_fs(struct membuf *membuf, const struct shader_ctx *shader)
 {
-	print_hlsl_defines(fp);
-	fprintf(fp, "\n");
-	fprintf(fp, "struct fs_input\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tvec4 gfx_position : SV_POSITION;\n");
+	print_hlsl_defines(membuf);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct fs_input\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\tvec4 gfx_position : SV_POSITION;\n");
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
-		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", input->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(input->type), input->name, input->bind);
+		const struct gfx_shader_input_def *input = &shader->inputs[i];
+		membuf_printf(membuf, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", input->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(input->type), input->name, input->bind);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "struct fs_output\n");
-	fprintf(fp, "{\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "struct fs_output\n");
+	membuf_printf(membuf, "{\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
-		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s %s : SV_TARGET%" PRIu8 ";\n", variable_type_to_string(output->type), output->name, output->bind);
+		const struct gfx_shader_output_def *output = &shader->outputs[i];
+		membuf_printf(membuf, "\t%s %s : SV_TARGET%" PRIu8 ";\n", variable_type_to_string(output->type), output->name, output->bind);
 	}
-	fprintf(fp, "};\n");
-	fprintf(fp, "\n");
+	membuf_printf(membuf, "};\n");
+	membuf_printf(membuf, "\n");
 	for (size_t i = 0; i < shader->structs_nb; ++i)
-		print_d3d11_struct(&shader->structs[i], fp);
+		print_d3d11_struct(membuf, &shader->structs[i]);
 	for (size_t i = 0; i < shader->constants_nb; ++i)
-		print_d3d11_constant(&shader->constants[i], fp);
+		print_d3d11_constant(membuf, shader, &shader->constants[i]);
 	for (size_t i = 0; i < shader->samplers_nb; ++i)
-		print_d3d11_sampler(&shader->samplers[i], fp);
+		print_d3d11_sampler(membuf, &shader->samplers[i]);
 	if (shader->samplers_nb)
-		fprintf(fp, "\n");
-	fprintf(fp, shader->code);
-	fprintf(fp, "\n");
-	fprintf(fp, "fs_output main(fs_input input)\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\treturn gfx_main(input);\n");
-	fprintf(fp, "}\n");
+		membuf_printf(membuf, "\n");
+	membuf_printf(membuf, shader->code);
+	membuf_printf(membuf, "\n");
+	membuf_printf(membuf, "fs_output main(fs_input input)\n");
+	membuf_printf(membuf, "{\n");
+	membuf_printf(membuf, "\treturn gfx_main(input);\n");
+	membuf_printf(membuf, "}\n");
 	return true;
 }
 
-static bool print_shader(struct gfx_shader *shader, FILE *fp, enum gfx_shader_api api)
+static bool print_shader(struct membuf *membuf, struct shader_ctx *shader, enum gfx_device_backend backend)
 {
-	switch (api)
+	switch (backend)
 	{
-		case GFX_API_GL3:
-		case GFX_API_GL4:
-		case GFX_API_GLES3:
-		case GFX_API_VK:
+		case GFX_DEVICE_GL3:
+		case GFX_DEVICE_GL4:
+		case GFX_DEVICE_GLES3:
+		case GFX_DEVICE_VK:
 			switch (shader->type)
 			{
 				case GFX_SHADER_VERTEX:
-					return print_glsl_vs(shader, fp, api);
+					return print_glsl_vs(membuf, shader, backend);
 				case GFX_SHADER_FRAGMENT:
-					return print_glsl_fs(shader, fp, api);
+					return print_glsl_fs(membuf, shader, backend);
 				default:
-					fprintf(stderr, "unknown shader type");
+					fprintf(stderr, "unknown shader type\n");
 					return false;
 			}
 			break;
-		case GFX_API_D3D11:
+		case GFX_DEVICE_D3D11:
 			switch (shader->type)
 			{
 				case GFX_SHADER_VERTEX:
-					return print_d3d11_vs(shader, fp);
+					return print_d3d11_vs(membuf, shader);
 				case GFX_SHADER_FRAGMENT:
-					return print_d3d11_fs(shader, fp);
+					return print_d3d11_fs(membuf, shader);
 				default:
-					fprintf(stderr, "unknown shader type");
+					fprintf(stderr, "unknown shader type\n");
 					return false;
 			}
 			break;
 		default:
-			fprintf(stderr, "unknown api\n");
+			fprintf(stderr, "unknown backend\n");
 			return false;
 	}
 	return true;
 }
 
+static bool convert_vk(struct membuf *membuf, struct shader_ctx *shader)
+{
+	int in_fd = -1;
+	int out_fd = -1;
+	char in[256] = "/tmp/gfx_input_XXXXXX";
+	char out[256] = "/tmp/gfx_output_XXXXXX";
+	char command[1024];
+	const char *prog = getenv("GLSLANG_VALIDATOR");
+	if (!prog)
+		prog = "glslangValidator";
+	bool ret = false;
+	const char *type;
+	switch (shader->type)
+	{
+		case GFX_SHADER_VERTEX:
+			type = "vert";
+			break;
+		case GFX_SHADER_FRAGMENT:
+			type = "frag";
+			break;
+		default:
+			fprintf(stderr, "unknown shader type\n");
+			return false;
+	}
+	in_fd = mkstemp(in);
+	if (in_fd == -1)
+	{
+		fprintf(stderr, "failed to create temp in file: %s\n", strerror(errno));
+		goto err;
+	}
+	out_fd = mkstemp(out);
+	if (out_fd == -1)
+	{
+		fprintf(stderr, "failed to create temp out file: %s\n", strerror(errno));
+		goto err;
+	}
+	if (write(in_fd, membuf->data, membuf->size) != membuf->size)
+	{
+		fprintf(stderr, "failed to write glslangValidator input file\n");
+		goto err;
+	}
+	snprintf(command, sizeof(command), "%s -V -S %s -o \"%s\" \"%s\"", prog, type, out, in);
+	if (system(command))
+	{
+		fprintf(stderr, "glslangValidator call failed\n");
+		goto err;
+	}
+	free(membuf->data);
+	membuf->data = NULL;
+	membuf->size = 0;
+	if (!membuf_read_file(membuf, out_fd))
+		goto err;
+	ret = true;
+
+err:
+	if (in_fd != -1)
+	{
+		close(in_fd);
+		unlink(in);
+	}
+	if (out_fd != -1)
+	{
+		close(out_fd);
+		unlink(out);
+	}
+	return ret;
+}
+
+static bool convert_shader(struct membuf *membuf, struct shader_ctx *shader, enum gfx_device_backend backend)
+{
+	switch (backend)
+	{
+		case GFX_DEVICE_VK:
+			return convert_vk(membuf, shader);
+		default:
+			break;
+	}
+	return true;
+}
+
+static bool print_file(const char *path, struct shader_ctx *ctx, struct membuf *membufs)
+{
+	FILE *fp = fopen(path, "w");
+	if (!fp)
+	{
+		fprintf(stderr, "failed to open output file\n");
+		return false;
+	}
+	struct gfx_shader_def shader_def;
+	if (ctx->type == GFX_SHADER_VERTEX)
+		shader_def.magic = GFX_MAGIC_VERTEX;
+	else
+		shader_def.magic = GFX_MAGIC_FRAGMENT;
+	shader_def.outputs_count = ctx->outputs_nb;
+	shader_def.inputs_count = ctx->inputs_nb;
+	shader_def.samplers_count = ctx->samplers_nb;
+	shader_def.constants_count = ctx->constants_nb;
+	shader_def.structs_count = ctx->structs_nb;
+	size_t tmp = sizeof(shader_def);
+	tmp+= sizeof(*ctx->inputs) * ctx->inputs_nb;
+	tmp+= sizeof(*ctx->outputs) * ctx->outputs_nb;
+	tmp+= sizeof(*ctx->structs) * ctx->structs_nb;
+	tmp+= sizeof(*ctx->constants) * ctx->constants_nb;
+	tmp+= sizeof(*ctx->samplers) * ctx->samplers_nb;
+	for (size_t i = 0; i < 8; ++i)
+	{
+		if (!membufs[i].size)
+		{
+			shader_def.codes_lengths[i] = 0;
+			shader_def.codes_offsets[i] = 0;
+			continue;
+		}
+		shader_def.codes_lengths[i] = membufs[i].size;
+		shader_def.codes_offsets[i] = tmp;
+		tmp += membufs[i].size;
+	}
+	fwrite(&shader_def, 1, sizeof(shader_def), fp);
+	fwrite(ctx->inputs, sizeof(*ctx->inputs), ctx->inputs_nb, fp);
+	fwrite(ctx->outputs, sizeof(*ctx->outputs), ctx->outputs_nb, fp);
+	fwrite(ctx->structs, sizeof(*ctx->structs), ctx->structs_nb, fp);
+	fwrite(ctx->constants, sizeof(*ctx->constants), ctx->constants_nb, fp);
+	fwrite(ctx->samplers, sizeof(*ctx->samplers), ctx->samplers_nb, fp);
+	for (size_t i = 0; i < 8; ++i)
+	{
+		if (!membufs[i].size)
+			continue;
+		fwrite(membufs[i].data, 1, membufs[i].size, fp);
+	}
+	fclose(fp);
+	return true;
+}
+
 static void usage()
 {
-	printf("compile -t <type> -x <api> -i <input> -o <output>\n");
+	printf("compile -t <type> -x <backend> -i <input> -o <output>\n");
 	printf("-t: shader type (vs, fs)\n");
-	printf("-x: api (gl3, gl4, gles3, vk, d3d9, d3d11)\n");
+	printf("-x: backend list, coma-separated (gl3, gl4, gles3, vk, d3d9, d3d11)\n");
 	printf("-i: input file\n");
 	printf("-o: output file\n");
 }
@@ -1150,9 +1282,9 @@ int main(int argc, char **argv)
 	const char *in = NULL;
 	const char *out = NULL;
 	const char *type = NULL;
-	const char *api = NULL;
+	const char *backend = NULL;
 	enum gfx_shader_type shader_type;
-	enum gfx_shader_api shader_api;
+	uint32_t backend_mask = 0;
 	opterr = 1;
 	while ((c = getopt(argc, argv, "t:x:i:o:")) != -1)
 	{
@@ -1168,7 +1300,7 @@ int main(int argc, char **argv)
 				type = optarg;
 				break;
 			case 'x':
-				api = optarg;
+				backend = optarg;
 				break;
 			default:
 				usage();
@@ -1193,9 +1325,9 @@ int main(int argc, char **argv)
 		usage();
 		return EXIT_FAILURE;
 	}
-	if (!api)
+	if (!backend)
 	{
-		fprintf(stderr, "no api given\n");
+		fprintf(stderr, "no backend given\n");
 		usage();
 		return EXIT_FAILURE;
 	}
@@ -1205,9 +1337,9 @@ int main(int argc, char **argv)
 		usage();
 		return EXIT_FAILURE;
 	}
-	if (!shader_api_from_string(api, &shader_api))
+	if (!shader_backend_mask_from_string(backend, &backend_mask))
 	{
-		fprintf(stderr, "unknown shader api\n");
+		fprintf(stderr, "unknown shader backend\n");
 		usage();
 		return EXIT_FAILURE;
 	}
@@ -1217,7 +1349,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "failed to open %s\n", in);
 		return EXIT_FAILURE;
 	}
-	struct gfx_shader shader;
+	struct shader_ctx shader;
 	memset(&shader, 0, sizeof(shader));
 	if (!parse_shader(&shader, fp, shader_type))
 	{
@@ -1226,14 +1358,24 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	fclose(fp);
-	fp = fopen(out, "w");
-	if (!fp)
+
+	struct membuf membufs[8];
+	memset(membufs, 0, sizeof(membufs));
+	for (size_t i = 0; i < 8; ++i)
 	{
-		fprintf(stderr, "failed to open %s\n", out);
-		fclose(fp);
-		return EXIT_FAILURE;
+		if (!(backend_mask & (1 << i)))
+			continue;
+		print_shader(&membufs[i], &shader, i);
 	}
-	print_shader(&shader, fp, shader_api);
-	fclose(fp);
+	for (size_t i = 0; i < 8; ++i)
+	{
+		if (!(backend_mask & (1 << i)))
+			continue;
+		convert_shader(&membufs[i], &shader, i);
+	}
+	if (!print_file(out, &shader, membufs))
+		return EXIT_FAILURE;
+	for (size_t i = 0; i < 8; ++i)
+		free(membufs[i].data);
 	return EXIT_SUCCESS;
 }

@@ -1,8 +1,9 @@
 #include "shaders.h"
-
 #include "memory.h"
 #include "log.h"
 #include "wow.h"
+
+#include "../shaders/compile.h"
 
 #include <gfx/device.h>
 #include <gfx/window.h>
@@ -13,7 +14,7 @@
 
 #define SHADERS_DIR "shaders"
 
-static uint8_t *read_file(const char *path, uint32_t *len)
+static uint8_t *read_file(const char *path, size_t *len)
 {
 	uint8_t *buf = NULL;
 	size_t buf_size = 0;
@@ -29,6 +30,13 @@ static uint8_t *read_file(const char *path, uint32_t *len)
 	}
 	do
 	{
+		if (buf_size + 4096 >= 1024 * 1024)
+		{
+			LOG_ERROR("shader file too big (> 1MB)");
+			mem_free(MEM_GENERIC, buf);
+			buf = NULL;
+			goto cleanup;
+		}
 		if (*len == buf_size)
 		{
 			buf = mem_realloc(MEM_GENERIC, buf, buf_size + 4096);
@@ -41,13 +49,14 @@ static uint8_t *read_file(const char *path, uint32_t *len)
 		}
 		tmp = fread(buf + *len, 1, buf_size - *len, file);
 		*len += tmp;
-	} while (tmp > 0 && buf_size < 1024 * 64 && !feof(file));
+	} while (tmp > 0 && !feof(file));
 
-	if (ferror(file) || !feof(file))
+	if (ferror(file))
 	{
 		LOG_ERROR("read error: %s", strerror(errno));
 		mem_free(MEM_GENERIC, buf);
 		buf = NULL;
+		goto cleanup;
 	}
 
 	if (*len == buf_size)
@@ -65,15 +74,10 @@ cleanup:
 	return buf;
 }
 
-static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_type type)
+static bool load_shader(const char *name, enum gfx_shader_type type, uint8_t **data, size_t *size)
 {
-	int ret = false;
 	char fn[1024];
-	uint8_t *data = NULL;
-	uint32_t data_len;
 	const char *type_str;
-	const char *dir_str;
-	const char *ext_str;
 
 	switch (type)
 	{
@@ -85,86 +89,71 @@ static int load_shader(gfx_shader_t *shader, const char *name, enum gfx_shader_t
 			break;
 		default:
 			LOG_ERROR("invalid shader type: %d", (int)type);
-			return 0;
+			return false;
 	}
-	switch (g_wow->window->properties.device_backend)
-	{
-		case GFX_DEVICE_GL3:
-			dir_str = "gl3";
-			ext_str = "glsl";
-			break;
-		case GFX_DEVICE_GL4:
-			dir_str = "gl4";
-			ext_str = "glsl";
-			break;
-		case GFX_DEVICE_D3D9:
-			dir_str = "d3d9";
-			ext_str = "hlsl";
-			break;
-		case GFX_DEVICE_D3D11:
-			dir_str = "d3d11";
-			ext_str = "hlsl";
-			break;
-		case GFX_DEVICE_VK:
-			dir_str = "vk";
-			ext_str = "spv";
-			break;
-		case GFX_DEVICE_GLES3:
-			dir_str = "gles3";
-			ext_str = "glsl";
-			break;
-	}
-	if (snprintf(fn, sizeof(fn), "%s/%s/%s.%s.%s", SHADERS_DIR, dir_str, name, type_str, ext_str) == sizeof(fn))
+	if (snprintf(fn, sizeof(fn), "%s/%s.%s.gfx", SHADERS_DIR, name, type_str) == sizeof(fn))
 	{
 		LOG_ERROR("shader path is too long");
-		return 0;
+		return false;
 	}
-	data = read_file(fn, &data_len);
+	*data = read_file(fn, size);
 	if (!data)
-	{
-		ret = -1;
-		goto cleanup;
-	}
-	if (!gfx_create_shader(g_wow->device, shader, type, data, data_len))
-	{
-		ret = 0;
-		goto cleanup;
-	}
-
-	ret = 1;
-
-cleanup:
-	//mem_free(MEM_GENERIC, data);
-	return ret;
+		return false;
+	return true;
 }
 
-static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name, const struct gfx_shader_attribute *attributes, const struct gfx_shader_constant *constants, const struct gfx_shader_sampler *samplers)
+static bool create_shader(gfx_shader_t *shader, enum gfx_shader_type type, uint8_t *data, size_t size)
+{
+	struct gfx_shader_def *def = (struct gfx_shader_def*)data;
+	uint32_t code_length = def->codes_lengths[g_wow->window->properties.device_backend];
+	uint32_t code_offset = def->codes_offsets[g_wow->window->properties.device_backend];
+	if (!code_length)
+	{
+		LOG_ERROR("no shader code");
+		return false;
+	}
+	if (code_offset >= size || code_offset + code_length >= size)
+	{
+		LOG_ERROR("invalid code size");
+		return false;
+	}
+	if (!gfx_create_shader(g_wow->device, shader, type, &data[code_offset], code_length))
+	{
+		LOG_ERROR("failed to create shader");
+		return false;
+	}
+	return true;
+}
+
+static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name)
 {
 	const gfx_shader_t *shaders[3];
 	uint32_t shaders_count = 0;
 	gfx_shader_t fragment_shader = GFX_SHADER_INIT();
 	gfx_shader_t vertex_shader = GFX_SHADER_INIT();
+	uint8_t *vertex_data;
+	uint8_t *fragment_data;
+	size_t vertex_size;
+	size_t fragment_size;
 	bool ret = false;
 
-	switch (load_shader(&vertex_shader, name, GFX_SHADER_VERTEX))
-	{
-		case -1:
-		case 0:
-			goto cleanup;
-		case 1:
-			break;
-	}
-	switch (load_shader(&fragment_shader, name, GFX_SHADER_FRAGMENT))
-	{
-		case -1:
-		case 0:
-			goto cleanup;
-		case 1:
-			break;
-	}
+	if (!load_shader(name, GFX_SHADER_VERTEX, &vertex_data, &vertex_size))
+		goto cleanup;
+	if (!load_shader(name, GFX_SHADER_FRAGMENT, &fragment_data, &fragment_size))
+		goto cleanup;
+	if (!create_shader(&vertex_shader, GFX_SHADER_VERTEX, vertex_data, vertex_size))
+		goto cleanup;
+	if (!create_shader(&fragment_shader, GFX_SHADER_FRAGMENT, fragment_data, fragment_size))
+		goto cleanup;
 	*shader_state = GFX_SHADER_STATE_INIT();
 	shaders[shaders_count++] = &vertex_shader;
 	shaders[shaders_count++] = &fragment_shader;
+	struct gfx_shader_attribute attributes[16];
+	struct gfx_shader_constant constants[16];
+	struct gfx_shader_sampler samplers[16];
+	memset(attributes, 0, sizeof(attributes));
+	memset(constants, 0, sizeof(constants));
+	memset(samplers, 0, sizeof(samplers));
 	ret = gfx_create_shader_state(g_wow->device, shader_state, shaders, shaders_count, attributes, constants, samplers);
 	if (!ret)
 		LOG_ERROR("failed to create %s shader state", name);
@@ -175,739 +164,13 @@ cleanup:
 	return ret;
 }
 
-static bool build_wmo_collisions(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "wmo_collisions", attributes, constants, samplers);
-}
-
-static bool build_ssao_denoiser(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{"ssao_tex", 3},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "ssao_denoiser", attributes, constants, samplers);
-}
-
-static bool build_m2_collisions(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "m2_collisions", attributes, constants, samplers);
-}
-
-static bool build_wmo_portals(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "wmo_portals", attributes, constants, samplers);
-}
-
-static bool build_bloom_merge(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{"bloom_tex", 3},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "bloom_merge", attributes, constants, samplers);
-}
-
-static bool build_bloom_blur(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "bloom_blur", attributes, constants, samplers);
-}
-
-static bool build_mclq_water(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_depth", 1},
-		{"vs_uv", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 3},
-		{"normal_tex", 2},
-		{"color_tex", 1},
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "mclq_water", attributes, constants, samplers);
-}
-
-static bool build_mclq_magma(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "mclq_magma", attributes, constants, samplers);
-}
-
-static bool build_chromaber(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "chromaber", attributes, constants, samplers);
-}
-
-static bool build_m2_lights(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{"vs_bone", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "m2_lights", attributes, constants, samplers);
-}
-
-static bool build_m2_bones(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{"vs_bone", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "m2_bones", attributes, constants, samplers);
-}
-
-static bool build_particle(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{"vs_uv", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "particle", attributes, constants, samplers);
-}
-
-static bool build_sharpen(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "sharpen", attributes, constants, samplers);
-}
-
-static bool build_skybox(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color0", 1},
-		{"vs_color1", 2},
-		{"vs_color2", 3},
-		{"vs_color3", 4},
-		{"vs_color4", 5},
-		{"vs_uv", 6},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"clouds1", 0},
-		{"clouds2", 1},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "skybox", attributes, constants, samplers);
-}
-
-static bool build_ribbon(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{"vs_uv", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "ribbon", attributes, constants, samplers);
-}
-
-static bool build_basic(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "basic", attributes, constants, samplers);
-}
-
-static bool build_sobel(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "sobel", attributes, constants, samplers);
-}
-
-static bool build_bloom(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "bloom", attributes, constants, samplers);
-}
-
-static bool build_glow(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "glow", attributes, constants, samplers);
-}
-
-static bool build_mliq(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "mliq", attributes, constants, samplers);
-}
-
-static bool build_ssao(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex_position", 0},
-		{"tex_normal", 1},
-		{"tex_noise", 2},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "ssao", attributes, constants, samplers);
-}
-
-static bool build_fxaa(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "fxaa", attributes, constants, samplers);
-}
-
-static bool build_fsaa(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "fsaa", attributes, constants, samplers);
-}
-
-static bool build_aabb(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "aabb", attributes, constants, samplers);
-}
-
-static bool build_mcnk(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_normal", 0},
-		{"vs_xz", 1},
-		{"vs_uv", 2},
-		{"vs_y", 3},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"texture0", 1},
-		{"texture1", 2},
-		{"texture2", 3},
-		{"texture3", 4},
-		{"texture4", 5},
-		{"texture5", 6},
-		{"texture6", 7},
-		{"texture7", 8},
-		{"alpha_map", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "mcnk", attributes, constants, samplers);
-}
-
-static bool build_text(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "text", attributes, constants, samplers);
-}
-
-static bool build_gui(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "gui", attributes, constants, samplers);
-}
-
-static bool build_wdl(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "wdl", attributes, constants, samplers);
-}
-
-static bool build_wmo(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_normal", 1},
-		{"vs_uv", 2},
-		{"vs_color", 3},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex1", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "wmo", attributes, constants, samplers);
-}
-
-static bool build_cel(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_uv", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"position_tex", 2},
-		{"normal_tex", 1},
-		{"color_tex", 0},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "cel", attributes, constants, samplers);
-}
-
-static bool build_m2(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_bone_weights", 0},
-		{"vs_position", 1},
-		{"vs_normals", 2},
-		{"vs_bones", 3},
-		{"vs_uv1", 4},
-		{"vs_uv2", 5},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"scene_block", 2},
-		{"model_block", 1},
-		{"mesh_block", 0},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex1", 0},
-		{"tex2", 1},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "m2", attributes, constants, samplers);
-}
-
-static bool build_ui(gfx_shader_state_t *shader_state)
-{
-	static const struct gfx_shader_attribute attributes[] =
-	{
-		{"vs_position", 0},
-		{"vs_color", 1},
-		{"vs_uv", 2},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_constant constants[] =
-	{
-		{"model_block", 1},
-		{NULL, 0}
-	};
-	static const struct gfx_shader_sampler samplers[] =
-	{
-		{"tex", 0},
-		{"mask", 1},
-		{NULL, 0}
-	};
-	return load_shader_state(shader_state, "ui", attributes, constants, samplers);
-}
-
 bool shaders_build(struct shaders *shaders)
 {
 #define BUILD_SHADER(name) \
 	do \
 	{ \
 		LOG_INFO("building shader " #name); \
-		if (!build_##name(&shaders->name)) \
+		if (!load_shader_state(&shaders->name, #name)) \
 			return false; \
 	} while (0)
 
