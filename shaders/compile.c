@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -54,6 +55,7 @@ struct gfx_shader_constant_member
 {
 	char struct_name[64];
 	char name[64];
+	uint16_t array_size;
 	enum gfx_variable_type type;
 };
 
@@ -88,8 +90,9 @@ struct gfx_shader_input
 
 struct gfx_shader_struct_member
 {
-	enum gfx_variable_type type;
 	char name[64];
+	uint16_t array_size;
+	enum gfx_variable_type type;
 };
 
 struct gfx_shader_struct
@@ -300,7 +303,9 @@ static bool parse_variable_name(const char **line, char *name, size_t size)
 	}
 	while (**line && !isspace(**line))
 	{
-		if (!isalnum(**line) && **line != '_' && **line != '[' && **line != ']')
+		if (**line == '[')
+			break;
+		if (!isalnum(**line) && **line != '_')
 		{
 			fprintf(stderr, "invalid variable name: isn't [a-zA-Z0-9_]\n");
 			return false;
@@ -335,6 +340,42 @@ static bool parse_sampler_type(const char **line, enum gfx_sampler_type *type)
 		(*line)++;
 	}
 	return sampler_type_from_string(str, *line - str, type);
+}
+
+static bool parse_array_size(const char **line, uint16_t *array_sizep)
+{
+	if (**line != '[')
+	{
+		fprintf(stderr, "invalid array size: unknown char\n");
+		return false;
+	}
+	(*line)++;
+	char *endptr;
+	errno = 0;
+	long unsigned array_size = strtoul(*line, &endptr, 10);
+	if (errno)
+	{
+		fprintf(stderr, "invalid array size: failed to parse number\n");
+		return false;
+	}
+	if (endptr == *line)
+	{
+		fprintf(stderr, "invalid array size: no number found\n");
+		return false;
+	}
+	if (*endptr && *endptr != ']')
+	{
+		fprintf(stderr, "invalid array size: not numeric\n");
+		return false;
+	}
+	if (array_size > UINT16_MAX)
+	{
+		fprintf(stderr, "invalid array size: too big\n");
+		return false;
+	}
+	*array_sizep = array_size;
+	*line = endptr + 1;
+	return true;
 }
 
 static bool parse_in(struct gfx_shader *shader, const char *line)
@@ -443,6 +484,20 @@ static bool parse_constant_members(struct gfx_shader_constant *constant, FILE *f
 		skip_spaces(&line);
 		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
 			return false;
+		if (*line == '[')
+		{
+			if (!parse_array_size(&line, &member->array_size))
+				return false;
+		}
+		else
+		{
+			member->array_size = 0;
+		}
+		if (*line && *line != '\n')
+		{
+			fprintf(stderr, "invalid constant name: trailing char\n");
+			return false;
+		}
 		constant->members_nb++;
 	}
 	return true;
@@ -462,6 +517,11 @@ static bool parse_constant(struct gfx_shader *shader, const char *line, FILE *fp
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, constant->name, sizeof(constant->name)))
 		return false;
+	if (*line && *line != '\n')
+	{
+		fprintf(stderr, "invalid constant: trailling char\n");
+		return false;
+	}
 	if (!parse_constant_members(constant, fp))
 		return false;
 	shader->constants_nb++;
@@ -503,6 +563,20 @@ static bool parse_struct_members(struct gfx_shader_struct *st, FILE *fp)
 		skip_spaces(&line);
 		if (!parse_variable_name(&line, member->name, sizeof(member->name)))
 			return false;
+		if (*line == '[')
+		{
+			if (!parse_array_size(&line, &member->array_size))
+				return false;
+		}
+		else
+		{
+			member->array_size = 0;
+		}
+		if (*line && *line != '\n')
+		{
+			fprintf(stderr, "invalid struct name: trailing char\n");
+			return false;
+		}
 		st->members_nb++;
 	}
 	return true;
@@ -545,6 +619,11 @@ static bool parse_struct(struct gfx_shader *shader, const char *line, FILE *fp)
 	skip_spaces(&line);
 	if (!parse_variable_name(&line, st->name, sizeof(st->name)))
 		return false;
+	if (*line && *line != '\n')
+	{
+		fprintf(stderr, "invalid struct: trailing char\n");
+		return false;
+	}
 	if (!parse_struct_members(st, fp))
 		return false;
 	shader->structs_nb++;
@@ -641,11 +720,11 @@ static void print_glsl_constant(const struct gfx_shader_constant *constant, FILE
 	switch (api)
 	{
 		case GFX_API_VK:
-			fprintf(fp, "layout(set = 0, binding = %u, std140) uniform %s\n", constant->bind, constant->name);
+			fprintf(fp, "layout(set = 0, binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
 			break;
 		case GFX_API_GL4:
 		case GFX_API_GLES3:
-			fprintf(fp, "layout(binding = %u, std140) uniform %s\n", constant->bind, constant->name);
+			fprintf(fp, "layout(binding = %" PRIu8 ", std140) uniform %s\n", constant->bind, constant->name);
 			break;
 		case GFX_API_GL3:
 			fprintf(fp, "layout(std140) uniform %s\n", constant->name);
@@ -654,14 +733,18 @@ static void print_glsl_constant(const struct gfx_shader_constant *constant, FILE
 			assert(!"unknown api\n");
 	}
 	fprintf(fp, "{\n");
-	for (size_t j = 0; j < constant->members_nb; ++j)
+	for (size_t i = 0; i < constant->members_nb; ++i)
 	{
+		const struct gfx_shader_constant_member *member = &constant->members[i];
 		const char *type_str;
-		if (constant->members[j].type == GFX_VARIABLE_STRUCT)
-			type_str = constant->members[j].struct_name;
+		if (member->type == GFX_VARIABLE_STRUCT)
+			type_str = member->struct_name;
 		else
-			type_str = variable_type_to_string(constant->members[j].type);
-		fprintf(fp, "\t%s %s;\n", type_str, constant->members[j].name);
+			type_str = variable_type_to_string(member->type);
+		fprintf(fp, "\t%s %s", type_str, member->name);
+		if (member->array_size)
+			fprintf(fp, "[%" PRIu32 "]", member->array_size);
+		fprintf(fp, ";\n");
 	}
 	fprintf(fp, "};\n\n");
 }
@@ -670,9 +753,13 @@ static void print_glsl_struct(const struct gfx_shader_struct *st, FILE *fp)
 {
 	fprintf(fp, "struct %s\n", st->name);
 	fprintf(fp, "{\n");
-	for (size_t j = 0; j < st->members_nb; ++j)
+	for (size_t i = 0; i < st->members_nb; ++i)
 	{
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(st->members[j].type), st->members[j].name);
+		const struct gfx_shader_struct_member *member = &st->members[i];
+		fprintf(fp, "\t%s %s", variable_type_to_string(member->type), member->name);
+		if (member->array_size)
+			fprintf(fp, "[%" PRIu32 "]", member->array_size);
+		fprintf(fp, ";\n");
 	}
 	fprintf(fp, "};\n\n");
 }
@@ -682,11 +769,11 @@ static void print_glsl_sampler(const struct gfx_shader_sampler *sampler, FILE *f
 	switch (api)
 	{
 		case GFX_API_VK:
-			fprintf(fp, "layout(set = 1, binding = %u) uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
+			fprintf(fp, "layout(set = 1, binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
 		case GFX_API_GL4:
 		case GFX_API_GLES3:
-			fprintf(fp, "layout(binding = %u) uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
+			fprintf(fp, "layout(binding = %" PRIu8 ") uniform %s %s;\n", sampler->bind, sampler_type_to_string(sampler->type), sampler->name);
 			break;
 		case GFX_API_GL3:
 			fprintf(fp, "uniform %s %s;\n", sampler_type_to_string(sampler->type), sampler->name);
@@ -723,7 +810,7 @@ static bool print_glsl_vs(const struct gfx_shader *shader, FILE *fp, enum gfx_sh
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "layout(location = %u) in %s gfx_in_vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
+		fprintf(fp, "layout(location = %" PRIu8 ") in %s gfx_in_vs_%s;\n", input->bind, variable_type_to_string(input->type), input->name);
 	}
 	fprintf(fp, "\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
@@ -737,7 +824,7 @@ static bool print_glsl_vs(const struct gfx_shader *shader, FILE *fp, enum gfx_sh
 			case GFX_API_GL4:
 			case GFX_API_VK:
 			case GFX_API_GLES3:
-				fprintf(fp, "layout(location = %u) out %s%s gfx_in_fs_%s;\n", output->bind, output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
+				fprintf(fp, "layout(location = %" PRIu8 ") %sout %s gfx_in_fs_%s;\n", output->bind, output->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(output->type), output->name);
 				break;
 			default:
 				assert(!"unknown api\n");
@@ -812,14 +899,14 @@ static bool print_glsl_fs(const struct gfx_shader *shader, FILE *fp, enum gfx_sh
 		if (api == GFX_API_GL3)
 			fprintf(fp, "%sin %s gfx_in_fs_%s;\n", input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
 		else
-			fprintf(fp, "layout(location = %u) in %s%s gfx_in_fs_%s;\n", input->bind, input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
+			fprintf(fp, "layout(location = %" PRIu8 ") in %s%s gfx_in_fs_%s;\n", input->bind, input->type == GFX_VARIABLE_INT ? "flat " : "", variable_type_to_string(input->type), input->name);
 	}
 	if (shader->inputs_nb)
 		fprintf(fp, "\n");
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
 		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "layout(location = %u) out %s gfx_out_fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
+		fprintf(fp, "layout(location = %" PRIu8 ") out %s gfx_out_fs_%s;\n", output->bind, variable_type_to_string(output->type), output->name);
 	}
 	fprintf(fp, "\n");
 	for (size_t i = 0; i < shader->structs_nb; ++i)
@@ -898,28 +985,36 @@ static void print_hlsl_defines(FILE *fp)
 
 static void print_d3d11_constant(const struct gfx_shader_constant *constant, FILE *fp)
 {
-	fprintf(fp, "cbuffer %s : register(b%u)\n", constant->name, constant->bind);
+	fprintf(fp, "cbuffer %s : register(b%" PRIu8 ")\n", constant->name, constant->bind);
 	fprintf(fp, "{\n");
-	for (size_t j = 0; j < constant->members_nb; ++j)
+	for (size_t i = 0; i < constant->members_nb; ++i)
 	{
-		fprintf(fp, "\t%s %s;\n", constant->members[j].type == GFX_VARIABLE_STRUCT ? constant->members[j].struct_name : variable_type_to_string(constant->members[j].type), constant->members[j].name);
+		const struct gfx_shader_constant_member *member = &constant->members[i];
+		fprintf(fp, "\t%s %s", member->type == GFX_VARIABLE_STRUCT ? member->struct_name : variable_type_to_string(member->type), member->name);
+		if (member->array_size)
+			fprintf(fp, "[%" PRIu32 "]", member->array_size);
+		fprintf(fp, ";\n");
 	}
 	fprintf(fp, "};\n\n");
 }
 
 static void print_d3d11_sampler(const struct gfx_shader_sampler *sampler, FILE *fp)
 {
-	fprintf(fp, "%s %s : register(t%u);\n", sampler_type_to_string(sampler->type), sampler->name, sampler->bind);
-	fprintf(fp, "SamplerState %s_sampler : register(s%u);\n", sampler->name, sampler->bind);
+	fprintf(fp, "%s %s : register(t%" PRIu8 ");\n", sampler_type_to_string(sampler->type), sampler->name, sampler->bind);
+	fprintf(fp, "SamplerState %s_sampler : register(s%" PRIu8 ");\n", sampler->name, sampler->bind);
 }
 
 static void print_d3d11_struct(const struct gfx_shader_struct *st, FILE *fp)
 {
 	fprintf(fp, "struct %s\n", st->name);
 	fprintf(fp, "{\n");
-	for (size_t j = 0; j < st->members_nb; ++j)
+	for (size_t i = 0; i < st->members_nb; ++i)
 	{
-		fprintf(fp, "\t%s %s;\n", variable_type_to_string(st->members[j].type), st->members[j].name);
+		const struct gfx_shader_struct_member *member = &st->members[i];
+		fprintf(fp, "\t%s %s", variable_type_to_string(member->type), member->name);
+		if (member->array_size)
+			fprintf(fp, "[%" PRIu32 "]", member->array_size);
+		fprintf(fp, ";\n");
 	}
 	fprintf(fp, "};\n\n");
 }
@@ -934,7 +1029,7 @@ static bool print_d3d11_vs(const struct gfx_shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s %s : VS_INPUT%u;\n", variable_type_to_string(input->type), input->name, input->bind);
+		fprintf(fp, "\t%s %s : VS_INPUT%" PRIu8 ";\n", variable_type_to_string(input->type), input->name, input->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
@@ -944,7 +1039,7 @@ static bool print_d3d11_vs(const struct gfx_shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
 		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s%s %s : FS_INPUT%u;\n", output->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(output->type), output->name, output->bind);
+		fprintf(fp, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", output->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(output->type), output->name, output->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
@@ -971,7 +1066,7 @@ static bool print_d3d11_fs(const struct gfx_shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->inputs_nb; ++i)
 	{
 		const struct gfx_shader_input *input = &shader->inputs[i];
-		fprintf(fp, "\t%s%s %s : FS_INPUT%u;\n", input->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(input->type), input->name, input->bind);
+		fprintf(fp, "\t%s%s %s : FS_INPUT%" PRIu8 ";\n", input->type == GFX_VARIABLE_INT ? "nointerpolation " : "", variable_type_to_string(input->type), input->name, input->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
@@ -980,7 +1075,7 @@ static bool print_d3d11_fs(const struct gfx_shader *shader, FILE *fp)
 	for (size_t i = 0; i < shader->outputs_nb; ++i)
 	{
 		const struct gfx_shader_output *output = &shader->outputs[i];
-		fprintf(fp, "\t%s %s : SV_TARGET%u;\n", variable_type_to_string(output->type), output->name, output->bind);
+		fprintf(fp, "\t%s %s : SV_TARGET%" PRIu8 ";\n", variable_type_to_string(output->type), output->name, output->bind);
 	}
 	fprintf(fp, "};\n");
 	fprintf(fp, "\n");
