@@ -77,32 +77,32 @@ endif
 
 all: $(OUT_SHADERS)
 
-gl3/%.vs.glsl: %.vs.gfx compile
+gl3/%.vs.glsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gl3 $<"
 	@./compile -t vs -x gl3 -i "$<" -o "$@"
 
-gl3/%.fs.glsl: %.fs.gfx compile
+gl3/%.fs.glsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gl3 $<"
 	@./compile -t fs -x gl3 -i "$<" -o "$@"
 
-gl4/%.vs.glsl: %.vs.gfx compile
+gl4/%.vs.glsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gl4 $<"
 	@./compile -t vs -x gl4 -i "$<" -o "$@"
 
-gl4/%.fs.glsl: %.fs.gfx compile
+gl4/%.fs.glsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gl4 $<"
 	@./compile -t fs -x gl4 -i "$<" -o "$@"
 
-gles3/%.vs.glsl: %.vs.gfx compile
+gles3/%.vs.glsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gles3 $<"
 	@./compile -t vs -x gles3 -i "$<" -o "$@"
 
-gles3/%.fs.glsl: %.fs.gfx compile
+gles3/%.fs.glsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile gles3 $<"
 	@./compile -t fs -x gles3 -i "$<" -o "$@"
@@ -111,7 +111,7 @@ vk/%.vs.spv: vk/%.vs.glsl
 	@echo "glslang vk $<"
 	@glslangValidator -V -S vert -o "$@" "$<"
 
-vk/%.vs.glsl: %.vs.gfx compile
+vk/%.vs.glsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile vk $<"
 	@./compile -t vs -x vk -i "$<" -o "$@"
@@ -120,27 +120,27 @@ vk/%.fs.spv: vk/%.fs.glsl
 	@echo "glslang vk $<"
 	@glslangValidator -V -S frag -o "$@" "$<"
 
-vk/%.fs.glsl: %.fs.gfx compile
+vk/%.fs.glsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile vk $<"
 	@./compile -t fs -x vk -i "$<" -o "$@"
 
-d3d9/%.vs.hlsl: %.vs.gfx compile
+d3d9/%.vs.hlsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d9 $<"
 	@./compile -t vs -x d3d9 -i "$<" -o "$@"
 
-d3d9/%.fs.hlsl: %.fs.gfx compile
+d3d9/%.fs.hlsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d9 $<"
 	@./compile -t fs -x d3d9 -i "$<" -o "$@"
 
-d3d11/%.vs.hlsl: %.vs.gfx compile
+d3d11/%.vs.hlsl: %.vs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d11 $<"
 	@./compile -t vs -x d3d11 -i "$<" -o "$@"
 
-d3d11/%.fs.hlsl: %.fs.gfx compile
+d3d11/%.fs.hlsl: %.fs.gfxs compile
 	@mkdir -p $(dir $@)
 	@echo "compile d3d11 $<"
 	@./compile -t fs -x d3d11 -i "$<" -o "$@"
