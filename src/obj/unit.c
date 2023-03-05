@@ -1132,6 +1132,8 @@ void unit_physics(struct unit *unit)
 {
 	struct vec3f src = unit->worldobj.position;
 	struct vec3f dst = get_next_pos(unit);
+	if (!(unit->worldobj.movement_data.flags & MOVEFLAG_FALLING) && src.x == dst.x && src.y == dst.y && src.z == dst.z)
+		return;
 	int64_t diff = g_wow->frametime - g_wow->lastframetime;
 	float dt = diff / 1000000000.f;
 	float gravity = 0;
