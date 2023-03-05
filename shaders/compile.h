@@ -85,8 +85,8 @@ struct gfx_shader_def
 	uint8_t inputs_count;
 	uint8_t outputs_count;
 	uint8_t structs_count;
-	uint8_t constants_count;
 	uint8_t samplers_count;
+	uint8_t constants_count;
 	uint32_t codes_lengths[8];
 	uint32_t codes_offsets[8];
 };

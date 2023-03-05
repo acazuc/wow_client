@@ -1229,15 +1229,15 @@ static bool print_file(const char *path, struct shader_ctx *ctx, struct membuf *
 		shader_def.magic = GFX_MAGIC_FRAGMENT;
 	shader_def.outputs_count = ctx->outputs_nb;
 	shader_def.inputs_count = ctx->inputs_nb;
+	shader_def.structs_count = ctx->structs_nb;
 	shader_def.samplers_count = ctx->samplers_nb;
 	shader_def.constants_count = ctx->constants_nb;
-	shader_def.structs_count = ctx->structs_nb;
 	size_t tmp = sizeof(shader_def);
 	tmp+= sizeof(*ctx->inputs) * ctx->inputs_nb;
 	tmp+= sizeof(*ctx->outputs) * ctx->outputs_nb;
 	tmp+= sizeof(*ctx->structs) * ctx->structs_nb;
-	tmp+= sizeof(*ctx->constants) * ctx->constants_nb;
 	tmp+= sizeof(*ctx->samplers) * ctx->samplers_nb;
+	tmp+= sizeof(*ctx->constants) * ctx->constants_nb;
 	for (size_t i = 0; i < 8; ++i)
 	{
 		if (!membufs[i].size)
@@ -1254,8 +1254,8 @@ static bool print_file(const char *path, struct shader_ctx *ctx, struct membuf *
 	fwrite(ctx->inputs, sizeof(*ctx->inputs), ctx->inputs_nb, fp);
 	fwrite(ctx->outputs, sizeof(*ctx->outputs), ctx->outputs_nb, fp);
 	fwrite(ctx->structs, sizeof(*ctx->structs), ctx->structs_nb, fp);
-	fwrite(ctx->constants, sizeof(*ctx->constants), ctx->constants_nb, fp);
 	fwrite(ctx->samplers, sizeof(*ctx->samplers), ctx->samplers_nb, fp);
+	fwrite(ctx->constants, sizeof(*ctx->constants), ctx->constants_nb, fp);
 	for (size_t i = 0; i < 8; ++i)
 	{
 		if (!membufs[i].size)

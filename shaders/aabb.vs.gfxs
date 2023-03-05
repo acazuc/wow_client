@@ -1,7 +1,4 @@
 in 0 vec3 position
-in 1 vec4 color
-
-out 0 vec4 color
 
 constant 0 mesh_block
 {
@@ -12,7 +9,6 @@ constant 0 mesh_block
 vs_output gfx_main(vs_input gfx_in)
 {
 	vs_output gfx_out;
-	gfx_out.color = gfx_in.color;
 	gfx_out.gfx_position = mul(vec4(gfx_in.position, 1.0), mvp);
 	return gfx_out;
 }

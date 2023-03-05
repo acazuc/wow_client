@@ -74,7 +74,19 @@ cleanup:
 	return buf;
 }
 
-static bool load_shader(const char *name, enum gfx_shader_type type, uint8_t **data, size_t *size)
+struct shader_def
+{
+	uint8_t *data;
+	size_t size;
+	struct gfx_shader_def *shader;
+	struct gfx_shader_constant_def *constants;
+	struct gfx_shader_sampler_def *samplers;
+	struct gfx_shader_struct_def *structs;
+	struct gfx_shader_output_def *outputs;
+	struct gfx_shader_input_def *inputs;
+};
+
+static bool load_shader(const char *name, enum gfx_shader_type type, struct shader_def *shader_def)
 {
 	char fn[1024];
 	const char *type_str;
@@ -96,31 +108,76 @@ static bool load_shader(const char *name, enum gfx_shader_type type, uint8_t **d
 		LOG_ERROR("shader path is too long");
 		return false;
 	}
-	*data = read_file(fn, size);
-	if (!data)
+	shader_def->data = read_file(fn, &shader_def->size);
+	if (!shader_def->data)
 		return false;
+	if (shader_def->size < sizeof(*shader_def->shader))
+	{
+		LOG_ERROR("shader data too small");
+		mem_free(MEM_GENERIC, shader_def->data);
+		return false;
+	}
+	shader_def->shader = (struct gfx_shader_def*)shader_def->data;
+	size_t shader_def_size = sizeof(*shader_def->shader);
+	size_t constants_size = shader_def->shader->constants_count * sizeof(*shader_def->constants);
+	size_t samplers_size = shader_def->shader->samplers_count * sizeof(*shader_def->samplers);
+	size_t structs_size = shader_def->shader->structs_count * sizeof(*shader_def->structs);
+	size_t outputs_size = shader_def->shader->outputs_count * sizeof(*shader_def->outputs);
+	size_t inputs_size = shader_def->shader->inputs_count * sizeof(*shader_def->inputs);
+	if (shader_def->size < shader_def_size + constants_size + samplers_size + outputs_size + inputs_size + structs_size)
+	{
+		LOG_ERROR("shader data too small");
+		mem_free(MEM_GENERIC, shader_def->data);
+		return false;
+	}
+	shader_def->inputs = (struct gfx_shader_input_def*)&shader_def->data[shader_def_size];
+	shader_def->outputs = (struct gfx_shader_output_def*)&shader_def->data[shader_def_size + inputs_size];
+	shader_def->structs = (struct gfx_shader_struct_def*)&shader_def->data[shader_def_size + inputs_size + outputs_size];
+	shader_def->samplers = (struct gfx_shader_sampler_def*)&shader_def->data[shader_def_size + inputs_size + outputs_size + structs_size];
+	shader_def->constants = (struct gfx_shader_constant_def*)&shader_def->data[shader_def_size + inputs_size + outputs_size + structs_size + samplers_size];
 	return true;
 }
 
-static bool create_shader(gfx_shader_t *shader, enum gfx_shader_type type, uint8_t *data, size_t size)
+static bool create_shader(gfx_shader_t *shader, enum gfx_shader_type type, struct shader_def *shader_def)
 {
-	struct gfx_shader_def *def = (struct gfx_shader_def*)data;
-	uint32_t code_length = def->codes_lengths[g_wow->window->properties.device_backend];
-	uint32_t code_offset = def->codes_offsets[g_wow->window->properties.device_backend];
+	uint32_t code_length = shader_def->shader->codes_lengths[g_wow->window->properties.device_backend];
+	uint32_t code_offset = shader_def->shader->codes_offsets[g_wow->window->properties.device_backend];
 	if (!code_length)
 	{
 		LOG_ERROR("no shader code");
 		return false;
 	}
-	if (code_offset >= size || code_offset + code_length >= size)
+	if (code_offset >= shader_def->size || code_offset + code_length >= shader_def->size)
 	{
 		LOG_ERROR("invalid code size");
 		return false;
 	}
-	if (!gfx_create_shader(g_wow->device, shader, type, &data[code_offset], code_length))
+	if (!gfx_create_shader(g_wow->device, shader, type, &shader_def->data[code_offset], code_length))
 	{
 		LOG_ERROR("failed to create shader");
 		return false;
+	}
+	return true;
+}
+
+static bool verify_shader_input_output(struct shader_def *vs, struct shader_def *fs)
+{
+	if (vs->shader->outputs_count != fs->shader->inputs_count)
+	{
+		LOG_ERROR("vs output count != fs input count");
+		return false;
+	}
+	for (size_t i = 0; i < fs->shader->inputs_count; ++i)
+	{
+		struct gfx_shader_output_def *output = &vs->outputs[i];
+		struct gfx_shader_input_def *input = &fs->inputs[i];
+		if (input->type != output->type || input->bind != output->bind
+		 || strcmp(input->name, output->name))
+		{
+			LOG_INFO("%s - %s", input->name, output->name);
+			LOG_ERROR("vs output != fs input");
+			return false;
+		}
 	}
 	return true;
 }
@@ -131,19 +188,19 @@ static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name
 	uint32_t shaders_count = 0;
 	gfx_shader_t fragment_shader = GFX_SHADER_INIT();
 	gfx_shader_t vertex_shader = GFX_SHADER_INIT();
-	uint8_t *vertex_data;
-	uint8_t *fragment_data;
-	size_t vertex_size;
-	size_t fragment_size;
+	struct shader_def vertex;
+	struct shader_def fragment;
 	bool ret = false;
 
-	if (!load_shader(name, GFX_SHADER_VERTEX, &vertex_data, &vertex_size))
+	if (!load_shader(name, GFX_SHADER_VERTEX, &vertex))
 		goto cleanup;
-	if (!load_shader(name, GFX_SHADER_FRAGMENT, &fragment_data, &fragment_size))
+	if (!load_shader(name, GFX_SHADER_FRAGMENT, &fragment))
 		goto cleanup;
-	if (!create_shader(&vertex_shader, GFX_SHADER_VERTEX, vertex_data, vertex_size))
+	if (!verify_shader_input_output(&vertex, &fragment))
 		goto cleanup;
-	if (!create_shader(&fragment_shader, GFX_SHADER_FRAGMENT, fragment_data, fragment_size))
+	if (!create_shader(&vertex_shader, GFX_SHADER_VERTEX, &vertex))
+		goto cleanup;
+	if (!create_shader(&fragment_shader, GFX_SHADER_FRAGMENT, &fragment))
 		goto cleanup;
 	*shader_state = GFX_SHADER_STATE_INIT();
 	shaders[shaders_count++] = &vertex_shader;
@@ -154,6 +211,36 @@ static bool load_shader_state(gfx_shader_state_t *shader_state, const char *name
 	memset(attributes, 0, sizeof(attributes));
 	memset(constants, 0, sizeof(constants));
 	memset(samplers, 0, sizeof(samplers));
+	for (size_t i = 0; i < vertex.shader->inputs_count; ++i)
+	{
+		struct gfx_shader_input_def *def = &vertex.inputs[i];
+		attributes[i].bind = def->bind;
+		attributes[i].name = def->name;
+	}
+	for (size_t i = 0; i < vertex.shader->samplers_count; ++i)
+	{
+		struct gfx_shader_sampler_def *def = &vertex.samplers[i];
+		samplers[i].bind = def->bind;
+		samplers[i].name = def->name;
+	}
+	for (size_t i = 0; i < fragment.shader->samplers_count; ++i)
+	{
+		struct gfx_shader_sampler_def *def = &fragment.samplers[i];
+		samplers[vertex.shader->samplers_count + i].bind = def->bind;
+		samplers[vertex.shader->samplers_count + i].name = def->name;
+	}
+	for (size_t i = 0; i < vertex.shader->constants_count; ++i)
+	{
+		struct gfx_shader_constant_def *def = &vertex.constants[i];
+		constants[i].bind = def->bind;
+		constants[i].name = def->name;
+	}
+	for (size_t i = 0; i < fragment.shader->constants_count; ++i)
+	{
+		struct gfx_shader_constant_def *def = &fragment.constants[i];
+		constants[vertex.shader->constants_count + i].bind = def->bind;
+		constants[vertex.shader->constants_count + i].name = def->name;
+	}
 	ret = gfx_create_shader_state(g_wow->device, shader_state, shaders, shaders_count, attributes, constants, samplers);
 	if (!ret)
 		LOG_ERROR("failed to create %s shader state", name);
