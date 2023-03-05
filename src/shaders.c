@@ -118,6 +118,28 @@ static bool load_shader(const char *name, enum gfx_shader_type type, struct shad
 		return false;
 	}
 	shader_def->shader = (struct gfx_shader_def*)shader_def->data;
+	switch (type)
+	{
+		case GFX_SHADER_VERTEX:
+			if (shader_def->shader->magic != GFX_MAGIC_VERTEX)
+			{
+				LOG_ERROR("invalid vertex shader magic");
+				mem_free(MEM_GENERIC, shader_def->data);
+				return false;
+			}
+			break;
+		case GFX_SHADER_FRAGMENT:
+			if (shader_def->shader->magic != GFX_MAGIC_FRAGMENT)
+			{
+				LOG_ERROR("invalid fragment shader magic");
+				mem_free(MEM_GENERIC, shader_def->data);
+				return false;
+			}
+			break;
+		default:
+			LOG_ERROR("invalid shader type: %d", (int)type);
+			return false;
+	}
 	size_t shader_def_size = sizeof(*shader_def->shader);
 	size_t constants_size = shader_def->shader->constants_count * sizeof(*shader_def->constants);
 	size_t samplers_size = shader_def->shader->samplers_count * sizeof(*shader_def->samplers);
